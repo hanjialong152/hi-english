@@ -382,45 +382,93 @@ def handle_admin_delete_user():
 # ---- 语音识别 API ----
 @app.route('/api/transcribe', methods=['POST'])
 def handle_transcribe():
-    """接收音频文件，返回识别文本"""
-    print(f'[Transcribe] 收到请求', flush=True)
+    """接收音频文件，返回识别文本。
+    前端上传 raw PCM (audio/l16, 16kHz, mono, 16-bit)，
+    后端将其包装成 WAV 后用 SpeechRecognition 识别。
+    """
+    print(f'[Transcribe] 收到请求, Content-Type: {request.content_type}', flush=True)
     try:
         content_type = request.content_type or ''
         if 'multipart/form-data' not in content_type:
             return jsonify({'error': '需要 multipart/form-data 格式'}), 400
 
         # 获取上传的音频文件
+        audio_file = None
+        audio_data = b''
+        audio_mime = ''
         if 'audio' in request.files:
             audio_file = request.files['audio']
             audio_data = audio_file.read()
+            audio_mime = audio_file.mimetype or ''
         elif 'file' in request.files:
             audio_file = request.files['file']
             audio_data = audio_file.read()
+            audio_mime = audio_file.mimetype or ''
         else:
-            # 从 raw body 中解析 multipart form data
             audio_data = request.data
 
         if not audio_data or len(audio_data) < 100:
             return jsonify({'success': False, 'text': '', 'error': '音频数据为空或太短'})
 
-        print(f'[Transcribe] 音频大小: {len(audio_data)} bytes', flush=True)
+        print(f'[Transcribe] 音频大小: {len(audio_data)} bytes, MIME: {audio_mime}', flush=True)
 
-        # 保存临时文件
-        with tempfile.NamedTemporaryFile(suffix='.webm', delete=False) as f:
-            f.write(audio_data)
-            temp_path = f.name
-
+        # 前端上传的是 raw PCM (audio/l16, 16kHz, mono, 16-bit)
+        # 需要包装成 WAV 格式才能被 SpeechRecognition 读取
+        wav_path = None
+        temp_path = None
         try:
-            text = transcribe_audio(temp_path)
+            import wave
+            import struct
+
+            if 'l16' in audio_mime.lower() or 'pcm' in audio_mime.lower():
+                # raw PCM: 16kHz, mono, 16-bit
+                print('[Transcribe] 检测到 raw PCM 数据，包装为 WAV', flush=True)
+                wav_path = tempfile.NamedTemporaryFile(suffix='.wav', delete=False).name
+                with wave.open(wav_path, 'wb') as wf:
+                    wf.setnchannels(1)
+                    wf.setsampwidth(2)  # 16-bit = 2 bytes
+                    wf.setframerate(16000)
+                    wf.writeframes(audio_data)
+                audio_to_recognize = wav_path
+            else:
+                # webm/ogg 等格式，需要 ffmpeg 转换
+                # 保存原始文件
+                suffix = '.webm' if 'webm' in audio_mime else '.bin'
+                with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as f:
+                    f.write(audio_data)
+                    temp_path = f.name
+
+                # 尝试用 ffmpeg 转换为 wav
+                import subprocess
+                wav_path = temp_path.rsplit('.', 1)[0] + '.wav'
+                try:
+                    result = subprocess.run(
+                        ['ffmpeg', '-y', '-i', temp_path, '-ar', '16000', '-ac', '1',
+                         '-f', 'wav', wav_path],
+                        capture_output=True, timeout=15
+                    )
+                    if result.returncode != 0:
+                        print(f'[Transcribe] ffmpeg转换失败: {result.stderr.decode()[:200]}', flush=True)
+                        return jsonify({'success': False, 'text': '', 'error': '音频格式转换失败，请重试'})
+                    audio_to_recognize = wav_path
+                except FileNotFoundError:
+                    print('[Transcribe] ffmpeg未安装，尝试直接读取', flush=True)
+                    audio_to_recognize = temp_path
+
+            # 识别
+            text = transcribe_audio(audio_to_recognize)
             if text:
                 return jsonify({'success': True, 'text': text, 'confidence': 0.9})
             else:
                 return jsonify({'success': False, 'text': '', 'error': '未能识别语音，请说话更清晰后重试'})
         finally:
-            try:
-                os.unlink(temp_path)
-            except:
-                pass
+            # 清理临时文件
+            for p in [temp_path, wav_path]:
+                if p:
+                    try:
+                        os.unlink(p)
+                    except:
+                        pass
     except Exception as e:
         import traceback
         traceback.print_exc()
@@ -428,7 +476,7 @@ def handle_transcribe():
 
 
 def transcribe_audio(filepath):
-    """识别音频文件"""
+    """用 SpeechRecognition 识别 WAV 文件"""
     try:
         import speech_recognition as sr
         recognizer = sr.Recognizer()
@@ -440,20 +488,26 @@ def transcribe_audio(filepath):
         with sr.AudioFile(filepath) as source:
             audio = recognizer.record(source)
 
-        # 尝试 Google Web Speech API
+        # 尝试 Google Web Speech API（免费，无需 API key）
         try:
             text = recognizer.recognize_google(audio, language='en-US')
             print(f'[Google SR] 成功: "{text}"', flush=True)
             return text
         except sr.UnknownValueError:
-            print('[Google SR] 无法识别', flush=True)
+            print('[Google SR] 无法识别音频内容', flush=True)
             return ''
         except sr.RequestError as e:
-            print(f'[Google SR] 错误: {e}', flush=True)
+            print(f'[Google SR] API请求错误: {e}', flush=True)
+            # Google API 不可用时，返回空字符串（前端会显示提示）
             return ''
 
     except ImportError:
         print('[WARN] speech_recognition 未安装', flush=True)
+        return ''
+    except Exception as e:
+        print(f'[Transcribe] 识别异常: {e}', flush=True)
+        import traceback
+        traceback.print_exc()
         return ''
 
 
