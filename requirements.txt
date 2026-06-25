@@ -1,0 +1,5 @@
+# Hi English - Render 部署依赖
+# SpeechRecognition 用于 /api/transcribe（Google Web Speech API，无需 API key）
+# PyAudio 是可选依赖（仅用于麦克风输入），文件转写不需要
+
+SpeechRecognition>=3.8.1

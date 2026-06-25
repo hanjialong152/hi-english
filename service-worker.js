@@ -1,0 +1,99 @@
+// ===================================================
+// Hi English - Service Worker v11 (修复音频串词)
+// ===================================================
+// v11: 重新生成全部4250个音频，修复发音与文本不匹配的问题
+
+var CACHE_VERSION = 'hi-english-v11';
+var CORE_CACHE = 'hi-english-core-v11';
+var AUDIO_CACHE = 'hi-english-audio-v11';
+
+var CORE_FILES = [
+  './',
+  './index.html',
+  './style.css',
+  './app.js',
+  './words_data.js',
+  './manifest.json',
+  './icon-192.png',
+  './icon-512.png',
+  './icon-apple.png',
+  './favicon.png',
+  './admin.html',
+  './admin.css',
+  './admin.js'
+];
+
+self.addEventListener('install', function(event) {
+  self.skipWaiting();
+  event.waitUntil(
+    caches.open(CORE_CACHE).then(function(cache) {
+      return cache.addAll(CORE_FILES);
+    }).catch(function() {})
+  );
+});
+
+self.addEventListener('activate', function(event) {
+  event.waitUntil(
+    caches.keys().then(function(names) {
+      return Promise.all(names.map(function(name) {
+        if (name !== CORE_CACHE && name !== AUDIO_CACHE) {
+          return caches.delete(name);
+        }
+      }));
+    }).then(function() {
+      return self.clients.claim();
+    })
+  );
+});
+
+self.addEventListener('fetch', function(event) {
+  var url = new URL(event.request.url);
+  if (event.request.method !== 'GET') return;
+
+  // 音频文件：网络优先
+  if (url.pathname.indexOf('/audio/') !== -1 || url.pathname.match(/\.(mp3|wav)$/)) {
+    event.respondWith(
+      fetch(event.request).then(function(resp) {
+        if (resp.ok) {
+          var clone = resp.clone();
+          caches.open(AUDIO_CACHE).then(function(cache) {
+            cache.put(event.request, clone);
+          });
+        }
+        return resp;
+      }).catch(function() {
+        return caches.match(event.request).then(function(cached) {
+          return cached || new Response('', { status: 404 });
+        });
+      })
+    );
+    return;
+  }
+
+  // 其他文件：网络优先
+  event.respondWith(
+    fetch(event.request).then(function(resp) {
+      if (resp.ok && resp.type !== 'opaque') {
+        var clone = resp.clone();
+        caches.open(CORE_CACHE).then(function(cache) {
+          cache.put(event.request, clone);
+        });
+      }
+      return resp;
+    }).catch(function() {
+      return caches.match(event.request).then(function(cached) {
+        if (cached) return cached;
+        if (event.request.mode === 'navigate') {
+          return caches.match('./index.html');
+        }
+        return new Response('离线', { status: 503 });
+      });
+    })
+  );
+});
+
+self.addEventListener('message', function(event) {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});

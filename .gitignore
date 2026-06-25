@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+dist/
+build/
+
+# 数据文件（Render 上不持久化，每次部署会重置）
+# data/
+# 如需持久化，请挂载 Render Disk 到 /data 目录
+
+# 音频文件（太大，建议用 CDN）
+# audio/
+
+# 系统
+.DS_Store
+*.log
+
+# IDE
+.vscode/
+.idea/
+audio/

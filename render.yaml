@@ -1,0 +1,16 @@
+# Render 部署配置
+# 在 Render Dashboard 中连接 Git 仓库后，此文件会自动被读取
+# 或手动在 Render Dashboard 中配置以下参数
+
+services:
+  - type: web
+    name: hi-english
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python server.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11"
+    # 注意：data/ 目录在 Render 免费版上不会持久化
+    # 每次重新部署后数据会丢失
+    # 建议升级到付费版并挂载 Render Disk，或改用云数据库

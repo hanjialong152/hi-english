@@ -1,0 +1,10 @@
+[build]
+  publish = "."
+  command = ""
+  functions = "netlify/functions"
+
+# API 路由：将 /api/transcribe 转发到 serverless function
+[[redirects]]
+  from = "/api/transcribe"
+  to = "/.netlify/functions/transcribe"
+  status = 200

@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#4A90D9">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Hi English 管理">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-apple.png">
+<link rel="icon" type="image/png" href="favicon.png">
+<title>Hi English - 管理后台</title>
+<link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+<!-- 管理员登录遮罩 -->
+<div id="admin-login-mask" class="admin-login-mask" style="display:flex">
+  <div class="admin-login-box">
+    <div class="admin-login-logo">📚</div>
+    <h2>Hi English 管理后台</h2>
+    <div class="form-group">
+      <input type="text" id="admin-username" placeholder="管理员账号" value="admin" readonly>
+    </div>
+    <div class="form-group">
+      <input type="password" id="admin-password" placeholder="请输入密码" onkeydown="if(event.key==='Enter')adminLogin()">
+    </div>
+    <button class="btn-primary" onclick="adminLogin()">登录</button>
+    <a href="index.html" class="back-student-link">← 返回学员端</a>
+  </div>
+</div>
+
+<div class="admin-layout">
+  <!-- 侧边栏 -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <span class="logo-icon">📚</span>
+      <div>
+        <div class="logo-title">Hi English 管理</div>
+        <div class="logo-sub">英语学习系统</div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-item active" onclick="showTab('tab-overview')">
+        <span>📊</span> 总览
+      </div>
+      <div class="nav-item" onclick="showTab('tab-students')">
+        <span>👥</span> 学员管理
+      </div>
+      <div class="nav-item" onclick="showTab('tab-progress')">
+        <span>📈</span> 进度跟踪
+      </div>
+      <div class="nav-item" onclick="showTab('tab-notify')">
+        <span>📢</span> 催学提醒
+      </div>
+      <div class="nav-item" onclick="showTab('tab-export')">
+        <span>📤</span> 导出数据
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="btn-admin-pwd" onclick="showAdminPwdModal()">🔑 修改密码</button>
+      <button class="btn-admin-logout" onclick="adminLogout()">🚪 退出</button>
+      <a href="index.html" class="btn-back-student">← 学员端</a>
+    </div>
+  </aside>
+
+  <!-- 主内容区 -->
+  <main class="main-content">
+    <!-- 总览 -->
+    <div id="tab-overview" class="tab-content active">
+      <div class="page-header">
+        <h1>学习总览</h1>
+        <div class="header-actions">
+          <button class="btn-refresh" onclick="refreshData()">🔄 刷新数据</button>
+          <span class="update-time" id="update-time"></span>
+        </div>
+      </div>
+
+      <!-- 总体统计卡片 -->
+      <div class="stats-grid">
+        <div class="stat-card blue">
+          <div class="stat-icon">👥</div>
+          <div class="stat-info">
+            <div class="stat-num" id="total-students">0</div>
+            <div class="stat-label">学员总数</div>
+          </div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-icon">✅</div>
+          <div class="stat-info">
+            <div class="stat-num" id="active-today">0</div>
+            <div class="stat-label">今日学习</div>
+          </div>
+        </div>
+        <div class="stat-card orange">
+          <div class="stat-icon">⚠️</div>
+          <div class="stat-info">
+            <div class="stat-num" id="inactive-students">0</div>
+            <div class="stat-label">3天未学习</div>
+          </div>
+        </div>
+        <div class="stat-card purple">
+          <div class="stat-icon">📊</div>
+          <div class="stat-info">
+            <div class="stat-num" id="avg-progress">0%</div>
+            <div class="stat-label">平均进度</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 进度分布 -->
+      <div class="card">
+        <div class="card-title">📊 学习进度分布</div>
+        <div id="progress-distribution" class="dist-bars"></div>
+      </div>
+
+      <!-- 活跃排行 -->
+      <div class="card">
+        <div class="card-title">🏆 学习排行榜（前10名）</div>
+        <div id="top-students-list"></div>
+      </div>
+
+      <!-- 最近活跃 -->
+      <div class="card">
+        <div class="card-title">🕐 最近学习记录</div>
+        <div id="recent-activity"></div>
+      </div>
+    </div>
+
+    <!-- 学员管理 -->
+    <div id="tab-students" class="tab-content">
+      <div class="page-header">
+        <h1>学员管理</h1>
+        <div class="header-actions">
+          <button class="btn-primary" onclick="showAddStudentModal()">➕ 新增学员</button>
+          <button class="btn-secondary" onclick="downloadImportTemplate()">📥 下载模板</button>
+          <button class="btn-secondary" onclick="document.getElementById('import-file').click()">📤 批量导入</button>
+          <input type="file" id="import-file" accept=".xlsx,.xls" style="display:none" onchange="importStudents(event)">
+          <input type="search" id="student-search" placeholder="搜索工号/姓名..." class="search-input" oninput="renderStudents()">
+        </div>
+      </div>
+
+      <div class="filter-row">
+        <select id="student-filter" onchange="renderStudents()" class="filter-select">
+          <option value="all">全部学员</option>
+          <option value="active">今日学习</option>
+          <option value="inactive3">3天未学习</option>
+          <option value="inactive7">7天未学习</option>
+          <option value="not-started">未开始学习</option>
+        </select>
+        <select id="student-sort" onchange="renderStudents()" class="filter-select">
+          <option value="lastLogin">按最近登录</option>
+          <option value="progress">按学习进度</option>
+          <option value="score">按综合评分</option>
+          <option value="name">按姓名</option>
+        </select>
+        <span id="student-count" class="count-badge">共0人</span>
+      </div>
+
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>工号</th>
+              <th>姓名</th>
+              <th>学习进度</th>
+              <th>已掌握</th>
+              <th>学习天数</th>
+              <th>平均分</th>
+              <th>最近学习</th>
+              <th>状态</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="students-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 进度跟踪 -->
+    <div id="tab-progress" class="tab-content">
+      <div class="page-header">
+        <h1>进度跟踪</h1>
+      </div>
+
+      <div class="progress-track-wrap">
+        <div class="card">
+          <div class="card-title">📉 学习进度落后提醒</div>
+          <div id="lagging-list" class="lagging-list"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">📈 进度完成情况</div>
+          <div id="progress-chart" class="progress-chart"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 催学提醒 -->
+    <div id="tab-notify" class="tab-content">
+      <div class="page-header">
+        <h1>催学提醒</h1>
+      </div>
+
+      <div class="card">
+        <div class="card-title">⚙️ 提醒设置</div>
+        <div class="notify-settings">
+          <div class="setting-item">
+            <label>未学习天数提醒阈值</label>
+            <select id="notify-days">
+              <option value="1">1天未学习</option>
+              <option value="3" selected>3天未学习</option>
+              <option value="7">7天未学习</option>
+            </select>
+          </div>
+          <div class="setting-item">
+            <label>进度低于</label>
+            <select id="notify-progress">
+              <option value="10">10%</option>
+              <option value="20" selected>20%</option>
+              <option value="30">30%</option>
+            </select>
+          </div>
+          <button class="btn-primary" onclick="checkNotifyList()">🔍 筛选需提醒学员</button>
+        </div>
+      </div>
+
+      <div class="card" id="notify-result-card" style="display:none">
+        <div class="card-title">📋 需要催学的学员</div>
+        <div id="notify-list"></div>
+        <div class="notify-actions">
+          <button class="btn-primary" onclick="exportNotifyList()">📤 导出名单</button>
+          <button class="btn-secondary" onclick="copyNotifyMsg()">📋 复制提醒语</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 导出数据 -->
+    <div id="tab-export" class="tab-content">
+      <div class="page-header">
+        <h1>数据导出</h1>
+      </div>
+
+      <div class="export-grid">
+        <div class="export-card" onclick="exportAllStudents()">
+          <div class="export-icon">📊</div>
+          <div class="export-title">全员学习报告</div>
+          <div class="export-desc">导出所有学员的学习数据（Excel格式）</div>
+          <button class="btn-export">导出 Excel</button>
+        </div>
+        <div class="export-card" onclick="exportProgressReport()">
+          <div class="export-icon">📈</div>
+          <div class="export-title">进度分析报告</div>
+          <div class="export-desc">导出学习进度分析报告（Word格式）</div>
+          <button class="btn-export">导出报告</button>
+        </div>
+        <div class="export-card" onclick="exportRankList()">
+          <div class="export-icon">🏆</div>
+          <div class="export-title">排行榜</div>
+          <div class="export-desc">导出学习排行榜（按进度排序）</div>
+          <button class="btn-export">导出排行</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- 学员详情弹窗 -->
+<div id="student-modal" class="modal" style="display:none">
+  <div class="modal-backdrop" onclick="closeModal()"></div>
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 id="modal-title">学员详情</h3>
+      <button onclick="closeModal()" class="modal-close">✕</button>
+    </div>
+    <div id="modal-body" class="modal-body"></div>
+  </div>
+</div>
+
+<!-- 新增学员弹窗 -->
+<div id="add-student-modal" class="modal" style="display:none">
+  <div class="modal-backdrop" onclick="closeAddStudentModal()"></div>
+  <div class="modal-content" style="max-width:380px">
+    <div class="modal-header">
+      <h3>➕ 新增学员</h3>
+      <button onclick="closeAddStudentModal()" class="modal-close">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group" style="margin-bottom:14px">
+        <label style="font-size:13px;color:#666;display:block;margin-bottom:4px">工号</label>
+        <input type="text" id="add-empid" placeholder="请输入工号" style="width:100%;height:40px;border:1.5px solid #E8EAF0;border-radius:8px;padding:0 12px;font-size:15px">
+      </div>
+      <div class="form-group" style="margin-bottom:16px">
+        <label style="font-size:13px;color:#666;display:block;margin-bottom:4px">姓名</label>
+        <input type="text" id="add-name" placeholder="请输入姓名" style="width:100%;height:40px;border:1.5px solid #E8EAF0;border-radius:8px;padding:0 12px;font-size:15px">
+      </div>
+      <button class="btn-primary" style="width:100%" onclick="addStudent()">确认添加</button>
+      <p style="font-size:12px;color:#999;margin-top:8px;text-align:center">初始密码：123@456.com</p>
+    </div>
+  </div>
+</div>
+
+<!-- 管理员修改密码弹窗 -->
+<div id="admin-pwd-modal" class="modal" style="display:none">
+  <div class="modal-backdrop" onclick="closeAdminPwdModal()"></div>
+  <div class="modal-content" style="max-width:380px">
+    <div class="modal-header">
+      <h3>🔑 修改管理员密码</h3>
+      <button onclick="closeAdminPwdModal()" class="modal-close">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group" style="margin-bottom:14px">
+        <label style="font-size:13px;color:#666;display:block;margin-bottom:4px">原密码</label>
+        <input type="password" id="admin-pwd-old" placeholder="请输入原密码" style="width:100%;height:40px;border:1.5px solid #E8EAF0;border-radius:8px;padding:0 12px;font-size:15px">
+      </div>
+      <div class="form-group" style="margin-bottom:14px">
+        <label style="font-size:13px;color:#666;display:block;margin-bottom:4px">新密码（至少6位）</label>
+        <input type="password" id="admin-pwd-new" placeholder="请输入新密码" style="width:100%;height:40px;border:1.5px solid #E8EAF0;border-radius:8px;padding:0 12px;font-size:15px">
+      </div>
+      <div class="form-group" style="margin-bottom:16px">
+        <label style="font-size:13px;color:#666;display:block;margin-bottom:4px">确认新密码</label>
+        <input type="password" id="admin-pwd-confirm" placeholder="请再次输入" style="width:100%;height:40px;border:1.5px solid #E8EAF0;border-radius:8px;padding:0 12px;font-size:15px">
+      </div>
+      <button class="btn-primary" style="width:100%" onclick="submitAdminChangePassword()">确认修改</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="admin.js"></script>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./service-worker.js').catch(function(){});
+}
+</script>
+</body>
+</html>

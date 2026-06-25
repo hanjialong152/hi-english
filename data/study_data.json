@@ -1,0 +1,114 @@
+{
+  "10001": {
+    "empid": "10001",
+    "name": "张三",
+    "learnedIds": [
+      1,
+      2,
+      3
+    ],
+    "masteredIds": [
+      1
+    ],
+    "studyDates": [
+      "Thu Jun 25 2026"
+    ],
+    "sessions": [],
+    "lastIndex": 3,
+    "totalStudySeconds": 120,
+    "updatedAt": 1782399759372
+  },
+  "10002": {
+    "empid": "10002",
+    "name": "李四",
+    "learnedIds": [],
+    "masteredIds": [],
+    "favoriteIds": [],
+    "speakScores": {},
+    "sessions": [],
+    "studyDates": [],
+    "lastIndex": 0,
+    "totalStudySeconds": 0,
+    "createdAt": 1782399759418,
+    "updatedAt": 1782399759418
+  },
+  "10003": {
+    "empid": "10003",
+    "name": "王五",
+    "learnedIds": [],
+    "masteredIds": [],
+    "favoriteIds": [],
+    "speakScores": {},
+    "sessions": [],
+    "studyDates": [],
+    "lastIndex": 0,
+    "totalStudySeconds": 0,
+    "createdAt": 1782399759418,
+    "updatedAt": 1782399759418
+  },
+  "gw00147407": {
+    "empid": "gw00147407",
+    "name": "韩家龙",
+    "learnedIds": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      344,
+      12
+    ],
+    "masteredIds": [
+      4
+    ],
+    "favoriteIds": [],
+    "speakScores": {
+      "4": 85
+    },
+    "sessions": [],
+    "studyDates": [
+      "Thu Jun 25 2026",
+      "Fri Jun 26 2026"
+    ],
+    "lastIndex": 12,
+    "totalStudySeconds": 401,
+    "createdAt": 1782400169193,
+    "updatedAt": 1782403425466,
+    "lastLogin": 1782403422083,
+    "loginCount": 7
+  },
+  "GW0100256": {
+    "empid": "GW0100256",
+    "name": "刘海玲",
+    "learnedIds": [],
+    "masteredIds": [],
+    "favoriteIds": [],
+    "speakScores": {},
+    "sessions": [],
+    "studyDates": [],
+    "lastIndex": 0,
+    "totalStudySeconds": 0,
+    "createdAt": 1782402576147,
+    "updatedAt": 1782402576147
+  },
+  "GW00058704": {
+    "empid": "GW00058704",
+    "name": "刘桂霄",
+    "learnedIds": [],
+    "masteredIds": [],
+    "favoriteIds": [],
+    "speakScores": {},
+    "sessions": [],
+    "studyDates": [],
+    "lastIndex": 0,
+    "totalStudySeconds": 0,
+    "createdAt": 1782402602907,
+    "updatedAt": 1782402602907
+  }
+}

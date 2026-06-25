@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#4A90D9">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Hi English">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-apple.png">
+<link rel="icon" type="image/png" href="favicon.png">
+<title>Hi English</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- PWA 安装引导横幅 -->
+<div id="pwa-install-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9999;background:linear-gradient(135deg,#4A90D9,#5BA1E6);color:#fff;padding:10px 15px;font-size:13px;display:none;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,0.2);">
+  <div style="flex:1;">
+    <b>📱 安装 Hi English APP</b><br>
+    <span id="pwa-install-text">添加到主屏幕，像APP一样使用</span>
+  </div>
+  <button onclick="document.getElementById('pwa-install-banner').style.display='none';" style="background:rgba(255,255,255,0.3);border:none;color:#fff;padding:5px 10px;border-radius:5px;font-size:12px;margin-left:10px;">✕</button>
+</div>
+
+<!-- 登录页 -->
+<div id="page-login" class="page active">
+  <div class="login-bg">
+    <div class="login-logo">
+      <div class="logo-icon">📚</div>
+      <h1>Hi English</h1>
+      <p>英语基础词汇学习系统</p>
+    </div>
+    <div class="login-card">
+      <h2>学员登录</h2>
+      <div class="form-group">
+        <label>工号</label>
+        <input type="text" id="input-empid" placeholder="请输入工号" maxlength="20">
+      </div>
+      <div class="form-group">
+        <label>密码</label>
+        <input type="password" id="input-password" placeholder="请输入密码" maxlength="32" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+  <button class="btn-primary" onclick="doLogin()">登录</button>
+  <div class="login-hint">
+    <a href="admin.html" target="_blank">🔧 管理后台</a>
+  </div>
+</div>
+</div>
+</div>
+  </div>
+</div>
+
+<!-- 主页 -->
+<div id="page-home" class="page">
+  <div class="app-header">
+    <div class="header-info">
+      <span id="user-display"></span>
+    </div>
+    <div class="header-actions">
+      <button class="btn-icon" onclick="showPage('page-report')">📊</button>
+      <button class="btn-icon" onclick="showChangePasswordModal()">🔑</button>
+      <button class="btn-icon" onclick="logout()">🚪</button>
+    </div>
+  </div>
+
+  <div class="home-content">
+    <div class="progress-card">
+      <div class="progress-title">学习进度</div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar" id="home-progress-bar"></div>
+      </div>
+      <div class="progress-text" id="home-progress-text">0 / 850 词</div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-num" id="stat-learned">0</div>
+        <div class="stat-label">已学</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-mastered">0</div>
+        <div class="stat-label">已掌握</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-days">0</div>
+        <div class="stat-label">学习天数</div>
+      </div>
+    </div>
+
+    <div class="mode-section">
+      <h3>学习模式</h3>
+      <div class="mode-cards">
+        <div class="mode-card" onclick="startLearn('sequential')">
+          <div class="mode-icon">📖</div>
+          <div class="mode-name">顺序学习</div>
+          <div class="mode-desc">按顺序学习850词</div>
+        </div>
+        <div class="mode-card" onclick="startLearn('review')">
+          <div class="mode-icon">🔄</div>
+          <div class="mode-name">复习模式</div>
+          <div class="mode-desc">复习已学单词</div>
+        </div>
+    <div class="mode-card" onclick="startLearn('practice')">
+      <div class="mode-icon">✍️</div>
+      <div class="mode-name">拼写练习</div>
+      <div class="mode-desc">听音拼写单词</div>
+    </div>
+        <div class="mode-card" onclick="startLearn('test')">
+          <div class="mode-icon">📝</div>
+          <div class="mode-name">测试模式</div>
+          <div class="mode-desc">随机测试单词</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="recent-section">
+      <h3>继续学习</h3>
+      <div id="recent-word-card" class="recent-word-card" onclick="resumeLearn()">
+        <div id="recent-word">点击开始学习</div>
+        <div id="recent-word-zh"></div>
+        <div class="recent-hint">▶ 继续</div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="bottom-nav">
+    <div class="nav-item active" onclick="showPage('page-home')">
+      <span>🏠</span><span>首页</span>
+    </div>
+    <div class="nav-item" onclick="showPage('page-wordlist')">
+      <span>📋</span><span>单词表</span>
+    </div>
+    <div class="nav-item" onclick="showPage('page-report')">
+      <span>📊</span><span>报告</span>
+    </div>
+  </div>
+</div>
+
+<!-- 单词学习页 -->
+<div id="page-learn" class="page">
+  <div class="learn-header">
+    <button class="btn-back" onclick="exitLearn()">‹ 返回</button>
+    <div class="learn-progress-info">
+      <span id="learn-current">1</span> / <span id="learn-total">850</span>
+    </div>
+    <button class="btn-icon" onclick="toggleFavorite()" id="btn-fav">☆</button>
+  </div>
+  
+  <div class="learn-progress-bar-wrap">
+    <div class="learn-progress-bar" id="learn-progress-bar"></div>
+  </div>
+
+  <div class="word-card-area">
+    <div class="word-card" id="main-word-card">
+      <!-- 单词展示 -->
+      <div class="wc-front">
+        <div class="wc-pos-ipa">
+          <span class="wc-pos" id="wc-pos">verb</span>
+          <span class="wc-ipa" id="wc-ipa">/kʌm/</span>
+        </div>
+        <div class="wc-word" id="wc-word">come</div>
+        <div class="wc-zh" id="wc-zh">来；来到</div>
+        <button class="btn-speak" onclick="speakWord()" title="朗读单词">🔊 朗读单词</button>
+      </div>
+
+      <!-- 词组 -->
+      <div class="wc-phrases">
+        <div class="wc-section-title">📌 常见词组</div>
+        <div class="wc-phrases-content" id="wc-phrases"></div>
+        <button class="btn-speak-sm" onclick="speakPhrases()">🔊 朗读词组</button>
+      </div>
+
+      <!-- 例句 -->
+      <div class="wc-examples">
+        <div class="wc-section-title">💬 例句</div>
+        <div class="example-item">
+          <div class="ex-en" id="ex1-en"></div>
+          <div class="ex-zh" id="ex1-zh"></div>
+          <button class="btn-speak-sm" onclick="speakExample(0)">🔊</button>
+        </div>
+        <div class="example-item">
+          <div class="ex-en" id="ex2-en"></div>
+          <div class="ex-zh" id="ex2-zh"></div>
+          <button class="btn-speak-sm" onclick="speakExample(1)">🔊</button>
+        </div>
+        <div class="example-item">
+          <div class="ex-en" id="ex3-en"></div>
+          <div class="ex-zh" id="ex3-zh"></div>
+          <button class="btn-speak-sm" onclick="speakExample(2)">🔊</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 跟读区域 - 可拖拽展开/收起 -->
+  <div class="speak-zone" id="speak-zone">
+    <!-- 拖拽手柄 -->
+    <div class="speak-drag-handle" id="speak-drag-handle" onclick="toggleSpeakZone()">
+      <div class="drag-bar"></div>
+      <span class="drag-label" id="drag-label">点击打开跟读区 ▲</span>
+    </div>
+    
+    <div class="speak-title">🎤 跟读练习</div>
+    
+    <!-- 跟读目标选择 -->
+    <div class="speak-target-selector">
+      <button class="speak-target-btn active" onclick="setSpeakTarget('word')" id="st-word">读单词</button>
+      <button class="speak-target-btn" onclick="setSpeakTarget('phrase')" id="st-phrase">读词组</button>
+      <button class="speak-target-btn" onclick="setSpeakTarget('sentence')" id="st-sentence">读例句</button>
+    </div>
+    
+    <!-- 当前跟读目标展示 -->
+    <div class="speak-target-display" id="speak-target-display">come</div>
+    
+    <!-- 录音按钮（按住说话） -->
+    <div class="mic-container">
+      <button class="btn-mic" id="btn-mic"
+        onmousedown="micDown()" onmouseup="micUp()"
+        ontouchstart="event.preventDefault(); micDown()" ontouchend="event.preventDefault(); micUp()">
+        🎤
+      </button>
+      <div class="mic-label" id="mic-label">按住说话</div>
+    </div>
+    
+    <!-- 录音动画 -->
+    <div class="recording-indicator" id="recording-indicator" style="display:none">
+      <div class="rec-dot"></div>
+      <span>正在录音...</span>
+    </div>
+    <div class="speak-tip" id="speak-tip">先听标准发音，再按住麦克风跟读</div>
+  </div>
+
+  <!-- 导航按钮 -->
+  <div class="learn-nav">
+    <button class="btn-nav btn-prev" onclick="prevWord()">‹ 上一个</button>
+    <button class="btn-nav btn-next" onclick="nextWord()">下一个 ›</button>
+  </div>
+</div>
+
+<!-- 拼写练习页 -->
+<div id="page-spell" class="page">
+  <div class="app-header">
+    <button class="btn-back" onclick="exitSpell()">‹ 返回</button>
+    <h2>拼写练习</h2>
+    <div class="learn-progress-info"><span id="spell-current">1</span> / <span id="spell-total">850</span></div>
+  </div>
+  <div class="learn-progress-bar-wrap">
+    <div class="learn-progress-bar" id="spell-progress-bar"></div>
+  </div>
+  <div class="spell-card-area">
+    <div class="spell-card">
+      <div class="spell-prompt">
+        <div class="spell-zh" id="spell-zh"></div>
+        <div class="spell-pos"><span id="spell-pos"></span></div>
+      </div>
+      <button class="btn-speak-spell" id="spell-play-btn" onclick="playSpellAudio()">🔊 点击播放发音</button>
+      <div class="spell-input-wrap">
+        <input type="text" id="spell-input" class="spell-input" placeholder="请拼写单词" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" onkeydown="onSpellKeydown(event)">
+      </div>
+      <div class="spell-feedback" id="spell-feedback" style="display:none">
+        <div class="spell-result-icon" id="spell-result-icon"></div>
+        <div class="spell-result-word" id="spell-result-word"></div>
+        <div class="spell-result-msg" id="spell-result-msg"></div>
+      </div>
+      <div class="spell-actions" id="spell-actions" style="display:none">
+        <button class="btn-spell-replay" onclick="playSpellAudio()">🔊 再听一次</button>
+        <button class="btn-spell-next" id="spell-next-btn" onclick="nextSpell()">下一个 ›</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 单词列表页 -->
+<div id="page-wordlist" class="page">
+  <div class="app-header">
+    <button class="btn-back" onclick="showPage('page-home')">‹ 返回</button>
+    <h2>单词表</h2>
+    <div></div>
+  </div>
+  <div class="wordlist-filters">
+    <input type="search" id="wl-search" placeholder="搜索单词..." oninput="filterWords()">
+    <select id="wl-filter" onchange="filterWords()">
+      <option value="all">全部</option>
+      <option value="learned">已学</option>
+      <option value="mastered">已掌握</option>
+      <option value="unlearned">未学</option>
+    </select>
+  </div>
+  <div id="wordlist-container" class="wordlist-container"></div>
+</div>
+
+<!-- 报告页 -->
+<div id="page-report" class="page">
+  <div class="app-header">
+    <button class="btn-back" onclick="showPage('page-home')">‹ 返回</button>
+    <h2>学习报告</h2>
+    <div></div>
+  </div>
+  <div id="report-content" class="report-content">
+    <div class="report-card">
+      <div class="report-title">📊 总体评分</div>
+      <div class="report-score" id="report-score">--</div>
+      <div class="score-label">综合得分</div>
+    </div>
+    
+    <div class="report-detail-card">
+      <div class="report-subtitle">📈 学习统计</div>
+      <div class="report-stats" id="report-stats"></div>
+    </div>
+
+    <div class="report-detail-card">
+      <div class="report-subtitle">💡 改进建议</div>
+      <div class="report-suggestions" id="report-suggestions"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 评分弹窗 -->
+<div class="score-modal-mask" id="score-modal-mask">
+  <div class="score-modal">
+    <div class="score-modal-icon" id="score-modal-icon"></div>
+    <div class="score-modal-msg" id="score-modal-msg"></div>
+    <div class="score-modal-score" id="score-modal-score"></div>
+    <div class="score-modal-detail" id="score-modal-detail"></div>
+    <button class="score-modal-btn" onclick="closeScoreModal()">继续学习</button>
+  </div>
+</div>
+
+<!-- 修改密码弹窗 -->
+<div class="score-modal-mask" id="pwd-modal-mask" style="display:none">
+  <div class="score-modal" style="max-width:340px">
+    <h3 style="margin-bottom:16px">🔑 修改密码</h3>
+    <div class="form-group" style="margin-bottom:12px">
+      <label style="font-size:13px;color:#666">原密码</label>
+      <input type="password" id="pwd-old" placeholder="请输入原密码" maxlength="32" style="width:100%;height:40px;border:1.5px solid #E8EAF0;border-radius:8px;padding:0 12px;font-size:15px;margin-top:4px">
+    </div>
+    <div class="form-group" style="margin-bottom:12px">
+      <label style="font-size:13px;color:#666">新密码（至少6位）</label>
+      <input type="password" id="pwd-new" placeholder="请输入新密码" maxlength="32" style="width:100%;height:40px;border:1.5px solid #E8EAF0;border-radius:8px;padding:0 12px;font-size:15px;margin-top:4px">
+    </div>
+    <div class="form-group" style="margin-bottom:16px">
+      <label style="font-size:13px;color:#666">确认新密码</label>
+      <input type="password" id="pwd-confirm" placeholder="请再次输入新密码" maxlength="32" style="width:100%;height:40px;border:1.5px solid #E8EAF0;border-radius:8px;padding:0 12px;font-size:15px;margin-top:4px">
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="score-modal-btn" style="background:#f0f0f0;color:#666;flex:1" onclick="closePwdModal()">取消</button>
+      <button class="score-modal-btn" style="flex:1" onclick="submitChangePassword()">确认修改</button>
+    </div>
+  </div>
+</div>
+
+<script src="words_data.js"></script>
+<script src="app.js"></script>
+<script>
+// PWA Service Worker 注册 (v11 - 修复音频串词)
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.getRegistrations().then(function(regs) {
+      regs.forEach(function(reg) { reg.unregister(); });
+      console.log('[PWA] 旧 Service Worker 已注销');
+
+      navigator.serviceWorker.register('./service-worker.js?v=11').then(function(reg) {
+        console.log('[PWA] Service Worker v11 注册成功');
+        if (reg.waiting) {
+          reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+        }
+        reg.addEventListener('updatefound', function() {
+          var newWorker = reg.installing;
+          if (newWorker) {
+            newWorker.addEventListener('statechange', function() {
+              if (newWorker.state === 'activated') {
+                console.log('[PWA] v11 已激活，刷新页面');
+                window.location.reload();
+              }
+            });
+          }
+        });
+      }).catch(function(err) {
+        console.log('[PWA] Service Worker 注册失败:', err);
+      });
+    });
+
+    if (window.caches) {
+      caches.keys().then(function(names) {
+        names.forEach(function(name) {
+          console.log('[PWA] 清除缓存:', name);
+          caches.delete(name);
+        });
+      });
+    }
+  });
+}
+
+// 检测是否在 iframe 中运行
+function isInIframe() {
+  try {
+    return window.self !== window.top;
+  } catch(e) {
+    return true; // 跨域 iframe 会抛异常
+  }
+}
+
+// PWA 安装引导
+var deferredPrompt = null;
+var isIframe = isInIframe();
+
+window.addEventListener('beforeinstallprompt', function(e) {
+  e.preventDefault();
+  deferredPrompt = e;
+  showInstallBanner('android');
+});
+
+window.addEventListener('appinstalled', function() {
+  document.getElementById('pwa-install-banner').style.display = 'none';
+  console.log('[PWA] APP已安装');
+});
+
+function showInstallBanner(platform) {
+  var banner = document.getElementById('pwa-install-banner');
+  var text = document.getElementById('pwa-install-text');
+  if (!banner || !text) return;
+
+  if (platform === 'android') {
+    text.innerHTML = '点击右侧安装，或浏览器菜单"添加到主屏幕"';
+    banner.innerHTML = '<div style="flex:1;"><b>📱 安装 Hi English APP</b><br>' +
+      '<span>' + text.innerHTML + '</span></div>' +
+      '<button onclick="triggerInstall()" style="background:#fff;color:#4A90D9;border:none;padding:6px 16px;border-radius:5px;font-size:13px;font-weight:bold;margin-left:10px;">安装</button>' +
+      '<button onclick="document.getElementById(\'pwa-install-banner\').style.display=\'none\'" style="background:transparent;border:none;color:#fff;padding:5px;margin-left:5px;font-size:16px;">✕</button>';
+  } else {
+    text.innerHTML = '点击Safari底部分享按钮 → 添加到主屏幕';
+  }
+  banner.style.display = 'flex';
+}
+
+function triggerInstall() {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(function(choice) {
+      if (choice.outcome === 'accepted') {
+        console.log('[PWA] 用户接受安装');
+      }
+      deferredPrompt = null;
+      document.getElementById('pwa-install-banner').style.display = 'none';
+    });
+  } else {
+    // deferredPrompt 为空，说明 beforeinstallprompt 没触发
+    // 提示用户手动操作
+    showManualInstallGuide();
+  }
+}
+
+// 手动安装指导（当 beforeinstallprompt 不触发时）
+function showManualInstallGuide() {
+  var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  var isAndroid = /Android/.test(navigator.userAgent);
+  var guide = '';
+
+  if (isIframe) {
+    // iframe 环境（预览模式）
+    guide = '<div style="background:#fff;color:#333;padding:16px;line-height:1.8;">' +
+      '<b>📱 安装 Hi English APP</b><br><br>' +
+      '当前在预览环境中，无法直接安装。<br>请按以下步骤操作：<br><br>' +
+      '<b>第一步：</b>点击右上角菜单，选择"在浏览器中打开"<br>' +
+      '<b>第二步：</b>在浏览器中打开后，点击浏览器菜单<br>' +
+      '<b>第三步：</b>选择"安装应用"或"添加到主屏幕"<br><br>' +
+      '<button onclick="copyLinkAndOpen()" style="background:#4A90D9;color:#fff;border:none;padding:8px 16px;border-radius:6px;font-size:14px;cursor:pointer;">复制链接并在浏览器中打开</button><br><br>' +
+      '<span style="font-size:12px;color:#999;">或直接复制链接：<br><code id="copy-link-text" style="word-break:break-all;"></code></span>' +
+      '</div>';
+  } else if (isIOS) {
+    guide = '<div style="background:#fff;color:#333;padding:16px;line-height:1.8;">' +
+      '<b>📱 iOS 安装步骤</b><br><br>' +
+      '1. 点击 Safari 底部分享按钮 <b>⎋</b><br>' +
+      '2. 向下滑动，找到"添加到主屏幕"<br>' +
+      '3. 点击"添加"完成安装<br><br>' +
+      '安装后可在主屏幕像普通APP一样使用 ✅' +
+      '</div>';
+  } else if (isAndroid) {
+    guide = '<div style="background:#fff;color:#333;padding:16px;line-height:1.8;">' +
+      '<b>📱 Android 安装步骤</b><br><br>' +
+      '方法一：点击浏览器右上角 ⋮ 菜单<br>' +
+      '　　　选择"安装应用"或"添加到主屏幕"<br><br>' +
+      '方法二：如果看不到安装选项<br>' +
+      '　　　请点击地址栏，确认以 https:// 开头<br><br>' +
+      '需要 Chrome 浏览器支持（不要用微信内置浏览器）' +
+      '</div>';
+  } else {
+    guide = '<div style="background:#fff;color:#333;padding:16px;">请使用 Chrome 或 Safari 浏览器打开此页面安装</div>';
+  }
+
+  document.getElementById('pwa-install-banner').style.display = 'none';
+  showModal(guide);
+}
+
+// 复制链接并在浏览器中打开
+function copyLinkAndOpen() {
+  var link = window.location.href;
+  // 尝试复制到剪贴板
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(link).then(function() {
+      showToast('链接已复制，请在浏览器中打开');
+    }).catch(function() {
+      showLinkFallback(link);
+    });
+  } else {
+    showLinkFallback(link);
+  }
+  // 尝试在新窗口打开（可能被拦截）
+  try {
+    window.open(link, '_blank');
+  } catch(e) {}
+}
+
+function showLinkFallback(link) {
+  var el = document.getElementById('copy-link-text');
+  if (el) {
+    el.textContent = link;
+    el.style.cursor = 'pointer';
+    el.onclick = function() { 
+      try { 
+        var range = document.createRange(); 
+        range.selectNode(el); 
+        window.getSelection().removeAllRanges(); 
+        window.getSelection().addRange(range); 
+      } catch(e) {} 
+    };
+  }
+  showToast('请复制链接后在浏览器中打开');
+}
+
+// 显示模态框（通用）
+function showModal(htmlContent) {
+  var mask = document.getElementById('score-modal-mask');
+  var modal = mask ? mask.querySelector('.score-modal') : null;
+  if (!mask || !modal) return;
+
+  modal.innerHTML = '<div style="padding:20px;">' + htmlContent + 
+    '<br><button class="score-modal-btn" onclick="closeModal()" style="margin-top:16px;">知道了</button></div>';
+  mask.style.display = 'flex';
+}
+
+function closeModal() {
+  var mask = document.getElementById('score-modal-mask');
+  if (mask) mask.style.display = 'none';
+  // 恢复评分弹窗内容
+  var modal = mask ? mask.querySelector('.score-modal') : null;
+  if (modal) {
+    modal.innerHTML = 
+      '<div class="score-modal-icon" id="score-modal-icon"></div>' +
+      '<div class="score-modal-msg" id="score-modal-msg"></div>' +
+      '<div class="score-modal-score" id="score-modal-score"></div>' +
+      '<div class="score-modal-detail" id="score-modal-detail"></div>' +
+      '<button class="score-modal-btn" onclick="closeScoreModal()">继续学习</button>';
+  }
+}
+
+// 检测是否已安装（standalone模式），未安装则显示引导
+window.addEventListener('DOMContentLoaded', function() {
+  var isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+    window.navigator.standalone === true;
+
+  if (!isStandalone) {
+    var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    var isAndroid = /Android/.test(navigator.userAgent);
+
+    setTimeout(function() {
+      // 如果在 iframe 中，直接显示手动安装指导
+      if (isIframe) {
+        showInstallBannerWithManual();
+        return;
+      }
+      if (isIOS && !deferredPrompt) {
+        showInstallBanner('ios');
+      }
+      // Android: beforeinstallprompt 事件会自动触发
+      // 如果 3 秒后还没触发，说明环境问题，显示手动指导
+      if (isAndroid && !deferredPrompt) {
+        setTimeout(function() {
+          if (!deferredPrompt) {
+            showInstallBannerWithManual();
+          }
+        }, 3000);
+      }
+    }, 2000);
+  }
+});
+
+function showInstallBannerWithManual() {
+  var banner = document.getElementById('pwa-install-banner');
+  if (!banner) return;
+
+  var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+  if (isIOS) {
+    banner.innerHTML = '<div style="flex:1;"><b>📱 安装 Hi English APP</b><br>' +
+      '<span>点击Safari底部分享按钮 ⎋ → 添加到主屏幕</span></div>' +
+      '<button onclick="document.getElementById(\'pwa-install-banner\').style.display=\'none\'" style="background:transparent;border:none;color:#fff;padding:5px;margin-left:5px;font-size:16px;">✕</button>';
+  } else {
+    banner.innerHTML = '<div style="flex:1;"><b>📱 安装 Hi English APP</b><br>' +
+      '<span>点击浏览器菜单 → 安装应用 / 添加到主屏幕</span></div>' +
+      '<button onclick="showManualInstallGuide()" style="background:#fff;color:#4A90D9;border:none;padding:6px 16px;border-radius:5px;font-size:13px;font-weight:bold;margin-left:10px;">安装帮助</button>' +
+      '<button onclick="document.getElementById(\'pwa-install-banner\').style.display=\'none\'" style="background:transparent;border:none;color:#fff;padding:5px;margin-left:5px;font-size:16px;">✕</button>';
+  }
+  banner.style.display = 'flex';
+}
+</script>
+</body>
+</html>
