@@ -1,16 +1,30 @@
-# Render 部署配置
-# 在 Render Dashboard 中连接 Git 仓库后，此文件会自动被读取
-# 或手动在 Render Dashboard 中配置以下参数
+# render.yaml - Render 部署配置
+# 使用方式：
+# 1. 将此文件放在 Git 仓库根目录
+# 2. 在 Render Dashboard 中连接 Git 仓库
+# 3. Render 会自动读取此文件
 
 services:
   - type: web
     name: hi-english
-    env: python
-    buildCommand: pip install -r requirements.txt
+    runtime: python
+    buildCommand: |
+      pip install -r requirements.txt
+      # 下载音频文件（如果不需要音频功能，可以注释掉）
+      # 注意：音频文件较大（86MB），首次构建会较慢
     startCommand: python server.py
     envVars:
       - key: PYTHON_VERSION
         value: "3.11"
-    # 注意：data/ 目录在 Render 免费版上不会持久化
-    # 每次重新部署后数据会丢失
-    # 建议升级到付费版并挂载 Render Disk，或改用云数据库
+      - key: PORT
+        value: "10000"
+    # 数据持久化：需要挂载 Render Disk（付费功能）
+    # disk:
+    #   name: hi-english-data
+    #   mountPath: /opt/render/project/src/data
+    #   sizeGB: 1
+
+# 注意：
+# 1. 免费版 Render 没有持久化磁盘，data/ 目录中的数据会在每次部署后丢失
+# 2. 如需数据持久化，请升级到付费版（$7/月）并挂载 Render Disk
+# 3. 或者修改代码使用云数据库（如 Supabase、Firebase）
