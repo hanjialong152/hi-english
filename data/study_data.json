@@ -137,5 +137,19 @@
     "totalStudySeconds": 0,
     "createdAt": 1782402602907,
     "updatedAt": 1782402602907
+  },
+  "GW0100031": {
+    "empid": "GW0100031",
+    "name": "鹿文军",
+    "learnedIds": [],
+    "masteredIds": [],
+    "favoriteIds": [],
+    "speakScores": {},
+    "sessions": [],
+    "studyDates": [],
+    "lastIndex": 0,
+    "totalStudySeconds": 0,
+    "createdAt": 1782470237944,
+    "updatedAt": 1782470237944
   }
 }
