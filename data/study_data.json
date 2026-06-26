@@ -49,9 +49,11 @@
   "gw00147407": {
     "createdAt": 1782400169193,
     "empid": "gw00147407",
-    "favoriteIds": [],
-    "lastIndex": 15,
-    "lastLogin": 1782444223676,
+    "favoriteIds": [
+      13
+    ],
+    "lastIndex": 12,
+    "lastLogin": 1782443279608,
     "learnedIds": [
       1,
       2,
@@ -66,29 +68,24 @@
       11,
       344,
       12,
-      13,
-      14,
-      15,
-      507,
-      16
+      13
     ],
-    "loginCount": 8,
+    "loginCount": 11,
     "masteredIds": [
-      4,
-      16
+      4
     ],
     "name": "韩家龙",
     "sessions": [],
     "speakScores": {
       "4": 85,
-      "16": 84
+      "13": 45
     },
     "studyDates": [
       "Thu Jun 25 2026",
       "Fri Jun 26 2026"
     ],
-    "totalStudySeconds": 492,
-    "updatedAt": 1782444332208
+    "totalStudySeconds": 458,
+    "updatedAt": 1782444339904
   },
   "GW0100256": {
     "empid": "GW0100256",
