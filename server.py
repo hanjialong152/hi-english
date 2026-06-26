@@ -646,19 +646,33 @@ def transcribe_audio(filepath):
 # 只要服务在运行，就不会休眠；服务重启后线程自动恢复
 SELF_PING_URL = os.environ.get('RENDER_EXTERNAL_URL', 'https://hi-english.onrender.com')
 
+# 保活状态记录（可通过 /api/keepalive 查看）
+_keepalive_status = {
+    'started_at': 0,
+    'last_ping_time': 0,
+    'last_ping_status': '',
+    'ping_count': 0
+}
+
 def keepalive_loop():
     """后台保活线程：每 10 分钟 ping 自己一次"""
+    _keepalive_status['started_at'] = int(time.time())
     # 启动后等待 30 秒，确保服务完全就绪
     time.sleep(30)
     while True:
         try:
-            ping_url = SELF_PING_URL.rstrip('/') + '/api/keepalive'
+            ping_url = SELF_PING_URL.rstrip('/') + '/api/keepalive?from=self'
             req = urllib.request.Request(ping_url)
             req.add_header('User-Agent', 'HiEnglish-KeepAlive/1.0')
             with urllib.request.urlopen(req, timeout=30) as resp:
                 status = resp.getcode()
-                print(f'[KeepAlive] ping {ping_url} -> HTTP {status} @ {time.strftime("%H:%M:%S")}', flush=True)
+                _keepalive_status['last_ping_time'] = int(time.time())
+                _keepalive_status['last_ping_status'] = f'HTTP {status}'
+                _keepalive_status['ping_count'] += 1
+                print(f'[KeepAlive] ping #{_keepalive_status["ping_count"]} -> HTTP {status} @ {time.strftime("%H:%M:%S")}', flush=True)
         except Exception as e:
+            _keepalive_status['last_ping_time'] = int(time.time())
+            _keepalive_status['last_ping_status'] = f'失败: {e}'
             print(f'[KeepAlive] ping 失败: {e} @ {time.strftime("%H:%M:%S")}', flush=True)
         # 每 10 分钟 ping 一次
         time.sleep(600)
@@ -666,8 +680,22 @@ def keepalive_loop():
 
 @app.route('/api/keepalive', methods=['GET'])
 def keepalive_endpoint():
-    """保活端点：返回最小响应，不触发任何数据操作"""
-    return jsonify({'status': 'ok', 'time': int(time.time())})
+    """保活端点：返回保活状态，可用于验证线程是否在运行"""
+    now = int(time.time())
+    last_ping = _keepalive_status['last_ping_time']
+    since_last = now - last_ping if last_ping else 0
+    return jsonify({
+        'status': 'ok',
+        'time': now,
+        'keepalive': {
+            'started_at': _keepalive_status['started_at'],
+            'last_ping_time': last_ping,
+            'seconds_since_last_ping': since_last,
+            'last_ping_status': _keepalive_status['last_ping_status'],
+            'ping_count': _keepalive_status['ping_count'],
+            'self_ping_url': SELF_PING_URL
+        }
+    })
 
 
 # ---- 启动入口 ----
