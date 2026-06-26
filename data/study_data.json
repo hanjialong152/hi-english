@@ -68,7 +68,8 @@
       12,
       13,
       14,
-      15
+      15,
+      507
     ],
     "loginCount": 8,
     "masteredIds": [
@@ -83,8 +84,8 @@
       "Thu Jun 25 2026",
       "Fri Jun 26 2026"
     ],
-    "totalStudySeconds": 420,
-    "updatedAt": 1782444267345
+    "totalStudySeconds": 435,
+    "updatedAt": 1782444271090
   },
   "GW0100256": {
     "empid": "GW0100256",
