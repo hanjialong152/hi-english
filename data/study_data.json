@@ -114,15 +114,20 @@
   "99999": {
     "empid": "99999",
     "name": "持久化测试学员",
-    "learnedIds": [],
-    "masteredIds": [],
-    "favoriteIds": [],
-    "speakScores": {},
+    "learnedIds": [
+      1,
+      2,
+      3
+    ],
+    "masteredIds": [
+      1
+    ],
+    "studyDates": [
+      "2026-06-26"
+    ],
     "sessions": [],
-    "studyDates": [],
-    "lastIndex": 0,
-    "totalStudySeconds": 0,
-    "createdAt": 1782443667926,
-    "updatedAt": 1782443667926
+    "lastIndex": 3,
+    "totalStudySeconds": 120,
+    "updatedAt": 1782443671209
   }
 }
