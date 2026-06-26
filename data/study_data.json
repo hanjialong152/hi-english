@@ -110,5 +110,19 @@
     "totalStudySeconds": 0,
     "createdAt": 1782402602907,
     "updatedAt": 1782402602907
+  },
+  "99999": {
+    "empid": "99999",
+    "name": "持久化测试学员",
+    "learnedIds": [],
+    "masteredIds": [],
+    "favoriteIds": [],
+    "speakScores": {},
+    "sessions": [],
+    "studyDates": [],
+    "lastIndex": 0,
+    "totalStudySeconds": 0,
+    "createdAt": 1782443667926,
+    "updatedAt": 1782443667926
   }
 }
