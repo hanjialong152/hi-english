@@ -52,7 +52,7 @@
     "favoriteIds": [
       13
     ],
-    "lastIndex": 12,
+    "lastIndex": 13,
     "lastLogin": 1782464651331,
     "learnedIds": [
       1,
@@ -68,24 +68,26 @@
       11,
       344,
       12,
-      13
+      13,
+      14
     ],
     "loginCount": 13,
     "masteredIds": [
-      4
+      4,
+      13
     ],
     "name": "韩家龙",
     "sessions": [],
     "speakScores": {
       "4": 85,
-      "13": 45
+      "13": 85
     },
     "studyDates": [
       "Thu Jun 25 2026",
       "Fri Jun 26 2026"
     ],
     "totalStudySeconds": 458,
-    "updatedAt": 1782464654402
+    "updatedAt": 1782464686072
   },
   "GW0100256": {
     "createdAt": 1782402576147,
