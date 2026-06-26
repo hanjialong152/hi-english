@@ -640,6 +640,36 @@ def transcribe_audio(filepath):
         return ''
 
 
+# ---- 自保活线程 ----
+# Render 免费版 15 分钟无请求会休眠
+# 解决方案：后台线程每 10 分钟向自己的公网 URL 发 HTTP 请求
+# 只要服务在运行，就不会休眠；服务重启后线程自动恢复
+SELF_PING_URL = os.environ.get('RENDER_EXTERNAL_URL', 'https://hi-english.onrender.com')
+
+def keepalive_loop():
+    """后台保活线程：每 10 分钟 ping 自己一次"""
+    # 启动后等待 30 秒，确保服务完全就绪
+    time.sleep(30)
+    while True:
+        try:
+            ping_url = SELF_PING_URL.rstrip('/') + '/api/keepalive'
+            req = urllib.request.Request(ping_url)
+            req.add_header('User-Agent', 'HiEnglish-KeepAlive/1.0')
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                status = resp.getcode()
+                print(f'[KeepAlive] ping {ping_url} -> HTTP {status} @ {time.strftime("%H:%M:%S")}', flush=True)
+        except Exception as e:
+            print(f'[KeepAlive] ping 失败: {e} @ {time.strftime("%H:%M:%S")}', flush=True)
+        # 每 10 分钟 ping 一次
+        time.sleep(600)
+
+
+@app.route('/api/keepalive', methods=['GET'])
+def keepalive_endpoint():
+    """保活端点：返回最小响应，不触发任何数据操作"""
+    return jsonify({'status': 'ok', 'time': int(time.time())})
+
+
 # ---- 启动入口 ----
 if __name__ == '__main__':
     # 检查依赖
@@ -649,6 +679,11 @@ if __name__ == '__main__':
     except ImportError:
         print('[WARN] speech_recognition 未安装，/api/transcribe 将无法使用', flush=True)
 
+    # 启动保活线程
+    ka_thread = threading.Thread(target=keepalive_loop, daemon=True)
+    ka_thread.start()
+    print(f'[KeepAlive] 保活线程已启动，每 10 分钟 ping {SELF_PING_URL}', flush=True)
+
     print(f'''
 ╔════════════════════════════════════════╗
 ║     🎤 Hi English 服务已启动          ║
@@ -657,6 +692,7 @@ if __name__ == '__main__':
 ║   管理端: http://0.0.0.0:{PORT}/admin.html ║
 ║                                        ║
 ║   语音识别API: /api/transcribe         ║
+║   保活: 每10分钟自ping                 ║
 ╚════════════════════════════════════════╝
 ''', flush=True)
 
