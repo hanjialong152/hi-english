@@ -35,8 +35,8 @@
   "gw00147407": {
     "empid": "gw00147407",
     "name": "韩家龙",
-    "password_hash": "7d0e5ebd267d18b216c9e7ce8558f0626a4b9ae42f0a093b023ee3a1ef81a702",
-    "salt": "bd41e64603d1fd91",
+    "password_hash": "f394bcfb3ae8bdb9815ed3c187da5b908a1152e8f7fc8edf449a211ccad3d993",
+    "salt": "928f03f19da3df6e",
     "created_at": 1782400169193,
     "created_by": "admin",
     "last_login": 1782486399782,
