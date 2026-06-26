@@ -173,15 +173,15 @@
     "empid": "GW00073508",
     "favoriteIds": [],
     "lastIndex": 0,
+    "lastLogin": 1782476905760,
     "learnedIds": [],
+    "loginCount": 2,
     "masteredIds": [],
     "name": "吴浩",
     "sessions": [],
     "speakScores": {},
     "studyDates": [],
     "totalStudySeconds": 9,
-    "updatedAt": 1782474052118,
-    "lastLogin": 1782474022564,
-    "loginCount": 1
+    "updatedAt": 1782476908852
   }
 }
