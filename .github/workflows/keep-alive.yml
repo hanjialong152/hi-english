@@ -1,0 +1,35 @@
+# Keep Render Service Warm
+# Render 免费版服务 15 分钟无活动会休眠，此工作流每 10 分钟访问一次保持活跃
+# GitHub Actions 对公开仓库免费且无限制
+
+name: Keep Alive
+
+on:
+  schedule:
+    # 每 10 分钟执行一次（cron 格式: 分 时 日 月 周）
+    - cron: '*/10 * * * *'
+  # 允许手动触发
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping website
+        run: |
+          echo "=== $(date) 开始保活 ping ==="
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 60 https://hi-english.onrender.com/)
+          RESPONSE_TIME=$(curl -s -o /dev/null -w "%{time_total}" --max-time 60 https://hi-english.onrender.com/)
+          echo "HTTP 状态码: $HTTP_CODE"
+          echo "响应时间: ${RESPONSE_TIME}s"
+          if [ "$HTTP_CODE" = "200" ]; then
+            echo "✅ 网站正常响应"
+          else
+            echo "⚠️ 网站返回非 200 状态码: $HTTP_CODE"
+          fi
+
+      - name: Ping API health check
+        run: |
+          # 同时 ping 一下 API 端点，确保后端也活跃
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 https://hi-english.onrender.com/api/study-data?empid=healthcheck)
+          echo "API 状态码: $HTTP_CODE"
