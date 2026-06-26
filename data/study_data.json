@@ -151,5 +151,35 @@
     "totalStudySeconds": 0,
     "createdAt": 1782470237944,
     "updatedAt": 1782470237944
+  },
+  "GW00407556": {
+    "empid": "GW00407556",
+    "name": "梁海涛",
+    "learnedIds": [],
+    "masteredIds": [],
+    "favoriteIds": [],
+    "speakScores": {},
+    "sessions": [],
+    "studyDates": [],
+    "lastIndex": 0,
+    "totalStudySeconds": 0,
+    "createdAt": 1782473882507,
+    "updatedAt": 1782473882507
+  },
+  "GW00073508": {
+    "createdAt": 1782473962876,
+    "empid": "GW00073508",
+    "favoriteIds": [],
+    "lastIndex": 0,
+    "learnedIds": [],
+    "masteredIds": [],
+    "name": "吴浩",
+    "sessions": [],
+    "speakScores": {},
+    "studyDates": [],
+    "totalStudySeconds": 0,
+    "updatedAt": 1782474025656,
+    "lastLogin": 1782474022564,
+    "loginCount": 1
   }
 }
