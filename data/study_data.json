@@ -47,8 +47,11 @@
     "updatedAt": 1782399759418
   },
   "gw00147407": {
+    "createdAt": 1782400169193,
     "empid": "gw00147407",
-    "name": "韩家龙",
+    "favoriteIds": [],
+    "lastIndex": 12,
+    "lastLogin": 1782444223676,
     "learnedIds": [
       1,
       2,
@@ -62,26 +65,24 @@
       10,
       11,
       344,
-      12
+      12,
+      13
     ],
+    "loginCount": 8,
     "masteredIds": [
       4
     ],
-    "favoriteIds": [],
+    "name": "韩家龙",
+    "sessions": [],
     "speakScores": {
       "4": 85
     },
-    "sessions": [],
     "studyDates": [
       "Thu Jun 25 2026",
       "Fri Jun 26 2026"
     ],
-    "lastIndex": 12,
     "totalStudySeconds": 401,
-    "createdAt": 1782400169193,
-    "updatedAt": 1782403425466,
-    "lastLogin": 1782403422083,
-    "loginCount": 7
+    "updatedAt": 1782444228150
   },
   "GW0100256": {
     "empid": "GW0100256",
@@ -110,24 +111,5 @@
     "totalStudySeconds": 0,
     "createdAt": 1782402602907,
     "updatedAt": 1782402602907
-  },
-  "99999": {
-    "empid": "99999",
-    "name": "持久化测试学员",
-    "learnedIds": [
-      1,
-      2,
-      3
-    ],
-    "masteredIds": [
-      1
-    ],
-    "studyDates": [
-      "2026-06-26"
-    ],
-    "sessions": [],
-    "lastIndex": 3,
-    "totalStudySeconds": 120,
-    "updatedAt": 1782443671209
   }
 }
