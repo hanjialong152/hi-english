@@ -93,15 +93,19 @@
     "favoriteIds": [],
     "lastIndex": 0,
     "lastLogin": 1782453803548,
-    "learnedIds": [],
+    "learnedIds": [
+      1
+    ],
     "loginCount": 2,
     "masteredIds": [],
     "name": "刘海玲",
     "sessions": [],
     "speakScores": {},
-    "studyDates": [],
+    "studyDates": [
+      "Fri Jun 26 2026"
+    ],
     "totalStudySeconds": 0,
-    "updatedAt": 1782453806557
+    "updatedAt": 1782453824534
   },
   "GW00058704": {
     "empid": "GW00058704",
