@@ -125,18 +125,20 @@
     "updatedAt": 1782453920400
   },
   "GW00058704": {
+    "createdAt": 1782402602907,
     "empid": "GW00058704",
-    "name": "刘桂霄",
+    "favoriteIds": [],
+    "lastIndex": 0,
     "learnedIds": [],
     "masteredIds": [],
-    "favoriteIds": [],
-    "speakScores": {},
+    "name": "刘桂霄",
     "sessions": [],
+    "speakScores": {},
     "studyDates": [],
-    "lastIndex": 0,
     "totalStudySeconds": 0,
-    "createdAt": 1782402602907,
-    "updatedAt": 1782402602907
+    "updatedAt": 1782476895677,
+    "lastLogin": 1782476892584,
+    "loginCount": 1
   },
   "GW0100031": {
     "empid": "GW0100031",
