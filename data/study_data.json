@@ -79,14 +79,15 @@
     "name": "韩家龙",
     "sessions": [],
     "speakScores": {
-      "4": 85
+      "4": 85,
+      "16": 28
     },
     "studyDates": [
       "Thu Jun 25 2026",
       "Fri Jun 26 2026"
     ],
     "totalStudySeconds": 442,
-    "updatedAt": 1782444281231
+    "updatedAt": 1782444309184
   },
   "GW0100256": {
     "empid": "GW0100256",
