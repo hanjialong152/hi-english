@@ -88,18 +88,20 @@
     "updatedAt": 1782444339904
   },
   "GW0100256": {
+    "createdAt": 1782402576147,
     "empid": "GW0100256",
-    "name": "刘海玲",
+    "favoriteIds": [],
+    "lastIndex": 0,
     "learnedIds": [],
     "masteredIds": [],
-    "favoriteIds": [],
-    "speakScores": {},
+    "name": "刘海玲",
     "sessions": [],
+    "speakScores": {},
     "studyDates": [],
-    "lastIndex": 0,
     "totalStudySeconds": 0,
-    "createdAt": 1782402576147,
-    "updatedAt": 1782402576147
+    "updatedAt": 1782453746101,
+    "lastLogin": 1782453743065,
+    "loginCount": 1
   },
   "GW00058704": {
     "empid": "GW00058704",
