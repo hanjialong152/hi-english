@@ -100,12 +100,14 @@
     "masteredIds": [],
     "name": "刘海玲",
     "sessions": [],
-    "speakScores": {},
+    "speakScores": {
+      "1": 59
+    },
     "studyDates": [
       "Fri Jun 26 2026"
     ],
     "totalStudySeconds": 0,
-    "updatedAt": 1782453824534
+    "updatedAt": 1782453886824
   },
   "GW00058704": {
     "empid": "GW00058704",
