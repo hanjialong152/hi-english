@@ -52,7 +52,7 @@
     "favoriteIds": [
       13
     ],
-    "lastIndex": 35,
+    "lastIndex": 36,
     "lastLogin": 1782525571429,
     "learnedIds": [
       1,
@@ -91,7 +91,8 @@
       33,
       34,
       35,
-      36
+      36,
+      37
     ],
     "loginCount": 22,
     "masteredIds": [
@@ -100,7 +101,8 @@
       14,
       15,
       16,
-      17
+      17,
+      36
     ],
     "name": "韩家龙",
     "sessions": [],
@@ -113,7 +115,8 @@
       "17": 86,
       "33": 28,
       "34": 45,
-      "35": 68
+      "35": 68,
+      "36": 85
     },
     "studyDates": [
       "Thu Jun 25 2026",
@@ -121,7 +124,7 @@
       "Sat Jun 27 2026"
     ],
     "totalStudySeconds": 785,
-    "updatedAt": 1782525936336
+    "updatedAt": 1782525959096
   },
   "GW0100256": {
     "createdAt": 1782402576147,
