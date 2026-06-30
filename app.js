@@ -972,7 +972,7 @@ function uploadAndTranscribe() {
   var audioBlob = new Blob(audioChunks, { type: audioChunks[0].type || 'audio/webm' });
   console.log('[MIC] 音频大小: ' + audioBlob.size + ' bytes, 类型: ' + audioBlob.type);
 
-  if (audioBlob.size < 200) {
+  if (audioBlob.size < 30) {
     console.warn('[MIC] 录音数据太小: ' + audioBlob.size + ' bytes');
     cleanupMic();
     restoreMicUI();
@@ -1039,7 +1039,11 @@ function uploadAndTranscribe() {
       console.error('[MIC] 上传失败:', err);
       if (!evaluatedAlready) {
         evaluatedAlready = true;
-        showScoreModal(0, '网络错误，无法连接语音识别服务，请检查网络后重试');
+        if (err.message === 'SILENT') {
+          showScoreModal(0, '未检测到声音，请按住麦克风大声朗读');
+        } else {
+          showScoreModal(0, '网络错误，无法连接语音识别服务，请检查网络后重试');
+        }
       }
     });
 }
@@ -1078,25 +1082,46 @@ function convertToPcm16(audioBlob) {
         .then(function(renderedBuffer) {
           // 提取 Float32 样本，转为 Int16 PCM
           var float32Data = renderedBuffer.getChannelData(0);
-          var pcm16 = new Int16Array(float32Data.length);
 
-          // 检测音量
+          // 检测音量：双阈值（峰值 + RMS）
           var sumSq = 0;
+          var peak = 0;
           for (var i = 0; i < float32Data.length; i++) {
             var s = float32Data[i];
-            // 限幅
             s = Math.max(-1, Math.min(1, s));
-            pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
             sumSq += s * s;
+            if (Math.abs(s) > peak) peak = Math.abs(s);
           }
-
           var rms = Math.sqrt(sumSq / float32Data.length);
-          console.log('[MIC] PCM: ' + pcm16.length + ' samples, RMS=' + rms.toFixed(4) + ', duration=' + (pcm16.length / 16000).toFixed(2) + 's');
+          var duration = float32Data.length / 16000;
+          console.log('[MIC] PCM: ' + float32Data.length + ' samples, RMS=' + rms.toFixed(4) + ', peak=' + peak.toFixed(4) + ', duration=' + duration.toFixed(2) + 's');
 
-          if (rms < 0.01) {
+          // 双阈值静音检测：短录音(<500ms)用宽松阈值
+          var minRms = duration < 0.5 ? 0.003 : 0.01;
+          var minPeak = duration < 0.5 ? 0.03 : 0.05;
+          if (rms < minRms && peak < minPeak) {
             reject(new Error('SILENT'));
             return;
           }
+
+          // 静音填充：音频 < 1.5s 时，前后各填充 200ms 静音，确保 Google API 有足够上下文
+          var padSamples = 200 * 16; // 200ms × 16kHz = 3200 samples
+          var paddedLength = float32Data.length;
+          if (duration < 1.5) {
+            paddedLength = float32Data.length + padSamples * 2;
+            console.log('[MIC] 静音填充: ' + duration.toFixed(2) + 's → ' + (paddedLength / 16000).toFixed(2) + 's');
+          }
+
+          var pcm16 = new Int16Array(paddedLength);
+          // 前 200ms 静音（值为0，Int16Array默认0无需显式设置）
+          // 原始音频
+          var offset = duration < 1.5 ? padSamples : 0;
+          for (var i = 0; i < float32Data.length; i++) {
+            var s = float32Data[i];
+            s = Math.max(-1, Math.min(1, s));
+            pcm16[offset + i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+          }
+          // 后 200ms 静音已在 Int16Array 初始值中（0）
 
           // 关闭 audioCtx
           if (audioCtx.close) audioCtx.close();
