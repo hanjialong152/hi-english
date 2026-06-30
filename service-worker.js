@@ -1,11 +1,11 @@
 // ===================================================
-// Hi English - Service Worker v11 (修复音频串词)
+// Hi English - Service Worker v12 (移除前端静音检测)
 // ===================================================
-// v11: 重新生成全部4250个音频，修复发音与文本不匹配的问题
+// v12: 移除前端静音检测，修复短单词(for/a/an/go)被误判为静音的问题
 
-var CACHE_VERSION = 'hi-english-v11';
-var CORE_CACHE = 'hi-english-core-v11';
-var AUDIO_CACHE = 'hi-english-audio-v11';
+var CACHE_VERSION = 'hi-english-v12';
+var CORE_CACHE = 'hi-english-core-v12';
+var AUDIO_CACHE = 'hi-english-audio-v12';
 
 var CORE_FILES = [
   './',

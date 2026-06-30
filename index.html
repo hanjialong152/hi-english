@@ -354,15 +354,15 @@
 <script src="words_data.js"></script>
 <script src="app.js"></script>
 <script>
-// PWA Service Worker 注册 (v11 - 修复音频串词)
+// PWA Service Worker 注册 (v12 - 移除前端静音检测)
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
     navigator.serviceWorker.getRegistrations().then(function(regs) {
       regs.forEach(function(reg) { reg.unregister(); });
       console.log('[PWA] 旧 Service Worker 已注销');
 
-      navigator.serviceWorker.register('./service-worker.js?v=11').then(function(reg) {
-        console.log('[PWA] Service Worker v11 注册成功');
+      navigator.serviceWorker.register('./service-worker.js?v=12').then(function(reg) {
+        console.log('[PWA] Service Worker v12 注册成功');
         if (reg.waiting) {
           reg.waiting.postMessage({ type: 'SKIP_WAITING' });
         }
@@ -371,7 +371,7 @@ if ('serviceWorker' in navigator) {
           if (newWorker) {
             newWorker.addEventListener('statechange', function() {
               if (newWorker.state === 'activated') {
-                console.log('[PWA] v11 已激活，刷新页面');
+                console.log('[PWA] v12 已激活，刷新页面');
                 window.location.reload();
               }
             });

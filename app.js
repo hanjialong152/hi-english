@@ -1083,26 +1083,20 @@ function convertToPcm16(audioBlob) {
           // 提取 Float32 样本，转为 Int16 PCM
           var float32Data = renderedBuffer.getChannelData(0);
 
-          // 检测音量：双阈值（峰值 + RMS）
+          // 记录音量信息（仅日志，不做拦截）
           var sumSq = 0;
           var peak = 0;
           for (var i = 0; i < float32Data.length; i++) {
             var s = float32Data[i];
-            s = Math.max(-1, Math.min(1, s));
-            sumSq += s * s;
             if (Math.abs(s) > peak) peak = Math.abs(s);
+            sumSq += s * s;
           }
           var rms = Math.sqrt(sumSq / float32Data.length);
           var duration = float32Data.length / 16000;
           console.log('[MIC] PCM: ' + float32Data.length + ' samples, RMS=' + rms.toFixed(4) + ', peak=' + peak.toFixed(4) + ', duration=' + duration.toFixed(2) + 's');
 
-          // 双阈值静音检测：短录音(<500ms)用宽松阈值
-          var minRms = duration < 0.5 ? 0.003 : 0.01;
-          var minPeak = duration < 0.5 ? 0.03 : 0.05;
-          if (rms < minRms && peak < minPeak) {
-            reject(new Error('SILENT'));
-            return;
-          }
+          // 不做前端静音检测——不同手机麦克风音量差异大，容易误判
+          // 静音判断交给后端 Google API 处理
 
           // 静音填充：音频 < 1.5s 时，前后各填充 200ms 静音，确保 Google API 有足够上下文
           var padSamples = 200 * 16; // 200ms × 16kHz = 3200 samples
