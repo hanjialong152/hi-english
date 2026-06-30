@@ -53,7 +53,7 @@
       13
     ],
     "lastIndex": 38,
-    "lastLogin": 1782702337812,
+    "lastLogin": 1782787594025,
     "learnedIds": [
       1,
       2,
@@ -97,9 +97,10 @@
       39,
       838,
       490,
-      339
+      339,
+      824
     ],
-    "loginCount": 28,
+    "loginCount": 29,
     "masteredIds": [
       4,
       13,
@@ -132,10 +133,11 @@
       "Fri Jun 26 2026",
       "Sat Jun 27 2026",
       "Sun Jun 28 2026",
-      "Mon Jun 29 2026"
+      "Mon Jun 29 2026",
+      "Tue Jun 30 2026"
     ],
-    "totalStudySeconds": 1036,
-    "updatedAt": 1782702447729
+    "totalStudySeconds": 1038,
+    "updatedAt": 1782787601269
   },
   "GW0100256": {
     "createdAt": 1782402576147,
