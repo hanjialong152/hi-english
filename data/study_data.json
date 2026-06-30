@@ -237,11 +237,13 @@
     "masteredIds": [],
     "name": "阿迦",
     "sessions": [],
-    "speakScores": {},
+    "speakScores": {
+      "1": 15
+    },
     "studyDates": [
       "Tue Jun 30 2026"
     ],
     "totalStudySeconds": 6,
-    "updatedAt": 1782788258558
+    "updatedAt": 1782788284313
   }
 }
