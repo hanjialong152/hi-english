@@ -335,12 +335,11 @@ function renderLearnPage() {
   const isFav = ud && ud.favoriteIds.includes(word.id);
   document.getElementById('btn-fav').textContent = isFav ? '★' : '☆';
 
-  // 重置跟读区
-  speakTarget = 'word';
+  // 重置跟读区（默认选中读词组）
+  speakTarget = 'phrase';
   document.querySelectorAll('.speak-target-btn').forEach(b => b.classList.remove('active'));
-  var stWordBtn = document.getElementById('st-word');
-  if (stWordBtn) stWordBtn.classList.add('active');
-  speakPracticeTarget = word.word;
+  var stPhraseBtn = document.getElementById('st-phrase');
+  if (stPhraseBtn) stPhraseBtn.classList.add('active');
   updateSpeakTargetDisplay();
   var speakTipEl = document.getElementById('speak-tip');
   if (speakTipEl) speakTipEl.textContent = '先听标准发音，再按住麦克风跟读';
@@ -772,13 +771,17 @@ function updateSpeakTargetDisplay() {
   
   const display = document.getElementById('speak-target-display');
   
-  if (speakTarget === 'word') {
-    speakTargetText = word.word;
-    display.textContent = word.word;
-  } else if (speakTarget === 'phrase') {
+  if (speakTarget === 'phrase') {
     const phrases = cleanPhrases(word.phrases);
-    speakTargetText = phrases;
-    display.textContent = phrases || word.word;
+    if (phrases) {
+      speakTargetText = phrases;
+      display.textContent = phrases;
+    } else {
+      // 没有词组时回退到例句
+      const examples = buildExamples(word);
+      speakTargetText = examples.length > 0 ? examples[0].en : word.word;
+      display.textContent = speakTargetText;
+    }
   } else {
     const examples = buildExamples(word);
     if (examples.length > 0) {

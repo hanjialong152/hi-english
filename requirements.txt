@@ -1,10 +1,15 @@
 # Hi English - Render 部署依赖
-# Flask Web 框架（Render Python 环境需要）
 Flask>=2.3.0
 
 # Python 3.13 移除了 cgi 模块，SpeechRecognition 内部依赖它
-# legacy-cgi 提供向后兼容的 cgi 模块
 legacy-cgi>=1.0.3
 
 # SpeechRecognition 用于 /api/transcribe（Google Web Speech API，无需 API key）
 SpeechRecognition>=3.8.1
+
+# 轻量 DTW 算法（纯 python，无外部依赖）
+fastdtw>=0.3.4
+
+# 科学计算（scipy 会自动装 numpy）
+scipy>=1.10.0
+numpy>=1.23.0
