@@ -234,7 +234,8 @@
     "lastLogin": 1782796037406,
     "learnedIds": [
       1,
-      719
+      719,
+      546
     ],
     "loginCount": 4,
     "masteredIds": [],
@@ -247,6 +248,6 @@
       "Tue Jun 30 2026"
     ],
     "totalStudySeconds": 6,
-    "updatedAt": 1782796106970
+    "updatedAt": 1782796121237
   }
 }
