@@ -258,13 +258,13 @@
     "empid": "GW00345316",
     "favoriteIds": [],
     "lastIndex": 0,
-    "lastLogin": 1782796037406,
+    "lastLogin": 1782806495073,
     "learnedIds": [
       1,
       719,
       546
     ],
-    "loginCount": 4,
+    "loginCount": 5,
     "masteredIds": [],
     "name": "阿迦",
     "sessions": [],
@@ -275,6 +275,6 @@
       "Tue Jun 30 2026"
     ],
     "totalStudySeconds": 25,
-    "updatedAt": 1782796126775
+    "updatedAt": 1782806498232
   }
 }
