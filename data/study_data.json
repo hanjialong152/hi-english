@@ -161,10 +161,11 @@
       "1": 59
     },
     "studyDates": [
-      "Fri Jun 26 2026"
+      "Fri Jun 26 2026",
+      "Tue Jun 30 2026"
     ],
     "totalStudySeconds": 85,
-    "updatedAt": 1782799110248
+    "updatedAt": 1782799135590
   },
   "GW00058704": {
     "createdAt": 1782402602907,
