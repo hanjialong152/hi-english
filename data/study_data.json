@@ -146,7 +146,7 @@
     "createdAt": 1782402576147,
     "empid": "GW0100256",
     "favoriteIds": [],
-    "lastIndex": 1,
+    "lastIndex": 2,
     "lastLogin": 1782799108059,
     "learnedIds": [
       1,
@@ -165,7 +165,7 @@
       "Tue Jun 30 2026"
     ],
     "totalStudySeconds": 85,
-    "updatedAt": 1782799135590
+    "updatedAt": 1782799154750
   },
   "GW00058704": {
     "createdAt": 1782402602907,
