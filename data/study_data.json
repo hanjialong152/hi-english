@@ -147,14 +147,14 @@
     "empid": "GW0100256",
     "favoriteIds": [],
     "lastIndex": 3,
-    "lastLogin": 1782799108059,
+    "lastLogin": 1782799212602,
     "learnedIds": [
       1,
       2,
       8,
       3
     ],
-    "loginCount": 3,
+    "loginCount": 4,
     "masteredIds": [],
     "name": "刘海玲",
     "sessions": [],
@@ -166,7 +166,7 @@
       "Tue Jun 30 2026"
     ],
     "totalStudySeconds": 123,
-    "updatedAt": 1782799174339
+    "updatedAt": 1782799214811
   },
   "GW00058704": {
     "createdAt": 1782402602907,
