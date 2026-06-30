@@ -52,7 +52,7 @@
     "favoriteIds": [
       13
     ],
-    "lastIndex": 46,
+    "lastIndex": 47,
     "lastLogin": 1782810232472,
     "learnedIds": [
       1,
@@ -109,7 +109,8 @@
       43,
       44,
       45,
-      46
+      46,
+      47
     ],
     "loginCount": 47,
     "masteredIds": [
@@ -155,7 +156,7 @@
       "Tue Jun 30 2026"
     ],
     "totalStudySeconds": 4741,
-    "updatedAt": 1782810469509
+    "updatedAt": 1782810474601
   },
   "GW0100256": {
     "createdAt": 1782402576147,
