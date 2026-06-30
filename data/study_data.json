@@ -160,7 +160,8 @@
       557,
       492,
       502,
-      9
+      9,
+      372
     ],
     "loginCount": 4,
     "masteredIds": [],
@@ -174,8 +175,8 @@
       "Fri Jun 26 2026",
       "Tue Jun 30 2026"
     ],
-    "totalStudySeconds": 264,
-    "updatedAt": 1782799404349
+    "totalStudySeconds": 271,
+    "updatedAt": 1782799448618
   },
   "GW00058704": {
     "createdAt": 1782402602907,
