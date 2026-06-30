@@ -536,7 +536,7 @@ def handle_transcribe():
         else:
             audio_data = request.data
 
-        if not audio_data or len(audio_data) < 20:
+        if not audio_data or len(audio_data) < 100:
             return jsonify({'success': False, 'text': '', 'error': '音频数据为空或太短'})
 
         print(f'[Transcribe] 音频大小: {len(audio_data)} bytes, MIME: {audio_mime}', flush=True)
@@ -553,26 +553,11 @@ def handle_transcribe():
                 # raw PCM: 16kHz, mono, 16-bit
                 print('[Transcribe] 检测到 raw PCM 数据，包装为 WAV', flush=True)
                 wav_path = tempfile.NamedTemporaryFile(suffix='.wav', delete=False).name
-
-                # 计算音频时长，短音频需要静音填充到 1.5s（Google API 需要足够上下文）
-                num_samples = len(audio_data) // 2  # 16-bit = 2 bytes/sample
-                duration = num_samples / 16000
-                print(f'[Transcribe] PCM 时长: {duration:.2f}s', flush=True)
-
                 with wave.open(wav_path, 'wb') as wf:
                     wf.setnchannels(1)
                     wf.setsampwidth(2)  # 16-bit = 2 bytes
                     wf.setframerate(16000)
-
-                    if duration < 1.2:
-                        # 短音频填充静音到 1.5s
-                        pad_samples = int((1.5 - duration) / 2 * 16000)
-                        pad_bytes = pad_samples * 2  # 16-bit = 2 bytes
-                        silence_pad = b'\x00' * pad_bytes
-                        wf.writeframes(silence_pad + audio_data + silence_pad)
-                        print(f'[Transcribe] WAV 静音填充: {duration:.2f}s → 1.5s (前后各 {pad_samples} samples)', flush=True)
-                    else:
-                        wf.writeframes(audio_data)
+                    wf.writeframes(audio_data)
                 audio_to_recognize = wav_path
             else:
                 # webm/ogg 等格式，需要 ffmpeg 转换
@@ -624,9 +609,9 @@ def transcribe_audio(filepath):
     try:
         import speech_recognition as sr
         recognizer = sr.Recognizer()
-        recognizer.energy_threshold = 50
+        recognizer.energy_threshold = 80
         recognizer.dynamic_energy_threshold = True
-        recognizer.pause_threshold = 0.5
+        recognizer.pause_threshold = 0.8
         recognizer.operation_timeout = 5
 
         with sr.AudioFile(filepath) as source:

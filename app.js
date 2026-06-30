@@ -972,7 +972,7 @@ function uploadAndTranscribe() {
   var audioBlob = new Blob(audioChunks, { type: audioChunks[0].type || 'audio/webm' });
   console.log('[MIC] 音频大小: ' + audioBlob.size + ' bytes, 类型: ' + audioBlob.type);
 
-  if (audioBlob.size < 30) {
+  if (audioBlob.size < 200) {
     console.warn('[MIC] 录音数据太小: ' + audioBlob.size + ' bytes');
     cleanupMic();
     restoreMicUI();
@@ -1026,16 +1026,9 @@ function uploadAndTranscribe() {
       if (data.success && data.text) {
         evaluateSpeaking(data.text);
       } else {
-        // Google API 返回空——对于短单词（go/at/in/on 等）这是常见情况
-        // 不给0分，而是给一个鼓励性提示让用户继续
         evaluatedAlready = true;
         var errMsg = data.error || '未能识别语音，请重试';
-        // 如果错误是"未能识别"，说明音频已上传成功但 Google API 无法识别短单词
-        if (errMsg.indexOf('未能识别') >= 0) {
-          showScoreModal(60, '发音已收到，短单词识别较难，请多听标准发音再试');
-        } else {
-          showScoreModal(0, errMsg);
-        }
+        showScoreModal(0, errMsg);
       }
     })
     .catch(function(err) {
@@ -1046,11 +1039,7 @@ function uploadAndTranscribe() {
       console.error('[MIC] 上传失败:', err);
       if (!evaluatedAlready) {
         evaluatedAlready = true;
-        if (err.message === 'SILENT') {
-          showScoreModal(0, '未检测到声音，请按住麦克风大声朗读');
-        } else {
-          showScoreModal(0, '网络错误，无法连接语音识别服务，请检查网络后重试');
-        }
+        showScoreModal(0, '网络错误，无法连接语音识别服务，请检查网络后重试');
       }
     });
 }
@@ -1089,40 +1078,25 @@ function convertToPcm16(audioBlob) {
         .then(function(renderedBuffer) {
           // 提取 Float32 样本，转为 Int16 PCM
           var float32Data = renderedBuffer.getChannelData(0);
+          var pcm16 = new Int16Array(float32Data.length);
 
-          // 记录音量信息（仅日志，不做拦截）
+          // 检测音量
           var sumSq = 0;
-          var peak = 0;
           for (var i = 0; i < float32Data.length; i++) {
             var s = float32Data[i];
-            if (Math.abs(s) > peak) peak = Math.abs(s);
+            // 限幅
+            s = Math.max(-1, Math.min(1, s));
+            pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
             sumSq += s * s;
           }
+
           var rms = Math.sqrt(sumSq / float32Data.length);
-          var duration = float32Data.length / 16000;
-          console.log('[MIC] PCM: ' + float32Data.length + ' samples, RMS=' + rms.toFixed(4) + ', peak=' + peak.toFixed(4) + ', duration=' + duration.toFixed(2) + 's');
+          console.log('[MIC] PCM: ' + pcm16.length + ' samples, RMS=' + rms.toFixed(4) + ', duration=' + (pcm16.length / 16000).toFixed(2) + 's');
 
-          // 不做前端静音检测——不同手机麦克风音量差异大，容易误判
-          // 静音判断交给后端 Google API 处理
-
-          // 静音填充：音频 < 1.5s 时，前后各填充 200ms 静音，确保 Google API 有足够上下文
-          var padSamples = 200 * 16; // 200ms × 16kHz = 3200 samples
-          var paddedLength = float32Data.length;
-          if (duration < 1.5) {
-            paddedLength = float32Data.length + padSamples * 2;
-            console.log('[MIC] 静音填充: ' + duration.toFixed(2) + 's → ' + (paddedLength / 16000).toFixed(2) + 's');
+          if (rms < 0.01) {
+            reject(new Error('SILENT'));
+            return;
           }
-
-          var pcm16 = new Int16Array(paddedLength);
-          // 前 200ms 静音（值为0，Int16Array默认0无需显式设置）
-          // 原始音频
-          var offset = duration < 1.5 ? padSamples : 0;
-          for (var i = 0; i < float32Data.length; i++) {
-            var s = float32Data[i];
-            s = Math.max(-1, Math.min(1, s));
-            pcm16[offset + i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
-          }
-          // 后 200ms 静音已在 Int16Array 初始值中（0）
 
           // 关闭 audioCtx
           if (audioCtx.close) audioCtx.close();
@@ -1200,90 +1174,12 @@ function evaluateSpeaking(recognized) {
   var target = (speakTargetText || speakPracticeTarget || '').toLowerCase().trim();
   recognized = (recognized || '').toLowerCase().trim();
 
-  // 同音词映射表（Google API 常见误识别）
-  var homophoneMap = {
-    'for': ['four', 'fore', 'fleur'],
-    'to': ['too', 'two', '2'],
-    'too': ['to', 'two', '2'],
-    'two': ['to', 'too', '2'],
-    'be': ['bee', 'b', 'bea'],
-    'bee': ['be', 'b'],
-    'by': ['buy', 'bye', 'bi'],
-    'buy': ['by', 'bye'],
-    'bye': ['by', 'buy'],
-    'no': ['know', 'noh'],
-    'know': ['no', 'now'],
-    'right': ['write', 'rite', 'wright'],
-    'write': ['right', 'rite'],
-    'sea': ['see', 'c'],
-    'see': ['sea', 'c'],
-    'son': ['sun'],
-    'sun': ['son'],
-    'there': ['their', 'they\'re'],
-    'their': ['there', 'they\'re'],
-    'here': ['hear', 'hare'],
-    'hear': ['here', 'hare'],
-    'new': ['knew', 'gnu'],
-    'knew': ['new', 'gnu'],
-    'me': ['mi', 'm'],
-    'may': ['march', 'maye'],
-    'let': ['lette', 'led'],
-    'go': ['low', 'goes', 'going', 'gow', 'geo'],
-    'do': ['dew', 'due', 'dough'],
-    'at': ['art', 'hat', 'that', 'add', 'app'],
-    'in': ['inn', 'and', 'end', 'an', 'en'],
-    'on': ['own', 'an', 'one', 'un', 'awn'],
-    'an': ['and', 'in', 'on', 'anne', 'am'],
-    'a': ['eh', 'ay', 'hey', 'uh'],
-    'I': ['eye', 'aye', 'ai'],
-    'eye': ['i', 'aye'],
-    'our': ['hour', 'are'],
-    'hour': ['our', 'are'],
-    'or': ['oar', 'ore', 'for', 'all'],
-    'ore': ['or', 'oar'],
-    'way': ['weigh', 'whey', 'wei'],
-    'weigh': ['way'],
-    'wood': ['would', 'could'],
-    'would': ['wood', 'could'],
-    'made': ['maid', 'mayed'],
-    'maid': ['made'],
-    'piece': ['peace'],
-    'peace': ['piece'],
-    'some': ['sum'],
-    'sum': ['some'],
-    'plain': ['plane'],
-    'plane': ['plain'],
-  };
-
-  // 检查是否是同音词
-  function isHomophone(recognized, target) {
-    // 精确匹配
-    if (recognized === target) return true;
-    // 目标词在同音词表中，且识别结果是其同音词之一
-    if (homophoneMap[target] && homophoneMap[target].indexOf(recognized) >= 0) return true;
-    // 反向检查：识别结果在同音词表中，且目标是其同音词
-    if (homophoneMap[recognized] && homophoneMap[recognized].indexOf(target) >= 0) return true;
-    return false;
-  }
-
-  // 提取目标词中的第一个单词（跟读可能是单词/短语/例句）
-  var targetFirstWord = target.split(/\s+/)[0].replace(/[.,!?;:]/g, '');
-  var recognizedFirstWord = recognized.split(/\s+/)[0].replace(/[.,!?;:]/g, '');
-
   var score = 0;
   var detail = '';
 
   if (!recognized) {
     score = 0;
     detail = '没有听到您的声音，请按住麦克风再试一次';
-  } else if (isHomophone(recognized, target)) {
-    // 同音词匹配——发音正确，只是 Google API 识别成了同音字
-    score = 95;
-    detail = '发音正确！';
-  } else if (isHomophone(recognizedFirstWord, targetFirstWord)) {
-    // 第一个词是同音词
-    score = 90;
-    detail = '发音正确！';
   } else if (recognized === target) {
     score = 100;
     detail = '发音非常标准！';

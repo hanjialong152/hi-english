@@ -1,11 +1,11 @@
 // ===================================================
-// Hi English - Service Worker v13 (同音词匹配+短词容错)
+// Hi English - Service Worker v11 (修复音频串词)
 // ===================================================
-// v13: 添加同音词匹配(for→four等)，短单词无法识别时给鼓励分
+// v11: 重新生成全部4250个音频，修复发音与文本不匹配的问题
 
-var CACHE_VERSION = 'hi-english-v13';
-var CORE_CACHE = 'hi-english-core-v13';
-var AUDIO_CACHE = 'hi-english-audio-v13';
+var CACHE_VERSION = 'hi-english-v11';
+var CORE_CACHE = 'hi-english-core-v11';
+var AUDIO_CACHE = 'hi-english-audio-v11';
 
 var CORE_FILES = [
   './',
