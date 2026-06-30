@@ -230,7 +230,9 @@
     "favoriteIds": [],
     "lastIndex": 0,
     "lastLogin": 1782788195032,
-    "learnedIds": [],
+    "learnedIds": [
+      1
+    ],
     "loginCount": 2,
     "masteredIds": [],
     "name": "阿迦",
@@ -240,6 +242,6 @@
       "Tue Jun 30 2026"
     ],
     "totalStudySeconds": 6,
-    "updatedAt": 1782788197577
+    "updatedAt": 1782788203623
   }
 }
