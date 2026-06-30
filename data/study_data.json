@@ -122,6 +122,7 @@
     "name": "韩家龙",
     "sessions": [],
     "speakScores": {
+      "1": 0,
       "4": 85,
       "13": 85,
       "14": 85,
@@ -148,7 +149,7 @@
       "Tue Jun 30 2026"
     ],
     "totalStudySeconds": 3662,
-    "updatedAt": 1782809312089
+    "updatedAt": 1782809330889
   },
   "GW0100256": {
     "createdAt": 1782402576147,
