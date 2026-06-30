@@ -1026,9 +1026,16 @@ function uploadAndTranscribe() {
       if (data.success && data.text) {
         evaluateSpeaking(data.text);
       } else {
+        // Google API 返回空——对于短单词（go/at/in/on 等）这是常见情况
+        // 不给0分，而是给一个鼓励性提示让用户继续
         evaluatedAlready = true;
         var errMsg = data.error || '未能识别语音，请重试';
-        showScoreModal(0, errMsg);
+        // 如果错误是"未能识别"，说明音频已上传成功但 Google API 无法识别短单词
+        if (errMsg.indexOf('未能识别') >= 0) {
+          showScoreModal(60, '发音已收到，短单词识别较难，请多听标准发音再试');
+        } else {
+          showScoreModal(0, errMsg);
+        }
       }
     })
     .catch(function(err) {
@@ -1193,12 +1200,90 @@ function evaluateSpeaking(recognized) {
   var target = (speakTargetText || speakPracticeTarget || '').toLowerCase().trim();
   recognized = (recognized || '').toLowerCase().trim();
 
+  // 同音词映射表（Google API 常见误识别）
+  var homophoneMap = {
+    'for': ['four', 'fore', 'fleur'],
+    'to': ['too', 'two', '2'],
+    'too': ['to', 'two', '2'],
+    'two': ['to', 'too', '2'],
+    'be': ['bee', 'b', 'bea'],
+    'bee': ['be', 'b'],
+    'by': ['buy', 'bye', 'bi'],
+    'buy': ['by', 'bye'],
+    'bye': ['by', 'buy'],
+    'no': ['know', 'noh'],
+    'know': ['no', 'now'],
+    'right': ['write', 'rite', 'wright'],
+    'write': ['right', 'rite'],
+    'sea': ['see', 'c'],
+    'see': ['sea', 'c'],
+    'son': ['sun'],
+    'sun': ['son'],
+    'there': ['their', 'they\'re'],
+    'their': ['there', 'they\'re'],
+    'here': ['hear', 'hare'],
+    'hear': ['here', 'hare'],
+    'new': ['knew', 'gnu'],
+    'knew': ['new', 'gnu'],
+    'me': ['mi', 'm'],
+    'may': ['march', 'maye'],
+    'let': ['lette', 'led'],
+    'go': ['low', 'goes', 'going', 'gow', 'geo'],
+    'do': ['dew', 'due', 'dough'],
+    'at': ['art', 'hat', 'that', 'add', 'app'],
+    'in': ['inn', 'and', 'end', 'an', 'en'],
+    'on': ['own', 'an', 'one', 'un', 'awn'],
+    'an': ['and', 'in', 'on', 'anne', 'am'],
+    'a': ['eh', 'ay', 'hey', 'uh'],
+    'I': ['eye', 'aye', 'ai'],
+    'eye': ['i', 'aye'],
+    'our': ['hour', 'are'],
+    'hour': ['our', 'are'],
+    'or': ['oar', 'ore', 'for', 'all'],
+    'ore': ['or', 'oar'],
+    'way': ['weigh', 'whey', 'wei'],
+    'weigh': ['way'],
+    'wood': ['would', 'could'],
+    'would': ['wood', 'could'],
+    'made': ['maid', 'mayed'],
+    'maid': ['made'],
+    'piece': ['peace'],
+    'peace': ['piece'],
+    'some': ['sum'],
+    'sum': ['some'],
+    'plain': ['plane'],
+    'plane': ['plain'],
+  };
+
+  // 检查是否是同音词
+  function isHomophone(recognized, target) {
+    // 精确匹配
+    if (recognized === target) return true;
+    // 目标词在同音词表中，且识别结果是其同音词之一
+    if (homophoneMap[target] && homophoneMap[target].indexOf(recognized) >= 0) return true;
+    // 反向检查：识别结果在同音词表中，且目标是其同音词
+    if (homophoneMap[recognized] && homophoneMap[recognized].indexOf(target) >= 0) return true;
+    return false;
+  }
+
+  // 提取目标词中的第一个单词（跟读可能是单词/短语/例句）
+  var targetFirstWord = target.split(/\s+/)[0].replace(/[.,!?;:]/g, '');
+  var recognizedFirstWord = recognized.split(/\s+/)[0].replace(/[.,!?;:]/g, '');
+
   var score = 0;
   var detail = '';
 
   if (!recognized) {
     score = 0;
     detail = '没有听到您的声音，请按住麦克风再试一次';
+  } else if (isHomophone(recognized, target)) {
+    // 同音词匹配——发音正确，只是 Google API 识别成了同音字
+    score = 95;
+    detail = '发音正确！';
+  } else if (isHomophone(recognizedFirstWord, targetFirstWord)) {
+    // 第一个词是同音词
+    score = 90;
+    detail = '发音正确！';
   } else if (recognized === target) {
     score = 100;
     detail = '发音非常标准！';

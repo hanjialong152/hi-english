@@ -1,11 +1,11 @@
 // ===================================================
-// Hi English - Service Worker v12 (移除前端静音检测)
+// Hi English - Service Worker v13 (同音词匹配+短词容错)
 // ===================================================
-// v12: 移除前端静音检测，修复短单词(for/a/an/go)被误判为静音的问题
+// v13: 添加同音词匹配(for→four等)，短单词无法识别时给鼓励分
 
-var CACHE_VERSION = 'hi-english-v12';
-var CORE_CACHE = 'hi-english-core-v12';
-var AUDIO_CACHE = 'hi-english-audio-v12';
+var CACHE_VERSION = 'hi-english-v13';
+var CORE_CACHE = 'hi-english-core-v13';
+var AUDIO_CACHE = 'hi-english-audio-v13';
 
 var CORE_FILES = [
   './',
