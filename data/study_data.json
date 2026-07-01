@@ -173,7 +173,8 @@
       186,
       285,
       228,
-      382
+      382,
+      222
     ],
     "loginCount": 63,
     "masteredIds": [
@@ -283,8 +284,8 @@
       "Tue Jun 30 2026",
       "Wed Jul 01 2026"
     ],
-    "totalStudySeconds": 13893,
-    "updatedAt": 1782890436711
+    "totalStudySeconds": 13894,
+    "updatedAt": 1782890456565
   },
   "GW0100256": {
     "createdAt": 1782402576147,
