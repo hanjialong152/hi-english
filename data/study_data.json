@@ -164,7 +164,15 @@
       265,
       84,
       85,
-      131
+      131,
+      678,
+      296,
+      297,
+      107,
+      309,
+      186,
+      285,
+      228
     ],
     "loginCount": 62,
     "masteredIds": [
@@ -274,8 +282,8 @@
       "Tue Jun 30 2026",
       "Wed Jul 01 2026"
     ],
-    "totalStudySeconds": 12888,
-    "updatedAt": 1782876684345
+    "totalStudySeconds": 13884,
+    "updatedAt": 1782877684313
   },
   "GW0100256": {
     "createdAt": 1782402576147,
