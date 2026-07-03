@@ -54,7 +54,7 @@
       80
     ],
     "lastIndex": 84,
-    "lastLogin": 1782968687202,
+    "lastLogin": 1783085080306,
     "learnedIds": [
       1,
       2,
@@ -176,9 +176,10 @@
       382,
       222,
       577,
-      783
+      783,
+      496
     ],
-    "loginCount": 67,
+    "loginCount": 68,
     "masteredIds": [
       4,
       13,
@@ -287,10 +288,11 @@
       "Mon Jun 29 2026",
       "Tue Jun 30 2026",
       "Wed Jul 01 2026",
-      "Thu Jul 02 2026"
+      "Thu Jul 02 2026",
+      "Fri Jul 03 2026"
     ],
     "totalStudySeconds": 13901,
-    "updatedAt": 1782968689641
+    "updatedAt": 1783085082936
   },
   "GW0100256": {
     "createdAt": 1782402576147,
