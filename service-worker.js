@@ -1,11 +1,11 @@
 // ===================================================
-// Hi English - Service Worker v12 (移除读单词板块)
+// Hi English - Service Worker v13 (移除读单词板块)
 // ===================================================
-// v12: 跟读练习移除"读单词"选项，只保留读词组和读例句
+// v13: 跟读练习移除"读单词"选项，只保留读词组和读例句
 
-var CACHE_VERSION = 'hi-english-v12';
-var CORE_CACHE = 'hi-english-core-v12';
-var AUDIO_CACHE = 'hi-english-audio-v12';
+var CACHE_VERSION = 'hi-english-v13';
+var CORE_CACHE = 'hi-english-core-v13';
+var AUDIO_CACHE = 'hi-english-audio-v13';
 
 var CORE_FILES = [
   './',
