@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Hi English - 学员端</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+:root {
+  --primary:#4A90D9; --primary-dark:#3A7BC8; --primary-light:#E8F2FC;
+  --success:#52C41A; --success-light:#F6FFED; --danger:#FF4D4F; --danger-light:#FFF1F0;
+  --warning:#FAAD14; --warning-light:#FFFBE6;
+  --bg:#F5F7FA; --card:#FFFFFF; --text:#333; --text-sub:#999; --text-light:#666;
+  --border:#E8E8E8; --radius:12px; --shadow:0 2px 8px rgba(0,0,0,0.06);
+}
+body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; background:var(--bg); color:var(--text); font-size:14px; line-height:1.5; }
+
+.phone-frame { max-width:420px; margin:0 auto; min-height:100vh; background:var(--bg); position:relative; }
+.page { display:none; min-height:100vh; padding-bottom:80px; }
+.page.active { display:block; }
+.card { background:var(--card); border-radius:var(--radius); padding:16px; margin:12px; box-shadow:var(--shadow); }
+.section-title { font-size:16px; font-weight:700; margin:16px 12px 8px; display:flex; align-items:center; gap:6px; }
+
+.top-bar { background:var(--primary); color:#fff; padding:12px 16px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100; }
+.top-bar .user-info { display:flex; align-items:center; gap:8px; }
+.top-bar .user-info .avatar { width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,0.3); display:flex; align-items:center; justify-content:center; font-size:16px; }
+.top-bar .user-info .name { font-size:15px; font-weight:600; }
+.top-bar .user-info .group-tag { font-size:11px; background:rgba(255,255,255,0.25); padding:1px 8px; border-radius:8px; margin-top:2px; display:inline-block; }
+.top-bar .top-btn { background:rgba(255,255,255,0.2); border:none; color:#fff; padding:6px 12px; border-radius:8px; font-size:13px; cursor:pointer; }
+
+.bottom-nav { position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:420px; background:var(--card); border-top:1px solid var(--border); display:flex; z-index:100; }
+.nav-item { flex:1; text-align:center; padding:8px 0; cursor:pointer; color:var(--text-sub); transition:color .2s; }
+.nav-item.active { color:var(--primary); }
+.nav-item .nav-icon { font-size:20px; }
+.nav-item .nav-label { font-size:11px; }
+
+.badge-dot { position:absolute; top:-8px; right:-8px; background:var(--danger); color:#fff; font-size:12px; height:26px; border-radius:13px; display:flex; align-items:center; justify-content:center; padding:0 10px; font-weight:700; border:2px solid #fff; box-shadow:0 2px 4px rgba(255,77,79,0.4); cursor:pointer; z-index:10; }
+
+.mode-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:0 12px; }
+.mode-card { background:var(--card); border-radius:var(--radius); padding:16px; text-align:center; cursor:pointer; position:relative; transition:all .2s; box-shadow:var(--shadow); }
+.mode-card:active { transform:scale(0.96); }
+.mode-card .mode-icon { font-size:32px; margin-bottom:6px; }
+.mode-card .mode-name { font-size:15px; font-weight:600; }
+.mode-card .mode-sub { font-size:11px; color:var(--text-sub); margin-top:2px; }
+.mode-card .mode-sub.daily { color:var(--danger); font-weight:600; }
+.mode-card.locked { opacity:0.5; }
+.mode-card.locked .mode-icon::after { content:'🔒'; }
+
+.stage-switcher { display:flex; margin:0 12px 12px; background:var(--card); border-radius:10px; padding:4px; box-shadow:var(--shadow); }
+.stage-tab { flex:1; text-align:center; padding:10px; border-radius:8px; font-size:13px; font-weight:600; color:var(--text-sub); cursor:pointer; transition:all .2s; position:relative; }
+.stage-tab.active { background:var(--primary); color:#fff; }
+.stage-tab.locked { opacity:0.6; }
+.stage-tab .lock-icon { font-size:12px; }
+
+.progress-bar { height:8px; background:var(--border); border-radius:4px; overflow:hidden; margin:8px 0; }
+.progress-bar .fill { height:100%; background:var(--primary); border-radius:4px; transition:width .3s; }
+
+.stat-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; padding:0 12px; }
+.stat-card { background:var(--card); border-radius:10px; padding:12px 8px; text-align:center; box-shadow:var(--shadow); }
+.stat-card .stat-val { font-size:22px; font-weight:700; color:var(--primary); }
+.stat-card .stat-key { font-size:11px; color:var(--text-sub); margin-top:2px; }
+
+.btn { display:inline-block; padding:10px 20px; border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; transition:all .2s; }
+.btn-primary { background:var(--primary); color:#fff; }
+.btn-success { background:var(--success); color:#fff; }
+.btn-danger { background:var(--danger); color:#fff; }
+.btn-outline { background:transparent; border:1px solid var(--border); color:var(--text); }
+.btn:active { transform:scale(0.97); }
+.btn-block { display:block; width:100%; }
+
+.back-bar { background:var(--primary); color:#fff; padding:12px 16px; display:flex; align-items:center; gap:12px; position:sticky; top:0; z-index:100; }
+.back-bar .back-btn { background:none; border:none; color:#fff; font-size:20px; cursor:pointer; }
+.back-bar .back-title { font-size:16px; font-weight:600; }
+
+.learn-header { background:var(--card); padding:16px; margin-bottom:8px; box-shadow:var(--shadow); }
+.learn-word { font-size:28px; font-weight:700; text-align:center; margin:8px 0; }
+.learn-ipa { text-align:center; color:var(--text-sub); font-size:14px; }
+.learn-zh { text-align:center; color:var(--text-light); margin-top:4px; }
+.learn-section { background:var(--card); margin:8px 12px; border-radius:var(--radius); padding:14px; box-shadow:var(--shadow); }
+.learn-section h4 { font-size:13px; color:var(--text-sub); margin-bottom:8px; display:flex; align-items:center; gap:4px; }
+.speak-target-btns { display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
+.speak-target-btn { padding:6px 14px; border:1px solid var(--border); border-radius:20px; font-size:13px; cursor:pointer; background:var(--card); }
+.speak-target-btn.active { background:var(--primary); color:#fff; border-color:var(--primary); }
+.speak-target-btn .score-mark { font-size:11px; margin-left:4px; }
+.speak-target-btn .score-pass { color:var(--success); }
+.speak-target-btn .score-fail { color:var(--danger); }
+.voice-input { width:100%; padding:14px; border:2px solid var(--border); border-radius:10px; font-size:16px; outline:none; transition:border-color .2s; }
+.voice-input:focus { border-color:var(--primary); }
+.voice-input::placeholder { color:var(--text-sub); font-size:14px; }
+.test-sub-card { background:var(--bg); border-radius:10px; padding:14px; margin-bottom:12px; }
+@keyframes pulse { 0%,100%{transform:scale(1);} 50%{transform:scale(1.1);} }
+
+/* ===== NEW: Pure recording button ===== */
+/* ===== NEW: Pure recording button ===== */
+.rec-btn { width:72px; height:72px; border-radius:50%; background:var(--primary); border:none; color:#fff; font-size:28px; display:flex; align-items:center; justify-content:center; margin:0 auto; cursor:pointer; box-shadow:0 4px 12px rgba(74,144,217,0.4); touch-action:none; user-select:none; transition:all .2s; }
+.rec-btn.recording { background:var(--danger); animation:pulse 1s infinite; box-shadow:0 4px 12px rgba(255,77,79,0.4); }
+.rec-btn-sm { width:56px; height:56px; border-radius:50%; background:var(--primary); border:none; color:#fff; font-size:22px; display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:0 2px 8px rgba(74,144,217,0.3); flex-shrink:0; touch-action:none; user-select:none; transition:all .2s; }
+.rec-btn-sm.recording { background:var(--danger); animation:pulse 1s infinite; box-shadow:0 2px 8px rgba(255,77,79,0.3); }
+.rec-label { font-size:13px; color:var(--text-sub); text-align:center; margin-top:8px; }
+.rec-label.recording { color:var(--danger); font-weight:600; }
+.rec-score { font-size:18px; font-weight:700; text-align:center; margin-top:8px; }
+.rec-score.pass { color:var(--success); }
+.rec-score.fail { color:var(--danger); }
+
+/* Voice trigger box - blue box with text, no mic icon */
+
+
+
+
+
+/* Voice listening state - orange, compact, cute */
+
+
+@keyframes softPulse { 0%,100% { box-shadow:0 2px 8px rgba(255,107,53,0.35); } 50% { box-shadow:0 4px 14px rgba(255,107,53,0.55); } }
+@keyframes dotBlink { 0%,100% { opacity:0.2; } 50% { opacity:1; } }
+
+
+
+
+
+.checkin-progress { background:var(--primary-light); border-radius:10px; padding:12px; margin:0 12px 8px; display:flex; align-items:center; justify-content:space-between; cursor:pointer; }
+.checkin-progress .progress-info { display:flex; flex-direction:column; }
+.checkin-progress .progress-label { font-size:13px; font-weight:600; color:var(--text); }
+.checkin-progress .progress-text { font-size:14px; color:var(--primary); font-weight:600; margin-top:2px; }
+.checkin-progress .progress-sub { font-size:12px; color:var(--text-sub); margin-top:2px; }
+.checkin-progress .timer-ring { width:72px; height:72px; position:relative; }
+.checkin-progress .timer-ring svg { transform:rotate(-90deg); }
+.checkin-progress .timer-ring .pct { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:14px; font-weight:700; color:var(--primary); }
+
+.test-intro { text-align:center; padding:40px 20px; }
+.test-intro .test-icon { font-size:48px; margin-bottom:16px; }
+.test-intro h3 { font-size:18px; margin-bottom:8px; }
+.test-intro .test-sub { font-size:13px; color:var(--text-sub); margin-bottom:24px; }
+.test-card { background:var(--card); margin:8px 12px; border-radius:var(--radius); padding:20px; box-shadow:var(--shadow); }
+.test-card .test-num { font-size:12px; color:var(--text-sub); }
+.test-card .test-zh { font-size:18px; margin:8px 0; line-height:1.6; }
+.test-card .test-status { display:flex; align-items:center; gap:8px; margin-top:12px; }
+.test-card .test-score { font-size:24px; font-weight:700; }
+.test-card .test-score.pass { color:var(--success); }
+.test-card .test-score.fail { color:var(--danger); }
+.test-locked { text-align:center; padding:60px 20px; }
+.test-locked .lock-icon { font-size:48px; margin-bottom:16px; }
+.test-locked .lock-msg { font-size:15px; color:var(--text-light); }
+
+.calendar-modal { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:999; display:none; align-items:center; justify-content:center; }
+.calendar-modal.show { display:flex; }
+.calendar-box { background:#fff; border-radius:16px; padding:20px; width:90%; max-width:340px; }
+.calendar-box h3 { text-align:center; margin-bottom:16px; }
+.calendar-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
+.calendar-grid .cal-head { text-align:center; font-size:12px; color:var(--text-sub); padding:4px 0; }
+.calendar-grid .cal-day { aspect-ratio:1; display:flex; align-items:center; justify-content:center; border-radius:8px; font-size:13px; position:relative; cursor:pointer; }
+.calendar-grid .cal-day.done { background:var(--success-light); color:var(--success); font-weight:600; }
+.calendar-grid .cal-day.undone { background:var(--danger-light); color:var(--danger); font-weight:600; }
+.calendar-grid .cal-day.today { border:2px solid var(--primary); }
+.calendar-grid .cal-day.empty { visibility:hidden; }
+.calendar-grid .cal-day.future { color:var(--text-sub); opacity:0.4; }
+.calendar-legend { display:flex; gap:12px; margin-top:12px; font-size:12px; color:var(--text-sub); }
+.calendar-legend span { display:flex; align-items:center; gap:4px; }
+.calendar-legend .legend-dot { width:12px; height:12px; border-radius:3px; display:inline-block; }
+.calendar-makeup-tip { background:var(--warning-light); border-radius:8px; padding:8px 12px; margin-top:8px; font-size:12px; color:var(--warning); display:flex; align-items:center; gap:6px; }
+
+.rank-list { background:var(--card); border-radius:var(--radius); margin:8px 12px; overflow:hidden; box-shadow:var(--shadow); }
+.rank-item { display:flex; align-items:center; padding:12px 16px; border-bottom:1px solid var(--border); }
+.rank-item:last-child { border-bottom:none; }
+.rank-item .rank-num { width:32px; text-align:center; font-size:16px; font-weight:700; }
+.rank-item .rank-num.top1 { color:#FFD700; }
+.rank-item .rank-num.top2 { color:#C0C0C0; }
+.rank-item .rank-num.top3 { color:#CD7F32; }
+.rank-item .rank-name { flex:1; font-size:14px; }
+.rank-item .rank-score { font-size:14px; font-weight:600; color:var(--primary); }
+.rank-item.self { background:var(--primary-light); }
+.rank-item.self .rank-name { font-weight:700; }
+
+.modal-mask { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:999; display:none; align-items:center; justify-content:center; }
+.modal-mask.show { display:flex; }
+.modal-box { background:#fff; border-radius:16px; padding:24px; width:90%; max-width:380px; }
+.modal-box h3 { margin-bottom:16px; }
+.form-group { margin-bottom:12px; }
+.form-group label { display:block; font-size:13px; color:var(--text-sub); margin-bottom:4px; }
+.form-group input { width:100%; padding:10px; border:1px solid var(--border); border-radius:8px; font-size:14px; }
+.modal-actions { display:flex; gap:8px; margin-top:20px; }
+.modal-actions .btn { flex:1; }
+
+.alert-box { border-radius:8px; padding:10px 14px; margin:8px 12px; font-size:13px; display:flex; align-items:flex-start; gap:8px; }
+.alert-info { background:var(--primary-light); color:var(--primary); }
+
+.toast { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(0,0,0,0.8); color:#fff; padding:10px 20px; border-radius:8px; font-size:14px; z-index:9999; opacity:0; transition:opacity .3s; pointer-events:none; }
+.toast.show { opacity:1; }
+
+/* 站内信 */
+.msg-badge { position:absolute; top:-4px; right:-4px; background:var(--danger); color:#fff; font-size:10px; min-width:16px; height:16px; border-radius:8px; display:flex; align-items:center; justify-content:center; padding:0 4px; font-weight:700; }
+.msg-item { background:var(--card); border-radius:var(--radius); padding:14px; margin-bottom:10px; box-shadow:var(--shadow); position:relative; }
+.msg-item.unread::before { content:''; position:absolute; left:0; top:14px; bottom:14px; width:3px; background:var(--primary); border-radius:2px; }
+.msg-item.unread { background:var(--primary-light); }
+.msg-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
+.msg-type { font-size:11px; padding:2px 8px; border-radius:4px; font-weight:600; }
+.msg-type.type-reminder { background:var(--warning-light); color:var(--warning); }
+.msg-type.type-weekly { background:var(--primary-light); color:var(--primary); }
+.msg-type.type-monthly { background:#F0F5FF; color:#2F54EB; }
+.msg-type.type-system { background:var(--success-light); color:var(--success); }
+.msg-time { font-size:11px; color:var(--text-sub); }
+.msg-title { font-size:15px; font-weight:600; margin-bottom:4px; }
+.msg-body { font-size:13px; color:var(--text-light); line-height:1.5; }
+.msg-actions { display:flex; gap:8px; margin-top:10px; }
+
+/* 学习清单 */
+.word-list-item { display:flex; align-items:center; gap:10px; background:var(--card); border-radius:var(--radius); padding:12px 14px; margin-bottom:8px; box-shadow:var(--shadow); }
+.word-list-item .wl-num { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; flex-shrink:0; }
+.word-list-item .wl-num.mastered { background:var(--success-light); color:var(--success); }
+.word-list-item .wl-num.learned { background:var(--primary-light); color:var(--primary); }
+.word-list-item .wl-num.unlearned { background:var(--border); color:var(--text-sub); }
+.word-list-item .wl-word { font-size:15px; font-weight:600; flex:1; }
+.word-list-item .wl-ipa { font-size:12px; color:var(--text-sub); }
+.word-list-item .wl-zh { font-size:13px; color:var(--text-light); }
+.word-list-item .wl-status { font-size:11px; padding:2px 8px; border-radius:4px; flex-shrink:0; }
+.word-list-item .wl-status.mastered { background:var(--success-light); color:var(--success); font-weight:600; }
+.word-list-item .wl-status.learned { background:var(--primary-light); color:var(--primary); font-weight:600; }
+.word-list-item .wl-status.unlearned { background:var(--border); color:var(--text-sub); }
+.wl-filter { display:flex; gap:8px; margin:0 12px 12px; flex-wrap:wrap; }
+.wl-filter-btn { padding:6px 14px; border:1px solid var(--border); border-radius:20px; font-size:13px; cursor:pointer; background:var(--card); }
+.wl-filter-btn.active { background:var(--primary); color:#fff; border-color:var(--primary); }
+.wl-search { width:100%; padding:8px 12px; border:1px solid var(--border); border-radius:8px; font-size:14px; margin-bottom:8px; }
+</style>
+</head>
+<body>
+
+<div id="student-app" class="phone-frame">
+
+  <!-- 首页 -->
+  <div id="s-page-home" class="page active">
+    <div class="top-bar">
+      <div class="user-info">
+        <div class="avatar" id="s-avatar">--</div>
+        <div>
+          <div class="name" id="s-name">--</div>
+          <span class="group-tag" id="s-group">--</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <button class="top-btn" onclick="showChangePasswordModal()">修改密码</button>
+        <button class="top-btn" onclick="sNav('messages')" style="position:relative;">📬 站内信<span class="msg-badge" id="s-msg-badge" style="display:none;"></span></button>
+        <button class="top-btn" onclick="logout()">退出</button>
+      </div>
+    </div>
+
+    <!-- 阶段切换器 -->
+    <div style="padding:12px 12px 0;">
+      <div class="stage-switcher" id="s-stage-switcher"></div>
+    </div>
+
+    <!-- 学习进度 -->
+    <div class="card" id="s-progress-card"></div>
+
+    <!-- 今日打卡进度 -->
+    <div class="checkin-progress" onclick="showCalendar()" id="s-checkin"></div>
+
+    <!-- 学习模式版块 -->
+    <div class="section-title">学习模式</div>
+    <div class="mode-grid" id="s-learn-modes"></div>
+
+    <!-- 测试模式版块 -->
+    <div class="section-title">测试模式</div>
+    <div class="mode-grid" id="s-test-modes"></div>
+  </div>
+
+  <!-- 跟读学习页 -->
+  <div id="s-page-learn" class="page">
+    <div class="back-bar">
+      <button class="back-btn" onclick="backHome()">‹</button>
+      <span class="back-title" id="s-learn-title">跟读学习 · 每日必学</span>
+    </div>
+    <div id="s-learn-content"></div>
+  </div>
+
+  <!-- 拼写练习页 -->
+  <div id="s-page-spell" class="page">
+    <div class="back-bar">
+      <button class="back-btn" onclick="backHome()">‹</button>
+      <span class="back-title">拼写练习 · 选学</span>
+    </div>
+    <div id="s-spell-content"></div>
+  </div>
+
+  <!-- 周测页 -->
+  <div id="s-page-weekly" class="page">
+    <div class="back-bar">
+      <button class="back-btn" onclick="backHome()">‹</button>
+      <span class="back-title">周测模式</span>
+    </div>
+    <div id="s-weekly-content"></div>
+  </div>
+
+  <!-- 月测页 -->
+  <div id="s-page-monthly" class="page">
+    <div class="back-bar">
+      <button class="back-btn" onclick="backHome()">‹</button>
+      <span class="back-title">月测模式</span>
+    </div>
+    <div id="s-monthly-content"></div>
+  </div>
+
+  <!-- 报告页 -->
+  <div id="s-page-report" class="page">
+    <div class="top-bar">
+      <div style="font-size:16px;font-weight:600;">📊 学习报告</div>
+      <button class="top-btn" onclick="backHome()">返回</button>
+    </div>
+    <div id="s-report-content"></div>
+  </div>
+
+  <!-- 学习清单页 -->
+  <div id="s-page-wordlist" class="page">
+    <div class="top-bar">
+      <div style="font-size:16px;font-weight:600;">📋 学习清单</div>
+      <button class="top-btn" onclick="backHome()">返回</button>
+    </div>
+    <div id="s-wordlist-content"></div>
+  </div>
+
+  <!-- 站内信页 -->
+  <div id="s-page-messages" class="page">
+    <div class="top-bar">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button class="top-btn" onclick="sNav('home')">‹ 返回</button>
+        <span style="font-size:16px;font-weight:600;">📬 站内信</span>
+      </div>
+      <button class="top-btn" onclick="markAllRead()">全部已读</button>
+    </div>
+    <div id="s-messages-content"></div>
+  </div>
+
+  <!-- 底部导航 -->
+  <div class="bottom-nav">
+    <div class="nav-item active" onclick="sNav('home')"><div class="nav-icon">🏠</div><div class="nav-label">首页</div></div>
+    <div class="nav-item" onclick="sNav('wordlist')"><div class="nav-icon">📋</div><div class="nav-label">学习清单</div></div>
+    <div class="nav-item" onclick="sNav('report')"><div class="nav-icon">📊</div><div class="nav-label">报告</div></div>
+  </div>
+</div>
+
+<!-- 打卡日历弹窗 -->
+<div id="calendar-modal" class="calendar-modal">
+  <div class="calendar-box">
+    <h3 id="cal-title">📅 打卡日历</h3>
+    <div class="calendar-grid" id="calendar-grid"></div>
+    <div class="calendar-makeup-tip">
+      ⚠️ 仅可补当周打卡，不允许跨周或跨月补卡。点击当周红色未完成日期开始补卡学习，完成15分钟后补卡成功。
+    </div>
+    <div class="calendar-legend">
+      <span><span class="legend-dot" style="background:var(--success-light);"></span>绿色 = 已完成</span>
+      <span><span class="legend-dot" style="background:var(--danger-light);"></span>红色 = 未完成</span>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:8px;">
+      <button class="btn btn-outline" style="flex:1;" onclick="closeCalendar()">关闭</button>
+      <button class="btn btn-primary" style="flex:1;" onclick="goLearnFromCalendar()">去打卡</button>
+    </div>
+  </div>
+</div>
+
+<!-- 学员修改密码弹窗 -->
+<div id="change-password-modal" class="modal-mask">
+  <div class="modal-box">
+    <h3>🔐 修改个人密码</h3>
+    <div class="form-group">
+      <label>当前密码</label>
+      <input type="password" id="change-pw-old" placeholder="请输入当前密码">
+    </div>
+    <div class="form-group">
+      <label>新密码</label>
+      <input type="password" id="change-pw-new" placeholder="请输入新密码（格式不限）">
+    </div>
+    <div class="form-group">
+      <label>确认新密码</label>
+      <input type="password" id="change-pw-confirm" placeholder="请再次输入新密码">
+    </div>
+    <div style="font-size:12px;color:var(--text-sub);margin-bottom:8px;">密码格式不限制，修改后下次登录需使用新密码</div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('change-password-modal')">取消</button>
+      <button class="btn btn-primary" onclick="changeStudentPassword()">确认修改</button>
+    </div>
+  </div>
+</div>
+
+<!-- 分数弹窗 -->
+<div id="score-modal-mask" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:10000;justify-content:center;align-items:center;">
+  <div style="background:#fff;border-radius:16px;padding:32px 28px;width:300px;text-align:center;animation:popIn .3s ease;">
+    <div id="score-modal-icon" style="font-size:48px;margin-bottom:8px;"></div>
+    <div id="score-modal-score" style="font-size:42px;font-weight:800;margin-bottom:4px;"></div>
+    <div id="score-modal-msg" style="font-size:18px;font-weight:600;margin-bottom:8px;"></div>
+    <div id="score-modal-detail" style="font-size:13px;color:#888;margin-bottom:20px;"></div>
+    <button onclick="closeScoreModal()" style="width:100%;padding:12px;border:none;border-radius:8px;background:var(--primary);color:#fff;font-size:16px;font-weight:600;cursor:pointer;">确定</button>
+  </div>
+</div>
+<style>@keyframes popIn{from{transform:scale(0.7);opacity:0}to{transform:scale(1);opacity:1}}</style>
+
+<div class="toast" id="toast"></div>
+
+<script src="js/common.js?v=20260704c"></script>
+<script src="js/student.js?v=20260704c"></script>
+</body>
+</html>
