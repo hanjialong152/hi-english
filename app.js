@@ -731,7 +731,9 @@ var mediaStream = null;
 var micStartTime = 0; // 录音开始时间戳
 
 // 后端API地址（自动检测：同源使用相对路径，不同源用完整URL）
-var TRANSCRIBE_API = '/api/transcribe';
+var TRANSCRIBE_API = (typeof location !== 'undefined' && location.hostname === 'hi-english.onrender.com')
+  ? '/api/transcribe'
+  : 'https://hi-english.onrender.com/api/transcribe';
 
 // 语音识别模式：'backend'(后端API) | 'browser'(浏览器原生) | 'unknown'(未检测)
 var SPEECH_MODE = 'unknown';
@@ -743,6 +745,7 @@ var recognitionInterimText = '';
 var recognitionDone = false;
 var micUpTriggered = false; // 标记是否已触发松手停止
 var _micUserReleased = false; // 标记用户是否已松手（在录音开始前）
+var micPermissionGranted = false; // 标记麦克风权限是否已获取（首次弹框后标记）
 
 function initSpeechRecognition() {
   // 只使用 MediaRecorder 方案（录音上传后端识别）
@@ -867,17 +870,26 @@ function micDown() {
         micStarting = false;
         isRecording = false;
         restoreMicUI();
+        // 首次获取权限后提示用户再次长按
+        if (!micPermissionGranted) {
+          micPermissionGranted = true;
+          showToast('麦克风权限已获取，请再次长按麦克风朗读');
+        }
         return;
       }
 
       mediaStream = stream;
+      micPermissionGranted = true;
       
-      // 选择浏览器支持的音频格式
+      // 选择浏览器支持的音频格式（iOS Safari 用 mp4，Chrome 用 webm）
       var mimeType = 'audio/webm';
       if (!MediaRecorder.isTypeSupported(mimeType)) {
-        mimeType = 'audio/ogg';
+        mimeType = 'audio/mp4';
         if (!MediaRecorder.isTypeSupported(mimeType)) {
-          mimeType = '';
+          mimeType = 'audio/ogg';
+          if (!MediaRecorder.isTypeSupported(mimeType)) {
+            mimeType = '';
+          }
         }
       }
       
@@ -944,7 +956,7 @@ function micUp() {
   clearMicTimeout();
   
   if (isRecording && mediaRecorder && mediaRecorder.state === 'recording') {
-    // 停止录音，onstop回调里会自动上传识别
+    // 正在录音，停止录音
     try { mediaRecorder.stop(); } catch(e) { console.warn('[MIC] stop失败:', e); }
     isRecording = false;
     micStarting = false;
@@ -953,13 +965,13 @@ function micUp() {
     var label = document.getElementById('mic-label');
     if (label) label.textContent = '识别中...';
     var btn = document.getElementById('btn-mic');
-    if (btn) btn.classList.remove('recording'); // 变回蓝色
+    if (btn) btn.classList.remove('recording');
     var ind = document.getElementById('recording-indicator');
     if (ind) ind.style.display = 'none';
-  } else {
-    // 还没开始录音就松手了（micStarting=true但isRecording=false）
+  } else if (micStarting) {
+    // getUserMedia 还在进行中（权限弹框还没关闭），标记已松手
+    _micUserReleased = true;
     micStarting = false;
-    isRecording = false;
     restoreMicUI();
   }
 }
@@ -1000,14 +1012,17 @@ function uploadAndTranscribe() {
   var label = document.getElementById('mic-label');
   if (label) label.textContent = '识别中...';
 
-  // 超时保护：25秒
+  // 超时保护：25秒 → 降级到时长评分
   var uploadTimeout = setTimeout(function() {
     if (evaluatedAlready) return;
-    console.warn('[MIC] 上传识别超时');
+    console.warn('[MIC] 识别超时，降级到时长评分');
     cleanupMic();
     restoreMicUI();
     evaluatedAlready = true;
-    showScoreModal(0, '识别超时，请检查网络后重试');
+    var recDuration = (Date.now() - micStartTime) / 1000;
+    var score = durationFallbackScore(speakTargetText, recDuration);
+    showScoreModal(score, score > 0 ? '识别超时，按时长评分' : '识别超时，请重试');
+    saveSpeakScore(score);
   }, 25000);
 
   // 浏览器端转换：webm → 16kHz mono PCM
@@ -1039,9 +1054,12 @@ function uploadAndTranscribe() {
       if (data.success && data.text) {
         evaluateSpeaking(data.text);
       } else {
+        // 识别未成功，降级到时长评分
         evaluatedAlready = true;
-        var errMsg = data.error || '未能识别语音，请重试';
-        showScoreModal(0, errMsg);
+        var recDuration = (Date.now() - micStartTime) / 1000;
+        var score = durationFallbackScore(speakTargetText, recDuration);
+        showScoreModal(score, score > 0 ? '语音识别未成功，按时长评分' : (data.error || '未能识别，请重试'));
+        saveSpeakScore(score);
       }
     })
     .catch(function(err) {
@@ -1052,7 +1070,16 @@ function uploadAndTranscribe() {
       console.error('[MIC] 上传失败:', err);
       if (!evaluatedAlready) {
         evaluatedAlready = true;
-        showScoreModal(0, '网络错误，无法连接语音识别服务，请检查网络后重试');
+        if (err && err.message === 'SILENT') {
+          // 录音静音，不给分
+          showScoreModal(0, '没有听到声音，请大声朗读后重试');
+        } else {
+          // 其他错误，降级到时长评分
+          var recDuration = (Date.now() - micStartTime) / 1000;
+          var score = durationFallbackScore(speakTargetText, recDuration);
+          showScoreModal(score, score > 0 ? '网络错误，按时长评分' : '网络错误，请检查网络后重试');
+          saveSpeakScore(score);
+        }
       }
     });
 }
@@ -1162,29 +1189,22 @@ function resetMicUI(keepLabel) {
   }
 }
 
-// Document级别的事件处理
-function _docTouchEnd(e) { 
-  e.preventDefault();
-  if (isRecording && mediaRecorder && mediaRecorder.state === 'recording') {
-    // 正在录音，正常停止
-    try { mediaRecorder.stop(); } catch(ex) {}
-    isRecording = false;
-    micStarting = false;
-  } else if (micStarting) {
-    // 还没开始录音用户就松手了，设置标记让 getUserMedia 回调检查
-    _micUserReleased = true;
+// Document级别的松手处理 — 统一调用 micUp()，避免遗漏清理
+function _docTouchEnd(e) {
+  if (isRecording || micStarting) {
+    e.preventDefault();
+    micUp();
   }
 }
-function _docTouchCancel() { 
-  // 忽略 touchcancel，防止误触松手
+function _docTouchCancel(e) {
+  // touchcancel 也当作松手处理（防止录音停不下来）
+  if (isRecording || micStarting) {
+    micUp();
+  }
 }
-function _docMouseUp() {
-  if (isRecording && mediaRecorder && mediaRecorder.state === 'recording') {
-    try { mediaRecorder.stop(); } catch(ex) {}
-    isRecording = false;
-    micStarting = false;
-  } else if (micStarting) {
-    _micUserReleased = true;
+function _docMouseUp(e) {
+  if (isRecording || micStarting) {
+    micUp();
   }
 }
 
@@ -1201,12 +1221,59 @@ function clearMicTimeout() {
   }
 }
 
+// 时长评分（降级方案：服务器不可用时使用）
+function durationFallbackScore(targetText, duration) {
+  if (!targetText || duration < 0.3) return 0;
+  var wordCount = targetText.split(/\s+/).length;
+  var expectedDuration = wordCount * 0.5; // 每词约0.5秒
+  if (duration < 0.5) return 10;
+  var ratio = duration / expectedDuration;
+  if (ratio >= 0.5 && ratio <= 2.0) {
+    var baseScore = 75;
+    var deviation = Math.abs(1 - ratio);
+    var bonus = Math.round((1 - deviation) * 15);
+    return Math.min(92, baseScore + bonus);
+  } else if (ratio > 2.0 && ratio < 3.0) {
+    return 65;
+  } else if (ratio < 0.5) {
+    return 40;
+  }
+  return 50;
+}
+
+// 保存跟读成绩（降级评分时使用，evaluateSpeaking里已有保存逻辑）
+function saveSpeakScore(score) {
+  var ud = getUserData();
+  if (!ud) return;
+  var qIdx = learnQueue[currentIndex];
+  var word = allData[qIdx];
+  if (!word) return;
+  if (!ud.speakScores) ud.speakScores = {};
+  ud.speakScores[word.id] = Math.max(ud.speakScores[word.id] || 0, score);
+  if (score >= 80 && ud.masteredIds && !ud.masteredIds.includes(word.id)) {
+    ud.masteredIds.push(word.id);
+  }
+  saveUserData(ud);
+}
+
+// 服务器预热：页面加载后 ping Render 服务器，防止录音时冷启动
+function warmupServer() {
+  var url = (TRANSCRIBE_API.indexOf('http') === 0)
+    ? TRANSCRIBE_API.replace('/api/transcribe', '/api/keepalive')
+    : '/api/keepalive';
+  fetch(url, { method: 'GET' })
+    .then(function() { console.log('[Server] 预热成功'); })
+    .catch(function() { console.log('[Server] 预热失败（可能休眠中）'); });
+}
+// 页面加载后5秒预热
+setTimeout(warmupServer, 5000);
+
 function evaluateSpeaking(recognized) {
   // 防止多次弹窗
   if (evaluatedAlready) return;
   evaluatedAlready = true;
 
-  var target = (speakTargetText || speakPracticeTarget || '').toLowerCase().trim();
+  var target = (speakTargetText || '').toLowerCase().trim();
   recognized = (recognized || '').toLowerCase().trim();
 
   var score = 0;
