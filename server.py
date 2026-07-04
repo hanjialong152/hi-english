@@ -604,8 +604,48 @@ def handle_transcribe():
         return jsonify({'error': str(e)}), 500
 
 
+# Whisper 模型懒加载（tiny 模型约 75MB，首次加载需几秒）
+_whisper_model = None
+
+def _get_whisper_model():
+    global _whisper_model
+    if _whisper_model is None:
+        try:
+            import whisper
+            print('[Whisper] 加载 tiny 模型...', flush=True)
+            _whisper_model = whisper.load_model('tiny')
+            print('[Whisper] 模型加载完成', flush=True)
+        except ImportError:
+            print('[Whisper] openai-whisper 未安装，将使用 Google Speech API', flush=True)
+            return None
+        except Exception as e:
+            print(f'[Whisper] 加载失败: {e}', flush=True)
+            return None
+    return _whisper_model
+
+
 def transcribe_audio(filepath):
-    """用 SpeechRecognition 识别 WAV 文件"""
+    """识别 WAV 文件：优先 Whisper，降级 Google Speech API"""
+    text = ''
+
+    # 方案一：Whisper（本地识别，不受网络限制）
+    model = _get_whisper_model()
+    if model is not None:
+        try:
+            import time as _t
+            start = _t.time()
+            result = model.transcribe(filepath, language='en', fp16=False)
+            text = result.get('text', '').strip()
+            elapsed = _t.time() - start
+            if text:
+                print(f'[Whisper] 识别成功 ({elapsed:.1f}s): "{text}"', flush=True)
+                return text
+            else:
+                print(f'[Whisper] 识别为空 ({elapsed:.1f}s)', flush=True)
+        except Exception as e:
+            print(f'[Whisper] 识别失败: {e}', flush=True)
+
+    # 方案二：Google Web Speech API（降级方案）
     try:
         import speech_recognition as sr
         recognizer = sr.Recognizer()
@@ -617,7 +657,6 @@ def transcribe_audio(filepath):
         with sr.AudioFile(filepath) as source:
             audio = recognizer.record(source)
 
-        # 尝试 Google Web Speech API（免费，无需 API key）
         try:
             text = recognizer.recognize_google(audio, language='en-US')
             print(f'[Google SR] 成功: "{text}"', flush=True)
@@ -627,7 +666,6 @@ def transcribe_audio(filepath):
             return ''
         except sr.RequestError as e:
             print(f'[Google SR] API请求错误: {e}', flush=True)
-            # Google API 不可用时，返回空字符串（前端会显示提示）
             return ''
 
     except ImportError:
@@ -638,6 +676,8 @@ def transcribe_audio(filepath):
         import traceback
         traceback.print_exc()
         return ''
+
+    return text
 
 
 # ---- 自保活线程 ----

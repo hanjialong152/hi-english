@@ -4,8 +4,11 @@ Flask>=2.3.0
 # Python 3.13 移除了 cgi 模块，SpeechRecognition 内部依赖它
 legacy-cgi>=1.0.3
 
-# SpeechRecognition 用于 /api/transcribe（Google Web Speech API，无需 API key）
+# SpeechRecognition 用于 /api/transcribe（Google Web Speech API，降级方案）
 SpeechRecognition>=3.8.1
+
+# Whisper 语音识别（主方案，本地运行，不受网络限制）
+openai-whisper>=20231117
 
 # 轻量 DTW 算法（纯 python，无外部依赖）
 fastdtw>=0.3.4

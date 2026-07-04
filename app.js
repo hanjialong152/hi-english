@@ -742,6 +742,7 @@ var recognitionFinalText = '';
 var recognitionInterimText = '';
 var recognitionDone = false;
 var micUpTriggered = false; // 标记是否已触发松手停止
+var _micUserReleased = false; // 标记用户是否已松手（在录音开始前）
 
 function initSpeechRecognition() {
   // 只使用 MediaRecorder 方案（录音上传后端识别）
@@ -803,7 +804,7 @@ function playSpeakTargetAudio() {
 
 // =====================================================
 // 按下麦克风 —— 开始录音（MediaRecorder 方案）
-// 录音上传到后端 API（Netlify Serverless Function）识别
+// 录音上传到后端 API 识别（Whisper / Google）
 // =====================================================
 function micDown() {
   // 防止重复触发
@@ -822,6 +823,7 @@ function micDown() {
   micStarting = true;
   evaluatedAlready = false;
   isRecording = false;
+  _micUserReleased = false;
   audioChunks = [];
 
   // 停止正在播放的音频
@@ -841,9 +843,33 @@ function micDown() {
 
   console.log('[MIC] 正在请求麦克风权限...');
 
+  // *** 关键修复：在 getUserMedia 之前就注册松手监听器 ***
+  // 防止用户在权限弹框期间松手，touchend 事件丢失，导致录音永远停不下来
+  document.addEventListener('touchend', _docTouchEnd, {passive: false});
+  document.addEventListener('touchcancel', _docTouchCancel, {passive: false});
+  document.addEventListener('mouseup', _docMouseUp, {passive: false});
+  clearMicTimeout();
+  micTimeoutTimer = setTimeout(function() {
+    if (!isRecording && !micStarting) return;
+    console.log('[MIC] 录音超时(15秒)');
+    micUp();
+  }, 15000);
+
   // 请求麦克风权限并开始录音
   navigator.mediaDevices.getUserMedia({ audio: true })
     .then(function(stream) {
+      // *** 检查用户是否已在权限弹框期间松手 ***
+      if (_micUserReleased) {
+        console.log('[MIC] 用户已松手，停止录音流');
+        stream.getTracks().forEach(function(t) { t.stop(); });
+        _removeMicListeners();
+        clearMicTimeout();
+        micStarting = false;
+        isRecording = false;
+        restoreMicUI();
+        return;
+      }
+
       mediaStream = stream;
       
       // 选择浏览器支持的音频格式
@@ -851,7 +877,7 @@ function micDown() {
       if (!MediaRecorder.isTypeSupported(mimeType)) {
         mimeType = 'audio/ogg';
         if (!MediaRecorder.isTypeSupported(mimeType)) {
-          mimeType = ''; // 让浏览器自动选择
+          mimeType = '';
         }
       }
       
@@ -865,7 +891,6 @@ function micDown() {
       };
       
       mediaRecorder.onstop = function() {
-        // 录音停止后，上传识别
         console.log('[MIC] 录音停止，准备上传识别，音频片段数: ' + audioChunks.length);
         uploadAndTranscribe();
       };
@@ -880,7 +905,6 @@ function micDown() {
         }
       };
       
-      // 开始录音
       mediaRecorder.start();
       isRecording = true;
       micStarting = false;
@@ -888,30 +912,18 @@ function micDown() {
       console.log('[MIC] 录音已开始');
       var label2 = document.getElementById('mic-label');
       if (label2) label2.textContent = '松手结束';
-
-      // 在document级别注册松手事件
-      document.addEventListener('touchend', _docTouchEnd, {passive: false});
-      document.addEventListener('touchcancel', _docTouchCancel, {passive: false});
-      document.addEventListener('mouseup', _docMouseUp, {passive: false});
-
-      // 超时安全网：15秒自动停止
-      clearMicTimeout();
-      micTimeoutTimer = setTimeout(function() {
-        if (!isRecording) return;
-        console.log('[MIC] 录音超时(15秒)');
-        micUp();
-      }, 15000);
-      
     })
     .catch(function(err) {
       console.error('[MIC] 麦克风权限获取失败:', err.name, err.message);
+      _removeMicListeners();
+      clearMicTimeout();
       micStarting = false;
       isRecording = false;
       restoreMicUI();
       if (!evaluatedAlready) {
         evaluatedAlready = true;
         if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-          showScoreModal(0, '麦克风权限被拒绝，请点击地址栏🔒图标允许麦克风');
+          showScoreModal(0, '麦克风权限被拒绝，请点击地址栏lock图标允许麦克风');
         } else if (err.name === 'NotFoundError') {
           showScoreModal(0, '未找到麦克风设备，请检查手机麦克风是否正常');
         } else {
@@ -928,9 +940,7 @@ function micUp() {
   if (!isRecording && !micStarting) return;
 
   // 移除松手事件监听
-  document.removeEventListener('touchend', _docTouchEnd);
-  document.removeEventListener('touchcancel', _docTouchCancel);
-  document.removeEventListener('mouseup', _docMouseUp);
+  _removeMicListeners();
   clearMicTimeout();
   
   if (isRecording && mediaRecorder && mediaRecorder.state === 'recording') {
@@ -1155,12 +1165,34 @@ function resetMicUI(keepLabel) {
 // Document级别的事件处理
 function _docTouchEnd(e) { 
   e.preventDefault();
-  micUp(); 
+  if (isRecording && mediaRecorder && mediaRecorder.state === 'recording') {
+    // 正在录音，正常停止
+    try { mediaRecorder.stop(); } catch(ex) {}
+    isRecording = false;
+    micStarting = false;
+  } else if (micStarting) {
+    // 还没开始录音用户就松手了，设置标记让 getUserMedia 回调检查
+    _micUserReleased = true;
+  }
 }
 function _docTouchCancel() { 
   // 忽略 touchcancel，防止误触松手
 }
-function _docMouseUp() { micUp(); }
+function _docMouseUp() {
+  if (isRecording && mediaRecorder && mediaRecorder.state === 'recording') {
+    try { mediaRecorder.stop(); } catch(ex) {}
+    isRecording = false;
+    micStarting = false;
+  } else if (micStarting) {
+    _micUserReleased = true;
+  }
+}
+
+function _removeMicListeners() {
+  document.removeEventListener('touchend', _docTouchEnd);
+  document.removeEventListener('touchcancel', _docTouchCancel);
+  document.removeEventListener('mouseup', _docMouseUp);
+}
 
 function clearMicTimeout() {
   if (micTimeoutTimer) {
