@@ -681,6 +681,7 @@ var recState = {
   micStarting: false,
   userReleased: false,
   evaluatedAlready: false,
+  cancelled: false,
   micPermissionGranted: false,
   maxTimer: null,
   uploadTimer: null,
@@ -724,7 +725,11 @@ function _updateRecButtonUI(mode, idx, recording) {
 
 // ===== 长按开始录音 =====
 function startVoiceInput(mode, arg, isTouch) {
-  if (recState.active || recState.cooldown) return;
+  if (recState.active) return;
+  if (recState.cooldown) {
+    showToast('请稍等片刻再试');
+    return;
+  }
   if (isTouch) recState.usingTouch = true;
   if (!isTouch && recState.usingTouch) { recState.usingTouch = false; return; }
 
@@ -737,7 +742,8 @@ function startVoiceInput(mode, arg, isTouch) {
     wordId = arg;
     var word = words.find(function(w){ return String(w.id) === String(wordId); });
     if (!word) return;
-    targetText = getSpeakContent(word, speakTarget).en;
+    // 剥离HTML标签，只保留纯英文文本用于语音对比
+    targetText = getSpeakContent(word, speakTarget).en.replace(/<[^>]*>/g, '').trim();
   } else if (mode === 'learn-biz') {
     var sentIdx = parseInt(arg, 10);
     var lesson = lessons[currentIndex];
@@ -769,6 +775,7 @@ function startVoiceInput(mode, arg, isTouch) {
   recState.micStarting = true;
   recState.userReleased = false;
   recState.evaluatedAlready = false;
+  recState.cancelled = false;
   isAudioActive = true;
 
   // 停止正在播放的音频
@@ -793,6 +800,14 @@ function startVoiceInput(mode, arg, isTouch) {
 
   navigator.mediaDevices.getUserMedia({ audio: true })
     .then(function(stream) {
+      // 检查录音是否已被取消（用户导航离开了页面）
+      if (recState.cancelled || !recState.mode) {
+        console.log('[MIC] 录音已取消，释放麦克风流');
+        stream.getTracks().forEach(function(t) { t.stop(); });
+        _removeReleaseListeners();
+        if (recState.maxTimer) { clearTimeout(recState.maxTimer); recState.maxTimer = null; }
+        return;
+      }
       // 检查用户是否已在权限弹框期间松手
       if (recState.userReleased) {
         console.log('[MIC] 用户已松手，停止录音流');
@@ -834,6 +849,10 @@ function startVoiceInput(mode, arg, isTouch) {
       };
 
       recState.mediaRecorder.onstop = function() {
+        if (recState.cancelled) {
+          console.log('[MIC] 录音已取消，跳过onstop处理');
+          return;
+        }
         console.log('[MIC] 录音停止，准备上传识别');
         uploadAndTranscribe();
       };
@@ -924,6 +943,11 @@ function _removeReleaseListeners() {
 
 // ===== 上传音频到后端识别 =====
 function uploadAndTranscribe() {
+  // 检查录音是否已被取消（如用户导航离开页面）
+  if (recState.cancelled || !recState.mode) {
+    console.log('[MIC] 录音已取消，跳过上传识别');
+    return;
+  }
   if (!recState.audioChunks || recState.audioChunks.length === 0) {
     console.warn('[MIC] 没有录音数据');
     _cleanupMic();
@@ -948,45 +972,49 @@ function uploadAndTranscribe() {
     return;
   }
 
-  // 超时保护：25秒 → 降级到时长评分
+  // 超时保护：25秒 → 降级到时长评分（最高60分，不能通过）
   recState.uploadTimer = setTimeout(function() {
-    if (recState.evaluatedAlready) return;
+    if (recState.evaluatedAlready || recState.cancelled) return;
     console.warn('[MIC] 识别超时，降级到时长评分');
     _cleanupMic();
     _restoreRecUI();
     recState.evaluatedAlready = true;
     var dur = (Date.now() - recState.startTime) / 1000;
-    var score = _durationFallbackScore(recState.targetText, dur);
-    showScoreModal(score, score > 0 ? '识别超时，按时长评分' : '识别超时，请重试');
+    var score = Math.min(60, _durationFallbackScore(recState.targetText, dur));
+    showScoreModal(score, '识别超时，按时长评分（最高60分）');
     _recApplyScore(recState.mode, score);
   }, 25000);
 
   // 浏览器端转换：webm → 16kHz mono PCM
   _convertToPcm16(audioBlob)
     .then(function(pcmData) {
+      if (recState.cancelled) return; // 录音已取消，丢弃结果
       console.log('[MIC] PCM转换成功: ' + pcmData.byteLength + ' bytes');
       var formData = new FormData();
       formData.append('audio', new Blob([pcmData], { type: 'audio/l16' }), 'recording.pcm');
       return fetch(TRANSCRIBE_API, { method: 'POST', body: formData });
     })
     .then(function(response) {
+      if (recState.cancelled) return null; // 录音已取消，丢弃结果
       console.log('[MIC] 后端响应状态: ' + response.status);
       return response.json();
     })
     .then(function(data) {
+      if (!data) return; // 被取消
       if (recState.uploadTimer) { clearTimeout(recState.uploadTimer); recState.uploadTimer = null; }
       _cleanupMic();
       _restoreRecUI();
-      if (recState.evaluatedAlready) return;
+      if (recState.evaluatedAlready || recState.cancelled) return;
       console.log('[MIC] 识别结果:', data);
       if (data.success && data.text) {
         _evaluateSpeaking(data.text);
       } else {
-        // 识别未成功，降级到时长评分
+        // 识别未成功：服务器收到了音频但无法识别出有效英文
+        // 不使用时长评分（因为用户可能说了乱七八糟的内容），给低分
         recState.evaluatedAlready = true;
         var dur = (Date.now() - recState.startTime) / 1000;
-        var score = _durationFallbackScore(recState.targetText, dur);
-        showScoreModal(score, score > 0 ? '语音识别未成功，按时长评分' : (data.error || '未能识别，请重试'));
+        var score = dur >= 1.5 ? 35 : 25;
+        showScoreModal(score, '语音识别未成功，请清晰朗读英文后重试');
         _recApplyScore(recState.mode, score);
       }
     })
@@ -994,6 +1022,7 @@ function uploadAndTranscribe() {
       if (recState.uploadTimer) { clearTimeout(recState.uploadTimer); recState.uploadTimer = null; }
       _cleanupMic();
       _restoreRecUI();
+      if (recState.cancelled) return; // 录音已取消，不显示弹窗
       console.error('[MIC] 上传失败:', err);
       if (!recState.evaluatedAlready) {
         recState.evaluatedAlready = true;
@@ -1001,9 +1030,10 @@ function uploadAndTranscribe() {
           showScoreModal(0, '没有听到声音，请大声朗读后重试');
           _recApplyScore(recState.mode, 0);
         } else {
+          // 网络错误：服务器不可达，按时长评分但最高60分（不能通过）
           var dur = (Date.now() - recState.startTime) / 1000;
-          var score = _durationFallbackScore(recState.targetText, dur);
-          showScoreModal(score, score > 0 ? '网络错误，按时长评分' : '网络错误，请检查网络后重试');
+          var score = Math.min(60, _durationFallbackScore(recState.targetText, dur));
+          showScoreModal(score, '网络错误，按时长评分（最高60分）');
           _recApplyScore(recState.mode, score);
         }
       }
@@ -1153,7 +1183,7 @@ function _levenshtein(s, t) {
   return dp[m][n];
 }
 
-// ===== 时长评分兜底（服务器不可用时）=====
+// ===== 时长评分兜底（仅网络错误/超时时使用，最高70分）=====
 function _durationFallbackScore(targetText, duration) {
   if (!targetText || duration < 0.3) return 0;
   var wordCount = targetText.split(/\s+/).length;
@@ -1161,16 +1191,16 @@ function _durationFallbackScore(targetText, duration) {
   if (duration < 0.5) return 10;
   var ratio = duration / expectedDuration;
   if (ratio >= 0.5 && ratio <= 2.0) {
-    var baseScore = 75;
+    var baseScore = 55;
     var deviation = Math.abs(1 - ratio);
     var bonus = Math.round((1 - deviation) * 15);
-    return Math.min(92, baseScore + bonus);
+    return Math.min(70, baseScore + bonus);
   } else if (ratio > 2.0 && ratio < 3.0) {
-    return 65;
+    return 50;
   } else if (ratio < 0.5) {
-    return 40;
+    return 30;
   }
-  return 50;
+  return 40;
 }
 
 // ===== 分数弹窗 =====
@@ -1318,6 +1348,8 @@ function cancelVoiceInput() {
   var mode = recState.mode;
   var idx = recState.testIdx;
   var wordId = recState.wordId;
+  // 标记为已取消，阻止异步onstop触发uploadAndTranscribe
+  recState.cancelled = true;
   if (recState.active) {
     if (recState.mediaRecorder && recState.mediaRecorder.state === 'recording') {
       try { recState.mediaRecorder.stop(); } catch(e) {}
@@ -1334,7 +1366,7 @@ function cancelVoiceInput() {
 function _recStartCooldown() {
   recState.cooldown = true;
   if (recState.cooldownTimer) clearTimeout(recState.cooldownTimer);
-  recState.cooldownTimer = setTimeout(function() { recState.cooldown = false; }, 800);
+  recState.cooldownTimer = setTimeout(function() { recState.cooldown = false; }, 500);
 }
 
 function _recReset() {
@@ -1348,6 +1380,8 @@ function _recReset() {
   recState.micStarting = false;
   recState.userReleased = false;
   recState.evaluatedAlready = false;
+  // 注意：cancelled 不在此处重置，只由 startVoiceInput 重置
+  // 这样 cancelVoiceInput 设置的 cancelled=true 能被异步 onstop 检测到
   recState.usingTouch = false;
   if (recState.maxTimer) { clearTimeout(recState.maxTimer); recState.maxTimer = null; }
   if (recState.uploadTimer) { clearTimeout(recState.uploadTimer); recState.uploadTimer = null; }
@@ -1758,11 +1792,10 @@ function renderTestCard(type, content) {
     return '<div class="test-sub-card">' +
       '<div style="font-size:13px;color:var(--primary);font-weight:600;margin-bottom:6px;">' + item.label + '（看中文说英文）</div>' +
       '<div style="font-size:17px;color:var(--text);margin-bottom:10px;line-height:1.6;">' + item.zh + '</div>' +
-      '<div id="voice-area-test-' + idx + '" style="">' +
+      '<div id="voice-area-test-' + idx + '" style="text-align:center;">' +
         '<button class="rec-btn-sm" data-mode="test" data-arg="' + idx + '">🎤</button>' +
-        '<div style="flex:1;">' +
-          '<div class="rec-score" id="rec-score-test-' + idx + '" style="display:none;"></div>' +
-        '</div>' +
+        '<div class="rec-label" id="rec-label-test-' + idx + '">长按麦克风朗读，松手评分</div>' +
+        '<div class="rec-score" id="rec-score-test-' + idx + '" style="display:none;"></div>' +
       '</div>' +
     '</div>';
   }).join('');
