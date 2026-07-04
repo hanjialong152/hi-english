@@ -1,0 +1,2253 @@
+/* Hi English - Student App (matching Demo UI exactly) */
+var words = [];
+var lessons = [];
+var studyData = null;
+var currentStage = 'basic';
+var currentIndex = 0;
+var studyTimer = null;
+var studySeconds = 0;
+var testWords = [];
+var testWordIndex = 0;
+var testScores = {};
+var learnMode = 'read';
+var speakTarget = 'phrase';
+var makeupDate = null;
+var isAudioActive = false;
+// Test sub-items for current test word
+var testSubItems = [];
+var testSubScores = {};
+var bizSpellTarget = ''; // Current business spell practice target word
+
+// ===== Initialize =====
+async function init() {
+  var user = HiEnglish.getCurrentUser();
+  // getCurrentUser() now returns null if account was deleted or disabled
+  if (!user || user.role !== 'student') {
+    // 自动测试登录：如果没有登录，自动用测试账号登录（方便测试）
+    HiEnglish.initDefaultData();
+    var testResult = HiEnglish.login('100001', '123@456.com', false);
+    if (testResult.success) {
+      user = testResult.user;
+      console.log('[AUTO LOGIN] 测试账号自动登录成功');
+    } else {
+      window.location.href = 'index.html';
+      return;
+    }
+  }
+
+  refreshUserInfo(user);
+  startAccountWatchdog();
+
+  words = await HiEnglish.loadWords();
+  var lessonsData = await HiEnglish.loadLessons();
+  lessons = lessonsData.lessons || [];
+
+  studyData = HiEnglish.getStudyData(user.empid);
+  // Unlock business for 100003
+  if (user.empid === '100003') {
+    studyData.business.unlocked = true;
+    saveStudyData();
+  }
+  if (studyData.basic.mastered.length >= 850) {
+    studyData.business.unlocked = true;
+  }
+
+  renderStageSwitcher();
+  renderHome();
+  updateMessageBadge();
+  
+  // Initialize recording button event delegation
+  _setupRecEventDelegation();
+  
+  // Initialize browser notifications
+  initNotifications();
+  // Start watching for new messages from admin
+  startMessageWatcher();
+}
+
+// Refresh user info display from latest localStorage data
+function refreshUserInfo(user) {
+  if (!user) user = HiEnglish.getCurrentUser();
+  if (!user) return;
+  document.getElementById('s-name').textContent = user.name;
+  document.getElementById('s-group').textContent = user.group || '未分组';
+  document.getElementById('s-avatar').textContent = user.name ? user.name.charAt(0) : '?';
+}
+
+// Watchdog: check every 5 seconds if account is still valid
+// If admin deletes or disables the account, force logout immediately
+var watchdogTimer = null;
+function startAccountWatchdog() {
+  if (watchdogTimer) clearInterval(watchdogTimer);
+  watchdogTimer = setInterval(function() {
+    var user = HiEnglish.getCurrentUser();
+    if (!user) {
+      // Account was deleted or disabled
+      if (watchdogTimer) { clearInterval(watchdogTimer); watchdogTimer = null; }
+      alert('您的账号已被管理员删除或禁用，请联系管理员。');
+      window.location.href = 'index.html';
+    }
+  }, 5000);
+}
+
+// ===== Browser Notifications =====
+// Request permission for showing notifications in phone/computer notification bar
+function initNotifications() {
+  if (!('Notification' in window)) {
+    console.log('This browser does not support notifications.');
+    return;
+  }
+  if (Notification.permission === 'default') {
+    Notification.requestPermission().then(function(permission) {
+      if (permission === 'granted') {
+        console.log('Notification permission granted.');
+      }
+    });
+  }
+}
+
+// Show a browser notification (appears in phone notification bar / system tray)
+function showBrowserNotification(title, body) {
+  if (!('Notification' in window)) return;
+  if (Notification.permission !== 'granted') {
+    // Permission not granted, try requesting again
+    Notification.requestPermission().then(function(permission) {
+      if (permission === 'granted') {
+        _createNotification(title, body);
+      }
+    });
+    return;
+  }
+  _createNotification(title, body);
+}
+
+function _createNotification(title, body) {
+  try {
+    var notification = new Notification(title, {
+      body: body,
+      icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><circle cx="32" cy="32" r="30" fill="%234A90D9"/><text x="32" y="42" text-anchor="middle" fill="white" font-size="28" font-family="sans-serif">Hi</text></svg>',
+      tag: 'hi-english-reminder',
+      requireInteraction: false
+    });
+    // Auto close after 10 seconds
+    setTimeout(function() { notification.close(); }, 10000);
+    // Click to focus the app
+    notification.onclick = function() {
+      window.focus();
+      notification.close();
+      sNav('messages');
+    };
+  } catch(e) {
+    console.warn('Failed to create notification:', e);
+  }
+}
+
+// ===== Message Watcher =====
+// Polls for new messages from admin and shows notification when detected
+var lastNotificationTime = 0;
+var messageWatchTimer = null;
+
+function startMessageWatcher() {
+  if (messageWatchTimer) clearInterval(messageWatchTimer);
+  
+  // Initialize lastNotificationTime to current time (don't notify for old messages)
+  lastNotificationTime = Date.now();
+  
+  // Check every 3 seconds for new notification signal from admin
+  messageWatchTimer = setInterval(function() {
+    checkForNewNotifications();
+  }, 3000);
+  
+  // Also listen for localStorage changes (cross-tab)
+  window.addEventListener('storage', function(e) {
+    if (e.key === 'hi_english_notification') {
+      checkForNewNotifications();
+    }
+    if (e.key === 'hi_english_messages') {
+      // Messages were updated, refresh badge
+      updateMessageBadge();
+      // Check if current user got new messages
+      var user = HiEnglish.getCurrentUser();
+      if (user) {
+        var messages = HiEnglish.getMessages(user.empid);
+        var hasUnread = messages.some(function(m) { return !m.read; });
+        if (hasUnread) {
+          checkForNewNotifications();
+        }
+      }
+    }
+  });
+}
+
+function checkForNewNotifications() {
+  var user = HiEnglish.getCurrentUser();
+  if (!user) return;
+  
+  var notifData = localStorage.getItem('hi_english_notification');
+  if (!notifData) return;
+  
+  try {
+    var notif = JSON.parse(notifData);
+    // Only process if this notification is newer than last seen and targets this user
+    if (notif.time > lastNotificationTime) {
+      // Check if this user is in the target list
+      var isTarget = !notif.targets || notif.targets.length === 0 || notif.targets.indexOf(user.empid) >= 0;
+      if (isTarget) {
+        showBrowserNotification('📢 ' + notif.title, notif.content);
+        lastNotificationTime = notif.time;
+        // Also update the message badge
+        updateMessageBadge();
+        // Show in-app toast
+        showToast('收到新的催学提醒，请查看站内信');
+      }
+    }
+  } catch(e) {
+    // Ignore parse errors
+  }
+}
+
+// ===== Navigation =====
+function sNav(page) {
+  // Always refresh user info when navigating (picks up admin changes)
+  refreshUserInfo();
+  document.querySelectorAll('#student-app .page').forEach(function(p){ p.classList.remove('active'); });
+  document.getElementById('s-page-' + page).classList.add('active');
+  document.querySelectorAll('#student-app .bottom-nav .nav-item').forEach(function(n){ n.classList.remove('active'); });
+  var navMap = {home:0, wordlist:1, report:2};
+  var items = document.querySelectorAll('#student-app .bottom-nav .nav-item');
+  if (items[navMap[page]]) items[navMap[page]].classList.add('active');
+  if (page === 'wordlist') renderWordList('all');
+  if (page === 'report') renderReport();
+  if (page === 'messages') renderMessages();
+}
+
+function backHome() {
+  // Cancel any active voice input before leaving
+  if (recState.active) {
+    cancelVoiceInput();
+  }
+  isAudioActive = false;
+  stopStudyTimer();
+  saveStudyData();
+  makeupDate = null;
+  sNav('home');
+  renderHome();
+}
+
+function goLearn() {
+  learnMode = 'read';
+  currentIndex = studyData[currentStage].readIndex;
+  showLearnPage();
+  startStudyTimer();
+}
+
+function goSpell() {
+  learnMode = 'spell';
+  currentIndex = studyData[currentStage].spellIndex;
+  showSpellPage();
+  startStudyTimer();
+}
+
+function goWeeklyTest() {
+  prepareTest('weekly');
+}
+
+function goMonthlyTest() {
+  prepareTest('monthly');
+}
+
+function logout() { HiEnglish.logout(); }
+
+// ===== Stage Switcher =====
+function renderStageSwitcher() {
+  var container = document.getElementById('s-stage-switcher');
+  var basicActive = currentStage === 'basic';
+  var businessUnlocked = studyData.business.unlocked;
+  container.innerHTML =
+    '<div class="stage-tab ' + (basicActive ? 'active' : '') + '" onclick="switchStage(\'basic\')">基础词汇练习</div>' +
+    '<div class="stage-tab ' + (!basicActive ? 'active' : '') + ' ' + (!businessUnlocked ? 'locked' : '') + '" onclick="switchStage(\'business\')">' +
+    '商务英语练习 ' + (!businessUnlocked ? '<span class="lock-icon">🔒</span>' : '') +
+    '</div>';
+}
+
+function switchStage(stage) {
+  if (stage === 'business' && !studyData.business.unlocked) {
+    showToast('需完成基础词汇练习阶段后解锁');
+    return;
+  }
+  currentStage = stage;
+  renderStageSwitcher();
+  renderHome();
+}
+
+// ===== Home Page =====
+function renderHome() {
+  // Always refresh user info from localStorage to pick up admin changes (group rename, etc.)
+  refreshUserInfo();
+
+  var stageData = studyData[currentStage];
+  var totalItems = currentStage === 'basic' ? words.length : lessons.length;
+  var learnedCount = stageData.learned.length;
+  var masteredCount = stageData.mastered.length;
+  var progressPercent = totalItems > 0 ? Math.floor((stageData.readIndex / totalItems) * 100) : 0;
+
+  // Progress card
+  document.getElementById('s-progress-card').innerHTML =
+    '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+      '<span style="font-size:14px;font-weight:600;">学习进度</span>' +
+      '<span style="font-size:13px;color:var(--text-sub);">' + stageData.readIndex + ' / ' + totalItems + (currentStage === 'basic' ? ' 词' : ' 课') + '</span>' +
+    '</div>' +
+    '<div class="progress-bar"><div class="fill" style="width:' + progressPercent + '%;"></div></div>' +
+    '<div class="stat-grid" style="margin-top:12px;">' +
+      '<div class="stat-card"><div class="stat-val">' + stageData.readIndex + '</div><div class="stat-key">已学</div></div>' +
+      '<div class="stat-card"><div class="stat-val">' + masteredCount + '</div><div class="stat-key">已掌握</div></div>' +
+      '<div class="stat-card"><div class="stat-val">' + stageData.checkIns.filter(function(c){return c.completed;}).length + '</div><div class="stat-key">学习天数</div></div>' +
+    '</div>';
+
+  // Check-in progress
+  renderCheckIn();
+
+  // Learning modes
+  var today = HiEnglish.today();
+  var todayCheckIn = stageData.checkIns.find(function(c){return c.date === today;});
+  var needsCheckIn = !todayCheckIn || !todayCheckIn.completed;
+
+  document.getElementById('s-learn-modes').innerHTML =
+    '<div class="mode-card" onclick="goLearn()" style="position:relative;">' +
+      (needsCheckIn ? '<span class="badge-dot" onclick="event.stopPropagation();showCalendar()">补卡</span>' : '') +
+      '<div class="mode-icon">📖</div>' +
+      '<div class="mode-name">跟读学习</div>' +
+      '<div class="mode-sub daily">每日必学</div>' +
+    '</div>' +
+    '<div class="mode-card" onclick="goSpell()">' +
+      '<div class="mode-icon">✍️</div>' +
+      '<div class="mode-name">拼写练习</div>' +
+      '<div class="mode-sub">选学</div>' +
+    '</div>';
+
+  document.getElementById('s-test-modes').innerHTML =
+    '<div class="mode-card" onclick="goWeeklyTest()">' +
+      '<div class="mode-icon">📝</div>' +
+      '<div class="mode-name">周测模式</div>' +
+      '<div class="mode-sub">周学习内容随机测</div>' +
+    '</div>' +
+    '<div class="mode-card" onclick="goMonthlyTest()">' +
+      '<div class="mode-icon">📅</div>' +
+      '<div class="mode-name">月测模式</div>' +
+      '<div class="mode-sub">月学习内容随机测</div>' +
+    '</div>';
+}
+
+// ===== Check-in Progress =====
+function renderCheckIn() {
+  var stageData = studyData[currentStage];
+  var today = HiEnglish.today();
+  var todayCheckIn = stageData.checkIns.find(function(c){return c.date === today;});
+  if (!todayCheckIn) {
+    todayCheckIn = {date: today, seconds: 0, completed: false};
+    stageData.checkIns.push(todayCheckIn);
+  }
+  var progress = Math.min(100, Math.floor((todayCheckIn.seconds / 900) * 100));
+  var remaining = Math.max(0, 900 - todayCheckIn.seconds);
+  var mins = Math.floor(remaining / 60);
+  var secs = remaining % 60;
+  var circumference = 188.5;
+  var offset = circumference - (progress / 100) * circumference;
+  var statusText = todayCheckIn.completed ? '✅ 今日打卡已完成' : '还需 ' + mins + '分' + secs + '秒 完成打卡';
+
+  document.getElementById('s-checkin').innerHTML =
+    '<div class="progress-info">' +
+      '<span class="progress-label">今日打卡进度</span>' +
+      '<span class="progress-text">' + statusText + '</span>' +
+      '<span class="progress-sub">每日最低15分钟 · 播放音频和朗读才计入时长</span>' +
+    '</div>' +
+    '<div class="timer-ring">' +
+      '<svg width="72" height="72">' +
+        '<circle cx="36" cy="36" r="30" fill="none" stroke="#E8E8E8" stroke-width="6"/>' +
+        '<circle cx="36" cy="36" r="30" fill="none" stroke="' + (todayCheckIn.completed ? '#52C41A' : '#4A90D9') + '" stroke-width="6" stroke-dasharray="' + circumference + '" stroke-dashoffset="' + offset + '"/>' +
+      '</svg>' +
+      '<span class="pct">' + progress + '%</span>' +
+    '</div>';
+}
+
+// ===== Speak with timer tracking =====
+function speakWithTimer(text) {
+  isAudioActive = true;
+  HiEnglish.speak(text, {
+    onend: function() {
+      setTimeout(function() { isAudioActive = false; }, 500);
+    },
+    onerror: function() {
+      isAudioActive = false;
+    }
+  });
+}
+
+// ===== Learn Page (Read) =====
+function showLearnPage() {
+  document.querySelectorAll('#student-app .page').forEach(function(p){ p.classList.remove('active'); });
+  document.getElementById('s-page-learn').classList.add('active');
+
+  var title = currentStage === 'basic' ? '跟读学习 · 每日必学' : '商务英语 · 跟读学习';
+  document.getElementById('s-learn-title').textContent = title;
+
+  if (currentStage === 'basic') {
+    renderWordLearnCard();
+  } else {
+    renderLessonLearnCard();
+  }
+}
+
+function renderWordLearnCard() {
+  var total = words.length;
+  if (currentIndex >= total) {
+    document.getElementById('s-learn-content').innerHTML = '<div class="test-locked"><div class="lock-icon">🎉</div><div class="lock-msg">恭喜！已完成全部850词学习</div><div style="margin-top:24px;"><button class="btn btn-outline" onclick="backHome()">返回首页</button></div></div>';
+    return;
+  }
+
+  var word = words[currentIndex];
+  var stageData = studyData.basic;
+  var scores = stageData.speakScores[word.id] || {};
+  var masteredCount = stageData.mastered.length;
+
+  // Check-in progress bar
+  var today = HiEnglish.today();
+  var todayCheckIn = stageData.checkIns.find(function(c){return c.date === today;});
+  var checkSecs = todayCheckIn ? todayCheckIn.seconds : 0;
+  var checkProgress = Math.min(100, Math.floor((checkSecs / 900) * 100));
+  var circumference = 188.5;
+  var checkOffset = circumference - (checkProgress / 100) * circumference;
+
+  var makeupTip = makeupDate ? '<div class="alert-box alert-info" style="margin:8px 12px;">📌 正在为 ' + makeupDate + ' 补卡，完成15分钟学习后补卡成功</div>' : '';
+
+  var checkinHTML = makeupTip +
+    '<div class="checkin-progress" style="margin:8px 12px;">' +
+      '<div class="progress-info">' +
+        '<span class="progress-label">今日打卡进度</span>' +
+        '<span class="progress-text">' + (todayCheckIn && todayCheckIn.completed ? '✅ 已完成' : '播放音频或朗读才计时') + '</span>' +
+        '<span class="progress-sub">超过15分钟后进度不再增加</span>' +
+      '</div>' +
+      '<div class="timer-ring">' +
+        '<svg width="72" height="72">' +
+          '<circle cx="36" cy="36" r="30" fill="none" stroke="#E8E8E8" stroke-width="6"/>' +
+          '<circle cx="36" cy="36" r="30" fill="none" stroke="#52C41A" stroke-width="6" stroke-dasharray="' + circumference + '" stroke-dashoffset="' + checkOffset + '"/>' +
+        '</svg>' +
+        '<span class="pct">' + checkProgress + '%</span>' +
+      '</div>' +
+    '</div>';
+
+  var progressPercent = Math.floor((currentIndex / total) * 100);
+
+  // Header with word + speaker button
+  var headerHTML =
+    '<div class="learn-header">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+        '<span style="font-size:13px;color:var(--text-sub);">第 ' + (currentIndex + 1) + ' / ' + total + ' 词</span>' +
+        '<span style="font-size:13px;color:var(--primary);">已掌握 ' + masteredCount + ' 词</span>' +
+      '</div>' +
+      '<div class="progress-bar"><div class="fill" style="width:' + progressPercent + '%;"></div></div>' +
+      '<div style="display:flex;align-items:center;justify-content:center;gap:12px;">' +
+        '<div class="learn-word">' + word.word + '</div>' +
+        '<button onclick="speakWithTimer(\'' + escapeQuotes(word.word) + '\')" style="border:none;background:none;font-size:24px;cursor:pointer;">🔊</button>' +
+      '</div>' +
+      '<div class="learn-ipa">' + (word.ipa || '') + '  ' + (word.pos || '') + '</div>' +
+      '<div class="learn-zh">' + (word.cn || '') + '</div>' +
+    '</div>';
+
+  // Phrases - no parenthetical content, with speaker
+  var phraseHTML =
+    '<div class="learn-section">' +
+      '<h4>📌 常见词组 <button onclick="speakWithTimer(\'' + escapeQuotes(word.phrase_en) + '\')" style="float:right;border:none;background:none;font-size:16px;cursor:pointer;">🔊</button></h4>' +
+      '<div style="font-size:15px;">' +
+        '<div style="margin-bottom:4px;">' + word.phrase_en + '</div>' +
+        '<div style="font-size:13px;color:var(--text-sub);">' + word.phrase_cn + '</div>' +
+      '</div>' +
+    '</div>';
+
+  // Example sentences - remove parenthetical from header
+  var exHTML =
+    '<div class="learn-section">' +
+      '<h4>💬 例句</h4>' +
+      '<div style="margin-bottom:12px;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+          '<span style="font-size:14px;">' + word.s1_en + '</span>' +
+          '<button onclick="speakWithTimer(\'' + escapeQuotes(word.s1_en) + '\')" style="border:none;background:none;font-size:16px;cursor:pointer;">🔊</button>' +
+        '</div>' +
+        '<div style="font-size:13px;color:var(--text-sub);">' + word.s1_cn + '</div>' +
+      '</div>' +
+      '<div style="margin-bottom:12px;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+          '<span style="font-size:14px;">' + word.s2_en + '</span>' +
+          '<button onclick="speakWithTimer(\'' + escapeQuotes(word.s2_en) + '\')" style="border:none;background:none;font-size:16px;cursor:pointer;">🔊</button>' +
+        '</div>' +
+        '<div style="font-size:13px;color:var(--text-sub);">' + word.s2_cn + '</div>' +
+      '</div>' +
+      '<div>' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+          '<span style="font-size:14px;">' + word.s3_en + '</span>' +
+          '<button onclick="speakWithTimer(\'' + escapeQuotes(word.s3_en) + '\')" style="border:none;background:none;font-size:16px;cursor:pointer;">🔊</button>' +
+        '</div>' +
+        '<div style="font-size:13px;color:var(--text-sub);">' + word.s3_cn + '</div>' +
+      '</div>' +
+    '</div>';
+
+  // Speak practice - no explanation text
+  var phraseScore = scores.phrase;
+  var ex1Score = scores.ex1;
+  var ex2Score = scores.ex2;
+  var ex3Score = scores.ex3;
+
+  var speakBtnsHTML =
+    '<div class="learn-section">' +
+      '<h4>🎤 跟读练习（词组+3例句均需80分以上）</h4>' +
+      '<div class="speak-target-btns">' +
+        '<button class="speak-target-btn ' + (speakTarget === 'phrase' ? 'active' : '') + '" onclick="setSpeakTarget(this,\'phrase\',\'' + word.id + '\')">词组 ' + scoreHTML(phraseScore) + '</button>' +
+        '<button class="speak-target-btn ' + (speakTarget === 'ex1' ? 'active' : '') + '" onclick="setSpeakTarget(this,\'ex1\',\'' + word.id + '\')">例句1 ' + scoreHTML(ex1Score) + '</button>' +
+        '<button class="speak-target-btn ' + (speakTarget === 'ex2' ? 'active' : '') + '" onclick="setSpeakTarget(this,\'ex2\',\'' + word.id + '\')">例句2 ' + scoreHTML(ex2Score) + '</button>' +
+        '<button class="speak-target-btn ' + (speakTarget === 'ex3' ? 'active' : '') + '" onclick="setSpeakTarget(this,\'ex3\',\'' + word.id + '\')">例句3 ' + scoreHTML(ex3Score) + '</button>' +
+      '</div>' +
+      '<div id="speak-content-preview" style="background:var(--primary-light);border-radius:10px;padding:14px;margin-bottom:12px;">' +
+        '<div id="speak-en" style="font-size:15px;font-weight:600;color:var(--text);line-height:1.6;">' + getSpeakContent(word, speakTarget).en + '</div>' +
+      '</div>' +
+      '<div id="voice-area-learn" style="text-align:center;">' +
+        '<button class="rec-btn" data-mode="learn" data-arg="' + word.id + '">🎤</button>' +
+        '<div class="rec-score" id="rec-score-learn" style="display:none;"></div>' +
+        '<div style="font-size:12px;color:var(--warning);margin-top:4px;" id="mic-hint">' + getSpeakHint(phraseScore, ex1Score, ex2Score, ex3Score) + '</div>' +
+      '</div>' +
+    '</div>';
+
+  var navHTML =
+    '<div style="display:flex;gap:8px;padding:12px;">' +
+      '<button class="btn btn-outline" style="flex:1;" onclick="prevWord()">‹ 上一个</button>' +
+      '<button class="btn btn-primary" style="flex:1;" onclick="nextWord()">下一个 ›</button>' +
+    '</div>';
+
+  document.getElementById('s-learn-content').innerHTML = checkinHTML + headerHTML + phraseHTML + exHTML + speakBtnsHTML + navHTML;
+  _setupRecEventDelegation();
+}
+
+function renderLessonLearnCard() {
+  var total = lessons.length;
+  if (currentIndex >= total) {
+    document.getElementById('s-learn-content').innerHTML = '<div class="test-locked"><div class="lock-icon">🎉</div><div class="lock-msg">恭喜！已完成全部116课学习</div><div style="margin-top:24px;"><button class="btn btn-outline" onclick="backHome()">返回首页</button></div></div>';
+    return;
+  }
+
+  var lesson = lessons[currentIndex];
+  var progressPercent = Math.floor((currentIndex / total) * 100);
+  var stageData = studyData.business;
+  var makeupTip = makeupDate ? '<div class="alert-box alert-info" style="margin:8px 12px;">📌 正在为 ' + makeupDate + ' 补卡，完成15分钟学习后补卡成功</div>' : '';
+
+  // Check-in progress bar
+  var today = HiEnglish.today();
+  var todayCheckIn = stageData.checkIns.find(function(c){return c.date === today;});
+  var checkSecs = todayCheckIn ? todayCheckIn.seconds : 0;
+  var checkProgress = Math.min(100, Math.floor((checkSecs / 900) * 100));
+  var circumference = 188.5;
+  var checkOffset = circumference - (checkProgress / 100) * circumference;
+
+  var checkinHTML = makeupTip +
+    '<div class="checkin-progress" style="margin:8px 12px;">' +
+      '<div class="progress-info">' +
+        '<span class="progress-label">今日打卡进度</span>' +
+        '<span class="progress-text">' + (todayCheckIn && todayCheckIn.completed ? '✅ 已完成' : '播放音频或朗读才计时') + '</span>' +
+        '<span class="progress-sub">超过15分钟后进度不再增加</span>' +
+      '</div>' +
+      '<div class="timer-ring">' +
+        '<svg width="72" height="72">' +
+          '<circle cx="36" cy="36" r="30" fill="none" stroke="#E8E8E8" stroke-width="6"/>' +
+          '<circle cx="36" cy="36" r="30" fill="none" stroke="#52C41A" stroke-width="6" stroke-dasharray="' + circumference + '" stroke-dashoffset="' + checkOffset + '"/>' +
+        '</svg>' +
+        '<span class="pct">' + checkProgress + '%</span>' +
+      '</div>' +
+    '</div>';
+
+  var headerHTML =
+    '<div class="learn-header">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+        '<span style="font-size:13px;color:var(--text-sub);">第 ' + (currentIndex + 1) + ' / ' + total + ' 课</span>' +
+        '<span style="font-size:13px;color:var(--primary);">已掌握 ' + stageData.mastered.length + ' 课</span>' +
+      '</div>' +
+      '<div class="progress-bar"><div class="fill" style="width:' + progressPercent + '%;"></div></div>' +
+      '<div class="learn-word" style="font-size:22px;">' + lesson.title + '</div>' +
+      '<div class="learn-zh">' + lesson.titleCn + '</div>' +
+    '</div>';
+
+  // Sentences with audio playback
+  var sentencesHTML = lesson.sentences.map(function(s, i) {
+    return '<div class="learn-section">' +
+      '<h4>' + (s.speaker === 'A' ? '👤 A' : '👤 B') + ' <button onclick="speakWithTimer(\'' + escapeQuotes(s.en) + '\')" style="float:right;border:none;background:none;font-size:16px;cursor:pointer;">🔊</button></h4>' +
+      '<div style="font-size:15px;margin-bottom:4px;">' + s.en + '</div>' +
+      '<div style="font-size:13px;color:var(--text-sub);">' + s.zh + '</div>' +
+    '</div>';
+  }).join('');
+
+  // Speak practice section — one recording button per sentence
+  var lessonScores = stageData.speakScores[lesson.id] || {};
+  var speakPracticeHTML =
+    '<div class="learn-section">' +
+      '<h4>🎤 跟读练习（每句均需80分以上才算掌握）</h4>';
+
+  lesson.sentences.forEach(function(s, i) {
+    var sentScore = lessonScores['s' + i];
+    speakPracticeHTML +=
+      '<div style="margin-bottom:14px;padding:12px;background:var(--bg);border-radius:8px;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">' +
+          '<span style="font-size:13px;color:var(--primary);font-weight:600;">' + (s.speaker === 'A' ? '👤 A' : '👤 B') + ' · 句' + (i + 1) + '</span>' +
+          scoreHTML(sentScore) +
+        '</div>' +
+        '<div style="font-size:14px;margin-bottom:8px;line-height:1.5;">' + s.en + '</div>' +
+        '<div id="voice-area-biz-' + i + '" style="text-align:center;">' +
+          '<button class="rec-btn" data-mode="learn-biz" data-arg="' + i + '">🎤</button>' +
+          '<div class="rec-score" id="rec-score-biz-' + i + '" style="display:none;"></div>' +
+        '</div>' +
+      '</div>';
+  });
+
+  speakPracticeHTML += '</div>';
+
+  var navHTML =
+    '<div style="display:flex;gap:8px;padding:12px;">' +
+      '<button class="btn btn-outline" style="flex:1;" onclick="prevWord()">‹ 上一课</button>' +
+      '<button class="btn btn-primary" style="flex:1;" onclick="nextWord()">下一课 ›</button>' +
+    '</div>';
+
+  document.getElementById('s-learn-content').innerHTML = checkinHTML + headerHTML + sentencesHTML + speakPracticeHTML + navHTML;
+  _setupRecEventDelegation();
+}
+
+// ===== Speak practice helpers =====
+function escapeQuotes(str) {
+  if (!str) return '';
+  return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+}
+
+function scoreHTML(score) {
+  if (!score) return '<span style="font-size:11px;color:var(--text-sub);">未测</span>';
+  var cls = score >= 80 ? 'score-pass' : 'score-fail';
+  return '<span class="score-mark ' + cls + '">' + score + '</span>';
+}
+
+function getSpeakContent(word, target) {
+  var map = {
+    phrase: {en: word.phrase_en + '<br><span style="font-size:13px;color:var(--text-sub);">' + word.phrase_cn + '</span>'},
+    ex1: {en: word.s1_en},
+    ex2: {en: word.s2_en},
+    ex3: {en: word.s3_en}
+  };
+  return map[target] || map.phrase;
+}
+
+function getSpeakHint(p, e1, e2, e3) {
+  var missing = [];
+  if (!p || p < 80) missing.push('词组');
+  if (!e1 || e1 < 80) missing.push('例句1');
+  if (!e2 || e2 < 80) missing.push('例句2');
+  if (!e3 || e3 < 80) missing.push('例句3');
+  if (missing.length === 0) return '✅ 全部通过！单词已掌握';
+  return missing.join('、') + '未达80分，请继续完成';
+}
+
+function setSpeakTarget(btn, target, wordId) {
+  speakTarget = target;
+  document.querySelectorAll('.speak-target-btn').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  var word = words.find(function(w){return String(w.id) === String(wordId);});
+  if (!word) return;
+  var c = getSpeakContent(word, target);
+  document.getElementById('speak-en').innerHTML = c.en;
+}
+
+// ===== Voice Recording (MediaRecorder + Server-side Google SpeechRecognition) =====
+// 录音上传到 Render 服务器 /api/transcribe，服务器用 Google Speech API 识别
+// 返回文本后前端用 similarity 评分，80分通过
+// 服务器不可用时降级到时长评分
+
+// 后端API地址
+var TRANSCRIBE_API = 'https://hi-english.onrender.com/api/transcribe';
+
+var recState = {
+  active: false,
+  mode: null,
+  wordId: null,
+  testIdx: null,
+  targetText: '',
+  startTime: 0,
+  cooldown: false,
+  cooldownTimer: null,
+  mediaRecorder: null,
+  mediaStream: null,
+  audioChunks: [],
+  micStarting: false,
+  userReleased: false,
+  evaluatedAlready: false,
+  micPermissionGranted: false,
+  maxTimer: null,
+  uploadTimer: null,
+  usingTouch: false
+};
+
+// 服务器预热：页面加载后5秒 ping Render，防止录音时冷启动
+function warmupServer() {
+  var url = TRANSCRIBE_API.replace('/api/transcribe', '/api/keepalive');
+  fetch(url, { method: 'GET' })
+    .then(function() { console.log('[Server] 预热成功'); })
+    .catch(function() { console.log('[Server] 预热失败（可能休眠中）'); });
+}
+setTimeout(warmupServer, 5000);
+
+function _getRecIds(mode, idx) {
+  if (mode === 'learn') {
+    return { area: 'voice-area-learn', label: 'rec-label-learn', score: 'rec-score-learn' };
+  } else if (mode === 'learn-biz') {
+    return { area: 'voice-area-biz-' + idx, label: 'rec-label-biz-' + idx, score: 'rec-score-biz-' + idx };
+  } else {
+    return { area: 'voice-area-test-' + idx, label: 'rec-label-test-' + idx, score: 'rec-score-test-' + idx };
+  }
+}
+
+function _updateRecButtonUI(mode, idx, recording) {
+  var ids = _getRecIds(mode, idx);
+  var area = document.getElementById(ids.area);
+  if (!area) return;
+  var btn = area.querySelector('.rec-btn, .rec-btn-sm');
+  var label = document.getElementById(ids.label);
+  if (btn) {
+    if (recording) btn.classList.add('recording');
+    else btn.classList.remove('recording');
+  }
+  if (label) {
+    if (recording) { label.textContent = '松手结束'; label.classList.add('recording'); }
+    else { label.textContent = '长按麦克风朗读，松手评分'; label.classList.remove('recording'); }
+  }
+}
+
+// ===== 长按开始录音 =====
+function startVoiceInput(mode, arg, isTouch) {
+  if (recState.active || recState.cooldown) return;
+  if (isTouch) recState.usingTouch = true;
+  if (!isTouch && recState.usingTouch) { recState.usingTouch = false; return; }
+
+  // 获取目标文本
+  var targetText = '';
+  var wordId = null;
+  var testIdx = null;
+
+  if (mode === 'learn') {
+    wordId = arg;
+    var word = words.find(function(w){ return String(w.id) === String(wordId); });
+    if (!word) return;
+    targetText = getSpeakContent(word, speakTarget).en;
+  } else if (mode === 'learn-biz') {
+    var sentIdx = parseInt(arg, 10);
+    var lesson = lessons[currentIndex];
+    if (!lesson || !lesson.sentences[sentIdx]) return;
+    targetText = lesson.sentences[sentIdx].en;
+    wordId = lesson.id;
+    testIdx = sentIdx;
+  } else if (mode === 'test') {
+    testIdx = parseInt(arg, 10);
+    var item = testSubItems[testIdx];
+    if (!item) return;
+    targetText = item.en;
+  }
+
+  // 检查浏览器支持
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) {
+    showToast('浏览器不支持录音，请使用Chrome或Safari');
+    return;
+  }
+
+  // 重置状态
+  recState.mode = mode;
+  recState.wordId = wordId;
+  recState.testIdx = testIdx;
+  recState.targetText = targetText;
+  recState.startTime = Date.now();
+  recState.active = true;
+  recState.audioChunks = [];
+  recState.micStarting = true;
+  recState.userReleased = false;
+  recState.evaluatedAlready = false;
+  isAudioActive = true;
+
+  // 停止正在播放的音频
+  if (window.speechSynthesis) speechSynthesis.cancel();
+
+  // *** 关键：在 getUserMedia 之前就注册松手监听 ***
+  // 防止权限弹框期间松手丢失
+  document.addEventListener('touchend', _onRelease, { passive: false });
+  document.addEventListener('touchcancel', _onRelease, { passive: false });
+  document.addEventListener('mouseup', _onRelease);
+
+  // 15秒最大录音时间
+  recState.maxTimer = setTimeout(function() {
+    if (recState.active) {
+      console.log('[MIC] 录音超时(15秒)，自动停止');
+      _stopRecording();
+    }
+  }, 15000);
+
+  _updateRecButtonUI(mode, testIdx, true);
+  console.log('[MIC] 正在请求麦克风权限...');
+
+  navigator.mediaDevices.getUserMedia({ audio: true })
+    .then(function(stream) {
+      // 检查用户是否已在权限弹框期间松手
+      if (recState.userReleased) {
+        console.log('[MIC] 用户已松手，停止录音流');
+        stream.getTracks().forEach(function(t) { t.stop(); });
+        _removeReleaseListeners();
+        if (recState.maxTimer) { clearTimeout(recState.maxTimer); recState.maxTimer = null; }
+        recState.micStarting = false;
+        recState.active = false;
+        _updateRecButtonUI(recState.mode, recState.testIdx, false);
+        if (!recState.micPermissionGranted) {
+          recState.micPermissionGranted = true;
+          showToast('麦克风权限已获取，请再次长按朗读');
+        }
+        return;
+      }
+
+      recState.mediaStream = stream;
+      recState.micPermissionGranted = true;
+
+      // 选择浏览器支持的音频格式（iOS Safari 用 mp4，Chrome 用 webm）
+      var mimeType = 'audio/webm';
+      if (!MediaRecorder.isTypeSupported(mimeType)) {
+        mimeType = 'audio/mp4';
+        if (!MediaRecorder.isTypeSupported(mimeType)) {
+          mimeType = 'audio/ogg';
+          if (!MediaRecorder.isTypeSupported(mimeType)) {
+            mimeType = '';
+          }
+        }
+      }
+
+      recState.mediaRecorder = mimeType
+        ? new MediaRecorder(stream, { mimeType: mimeType })
+        : new MediaRecorder(stream);
+      recState.audioChunks = [];
+
+      recState.mediaRecorder.ondataavailable = function(e) {
+        if (e.data && e.data.size > 0) recState.audioChunks.push(e.data);
+      };
+
+      recState.mediaRecorder.onstop = function() {
+        console.log('[MIC] 录音停止，准备上传识别');
+        uploadAndTranscribe();
+      };
+
+      recState.mediaRecorder.onerror = function(e) {
+        console.error('[MIC] MediaRecorder错误:', e);
+        _cleanupMic();
+        _restoreRecUI();
+        if (!recState.evaluatedAlready) {
+          recState.evaluatedAlready = true;
+          showScoreModal(0, '录音出错，请重试');
+        }
+      };
+
+      recState.mediaRecorder.start();
+      recState.micStarting = false;
+      recState.startTime = Date.now();
+      console.log('[MIC] 录音已开始');
+      var label = document.getElementById(_getRecIds(recState.mode, recState.testIdx).label);
+      if (label) label.textContent = '松手结束';
+    })
+    .catch(function(err) {
+      console.error('[MIC] 麦克风权限获取失败:', err.name, err.message);
+      _removeReleaseListeners();
+      if (recState.maxTimer) { clearTimeout(recState.maxTimer); recState.maxTimer = null; }
+      recState.micStarting = false;
+      recState.active = false;
+      _updateRecButtonUI(recState.mode, recState.testIdx, false);
+      if (!recState.evaluatedAlready) {
+        recState.evaluatedAlready = true;
+        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+          showScoreModal(0, '麦克风权限被拒绝，请在浏览器设置中允许麦克风权限');
+        } else if (err.name === 'NotFoundError') {
+          showScoreModal(0, '未找到麦克风设备');
+        } else {
+          showScoreModal(0, '麦克风启动失败，请重试');
+        }
+      }
+    });
+}
+
+// ===== 松手停止录音 =====
+function _onRelease(e) {
+  // 防止 touchend + mouseup 双触发
+  if (e.type === 'touchend' || e.type === 'touchcancel') {
+    recState.usingTouch = true;
+  } else if (e.type === 'mouseup' && recState.usingTouch) {
+    recState.usingTouch = false;
+    return;
+  }
+
+  if (!recState.active && !recState.micStarting) return;
+
+  _removeReleaseListeners();
+  if (recState.maxTimer) { clearTimeout(recState.maxTimer); recState.maxTimer = null; }
+
+  if (recState.micStarting) {
+    // getUserMedia 还在进行中（权限弹框还没关闭），标记已松手
+    recState.userReleased = true;
+    recState.micStarting = false;
+    console.log('[MIC] 用户在权限弹框期间松手');
+    return;
+  }
+
+  _stopRecording();
+}
+
+function _stopRecording() {
+  if (recState.mediaRecorder && recState.mediaRecorder.state === 'recording') {
+    try { recState.mediaRecorder.stop(); } catch(e) { console.warn('[MIC] stop失败:', e); }
+  }
+  // 显示"识别中"状态
+  var ids = _getRecIds(recState.mode, recState.testIdx);
+  var label = document.getElementById(ids.label);
+  if (label) { label.textContent = '识别中...'; label.classList.remove('recording'); }
+  var area = document.getElementById(ids.area);
+  if (area) {
+    var btn = area.querySelector('.rec-btn, .rec-btn-sm');
+    if (btn) btn.classList.remove('recording');
+  }
+}
+
+function _removeReleaseListeners() {
+  document.removeEventListener('touchend', _onRelease);
+  document.removeEventListener('touchcancel', _onRelease);
+  document.removeEventListener('mouseup', _onRelease);
+}
+
+// ===== 上传音频到后端识别 =====
+function uploadAndTranscribe() {
+  if (!recState.audioChunks || recState.audioChunks.length === 0) {
+    console.warn('[MIC] 没有录音数据');
+    _cleanupMic();
+    _restoreRecUI();
+    if (!recState.evaluatedAlready) {
+      recState.evaluatedAlready = true;
+      showScoreModal(0, '录音太短，请按住麦克风大声朗读');
+    }
+    return;
+  }
+
+  var audioBlob = new Blob(recState.audioChunks, { type: recState.audioChunks[0].type || 'audio/webm' });
+  console.log('[MIC] 音频大小: ' + audioBlob.size + ' bytes, 类型: ' + audioBlob.type);
+
+  if (audioBlob.size < 200) {
+    _cleanupMic();
+    _restoreRecUI();
+    if (!recState.evaluatedAlready) {
+      recState.evaluatedAlready = true;
+      showScoreModal(0, '录音太短，请按住麦克风大声朗读');
+    }
+    return;
+  }
+
+  // 超时保护：25秒 → 降级到时长评分
+  recState.uploadTimer = setTimeout(function() {
+    if (recState.evaluatedAlready) return;
+    console.warn('[MIC] 识别超时，降级到时长评分');
+    _cleanupMic();
+    _restoreRecUI();
+    recState.evaluatedAlready = true;
+    var dur = (Date.now() - recState.startTime) / 1000;
+    var score = _durationFallbackScore(recState.targetText, dur);
+    showScoreModal(score, score > 0 ? '识别超时，按时长评分' : '识别超时，请重试');
+    _recApplyScore(recState.mode, score);
+  }, 25000);
+
+  // 浏览器端转换：webm → 16kHz mono PCM
+  _convertToPcm16(audioBlob)
+    .then(function(pcmData) {
+      console.log('[MIC] PCM转换成功: ' + pcmData.byteLength + ' bytes');
+      var formData = new FormData();
+      formData.append('audio', new Blob([pcmData], { type: 'audio/l16' }), 'recording.pcm');
+      return fetch(TRANSCRIBE_API, { method: 'POST', body: formData });
+    })
+    .then(function(response) {
+      console.log('[MIC] 后端响应状态: ' + response.status);
+      return response.json();
+    })
+    .then(function(data) {
+      if (recState.uploadTimer) { clearTimeout(recState.uploadTimer); recState.uploadTimer = null; }
+      _cleanupMic();
+      _restoreRecUI();
+      if (recState.evaluatedAlready) return;
+      console.log('[MIC] 识别结果:', data);
+      if (data.success && data.text) {
+        _evaluateSpeaking(data.text);
+      } else {
+        // 识别未成功，降级到时长评分
+        recState.evaluatedAlready = true;
+        var dur = (Date.now() - recState.startTime) / 1000;
+        var score = _durationFallbackScore(recState.targetText, dur);
+        showScoreModal(score, score > 0 ? '语音识别未成功，按时长评分' : (data.error || '未能识别，请重试'));
+        _recApplyScore(recState.mode, score);
+      }
+    })
+    .catch(function(err) {
+      if (recState.uploadTimer) { clearTimeout(recState.uploadTimer); recState.uploadTimer = null; }
+      _cleanupMic();
+      _restoreRecUI();
+      console.error('[MIC] 上传失败:', err);
+      if (!recState.evaluatedAlready) {
+        recState.evaluatedAlready = true;
+        if (err && err.message === 'SILENT') {
+          showScoreModal(0, '没有听到声音，请大声朗读后重试');
+          _recApplyScore(recState.mode, 0);
+        } else {
+          var dur = (Date.now() - recState.startTime) / 1000;
+          var score = _durationFallbackScore(recState.targetText, dur);
+          showScoreModal(score, score > 0 ? '网络错误，按时长评分' : '网络错误，请检查网络后重试');
+          _recApplyScore(recState.mode, score);
+        }
+      }
+    });
+}
+
+// 将音频 Blob 转换为 16kHz mono 16-bit PCM
+function _convertToPcm16(audioBlob) {
+  return new Promise(function(resolve, reject) {
+    var reader = new FileReader();
+    reader.onload = function() {
+      var arrayBuffer = reader.result;
+      var AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) { reject(new Error('浏览器不支持 AudioContext')); return; }
+      var audioCtx = new AudioContextClass();
+      audioCtx.decodeAudioData(arrayBuffer)
+        .then(function(audioBuffer) {
+          console.log('[MIC] 解码成功: ' + audioBuffer.duration.toFixed(2) + 's, ' + audioBuffer.sampleRate + 'Hz');
+          var targetSampleRate = 16000;
+          var targetLength = Math.ceil(audioBuffer.duration * targetSampleRate);
+          var offlineCtx = new OfflineAudioContext(1, targetLength, targetSampleRate);
+          var source = offlineCtx.createBufferSource();
+          source.buffer = audioBuffer;
+          source.connect(offlineCtx.destination);
+          source.start(0);
+          return offlineCtx.startRendering();
+        })
+        .then(function(renderedBuffer) {
+          var float32Data = renderedBuffer.getChannelData(0);
+          var pcm16 = new Int16Array(float32Data.length);
+          var sumSq = 0;
+          for (var i = 0; i < float32Data.length; i++) {
+            var s = float32Data[i];
+            s = Math.max(-1, Math.min(1, s));
+            pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+            sumSq += s * s;
+          }
+          var rms = Math.sqrt(sumSq / float32Data.length);
+          console.log('[MIC] PCM: ' + pcm16.length + ' samples, RMS=' + rms.toFixed(4));
+          if (rms < 0.01) { reject(new Error('SILENT')); return; }
+          if (audioCtx.close) audioCtx.close();
+          resolve(pcm16.buffer);
+        })
+        .catch(function(err) {
+          if (audioCtx.close) audioCtx.close();
+          console.error('[MIC] 解码失败:', err);
+          reject(err);
+        });
+    };
+    reader.onerror = function() { reject(new Error('文件读取失败')); };
+    reader.readAsArrayBuffer(audioBlob);
+  });
+}
+
+function _cleanupMic() {
+  if (recState.mediaStream) {
+    recState.mediaStream.getTracks().forEach(function(t) { t.stop(); });
+    recState.mediaStream = null;
+  }
+  recState.mediaRecorder = null;
+  recState.audioChunks = [];
+}
+
+function _restoreRecUI() {
+  var ids = _getRecIds(recState.mode, recState.testIdx);
+  var area = document.getElementById(ids.area);
+  if (area) {
+    var btn = area.querySelector('.rec-btn, .rec-btn-sm');
+    if (btn) btn.classList.remove('recording');
+  }
+  var label = document.getElementById(ids.label);
+  if (label) { label.textContent = '长按麦克风朗读，松手评分'; label.classList.remove('recording'); }
+}
+
+// ===== 评分：对比识别文本和目标文本 =====
+function _evaluateSpeaking(recognized) {
+  if (recState.evaluatedAlready) return;
+  recState.evaluatedAlready = true;
+
+  var target = (recState.targetText || '').toLowerCase().trim();
+  recognized = (recognized || '').toLowerCase().trim();
+
+  var score = 0;
+  var detail = '';
+
+  if (!recognized) {
+    score = 0;
+    detail = '没有听到您的声音，请按住麦克风再试一次';
+  } else if (recognized === target) {
+    score = 100;
+    detail = '发音非常标准！';
+  } else if (recognized.includes(target)) {
+    score = 90;
+    detail = '很好！发音正确';
+  } else if (target.includes(recognized)) {
+    score = 85;
+    detail = '发音不错，已包含目标内容';
+  } else {
+    // 清理常见填充词后再比对
+    var cleanRecognized = recognized
+      .replace(/\s*(uh|um|ah|er|mm|hm)\s*/g, ' ')
+      .replace(/^(the|a|an|i|it|is|to|my|we|they)\s+/, '')
+      .replace(/\s+(the|a|an|is|was|were|to|for|on|in|at)$/, '')
+      .replace(/[.,!?;:]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    if (cleanRecognized === target) {
+      score = 95;
+      detail = '发音正确！';
+    } else if (cleanRecognized.includes(target) || target.includes(cleanRecognized)) {
+      score = 85;
+      detail = '基本正确，注意清晰度';
+    } else {
+      var sim1 = _similarity(recognized, target);
+      var sim2 = _similarity(cleanRecognized, target);
+      var bestSim = Math.max(sim1, sim2);
+      score = Math.round(bestSim * 100);
+      detail = score >= 70 ? '基本正确，注意个别发音' : '发音偏差较大，请多听标准发音后再试';
+    }
+  }
+
+  showScoreModal(score, detail);
+  _recApplyScore(recState.mode, score);
+}
+
+function _similarity(a, b) {
+  if (!a || !b) return 0;
+  var longer = a.length > b.length ? a : b;
+  var shorter = a.length > b.length ? b : a;
+  if (longer.length === 0) return 1;
+  var editDist = _levenshtein(longer, shorter);
+  return (longer.length - editDist) / longer.length;
+}
+
+function _levenshtein(s, t) {
+  var m = s.length, n = t.length;
+  var dp = [];
+  for (var i = 0; i <= m; i++) { dp[i] = []; for (var j = 0; j <= n; j++) { dp[i][j] = 0; } }
+  for (var i = 0; i <= m; i++) dp[i][0] = i;
+  for (var j = 0; j <= n; j++) dp[0][j] = j;
+  for (var i = 1; i <= m; i++) {
+    for (var j = 1; j <= n; j++) {
+      dp[i][j] = s[i-1] === t[j-1] ? dp[i-1][j-1] : 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
+    }
+  }
+  return dp[m][n];
+}
+
+// ===== 时长评分兜底（服务器不可用时）=====
+function _durationFallbackScore(targetText, duration) {
+  if (!targetText || duration < 0.3) return 0;
+  var wordCount = targetText.split(/\s+/).length;
+  var expectedDuration = wordCount * 0.5;
+  if (duration < 0.5) return 10;
+  var ratio = duration / expectedDuration;
+  if (ratio >= 0.5 && ratio <= 2.0) {
+    var baseScore = 75;
+    var deviation = Math.abs(1 - ratio);
+    var bonus = Math.round((1 - deviation) * 15);
+    return Math.min(92, baseScore + bonus);
+  } else if (ratio > 2.0 && ratio < 3.0) {
+    return 65;
+  } else if (ratio < 0.5) {
+    return 40;
+  }
+  return 50;
+}
+
+// ===== 分数弹窗 =====
+function showScoreModal(score, detail) {
+  var mask = document.getElementById('score-modal-mask');
+  if (!mask) { console.warn('[Score] score-modal-mask not found'); return; }
+  var scoreEl = document.getElementById('score-modal-score');
+  var msgEl = document.getElementById('score-modal-msg');
+  var detailEl = document.getElementById('score-modal-detail');
+  var iconEl = document.getElementById('score-modal-icon');
+
+  if (scoreEl) scoreEl.textContent = score + '分';
+  if (detailEl) detailEl.textContent = detail || '';
+
+  var msg = '';
+  var icon = '';
+  var color = '';
+  if (score >= 90) { msg = '太棒了！'; icon = '🎉'; color = '#52c41a'; }
+  else if (score >= 80) { msg = '通过！'; icon = '✅'; color = '#52c41a'; }
+  else if (score >= 70) { msg = '不错！'; icon = '👍'; color = '#faad14'; }
+  else { msg = '继续加油！'; icon = '💪'; color = '#ff4d4f'; }
+
+  if (msgEl) msgEl.textContent = msg;
+  if (iconEl) iconEl.textContent = icon;
+  if (scoreEl) scoreEl.style.color = color;
+
+  mask.style.display = 'flex';
+}
+
+function closeScoreModal() {
+  var mask = document.getElementById('score-modal-mask');
+  if (mask) mask.style.display = 'none';
+}
+
+// ===== 保存分数到学习记录 =====
+function _recApplyScore(mode, score) {
+  var user = HiEnglish.getCurrentUser();
+  if (!user) return;
+  score = Math.round(score);
+  var stageData = studyData[currentStage];
+
+  if (mode === 'learn') {
+    var wordId = recState.wordId;
+    var word = words.find(function(w){ return String(w.id) === String(wordId); });
+    if (!word) { _recReset(); return; }
+    var scores = stageData.speakScores[wordId] || {};
+    scores[speakTarget] = score;
+    stageData.speakScores[wordId] = scores;
+    var allPass = true;
+    var targets = ['phrase', 'ex1', 'ex2', 'ex3'];
+    for (var i = 0; i < targets.length; i++) {
+      if (!scores[targets[i]] || scores[targets[i]] < 80) { allPass = false; break; }
+    }
+    if (allPass && !stageData.mastered.includes(wordId)) {
+      stageData.mastered.push(wordId);
+      showToast('恭喜！已掌握 ' + word.word);
+    }
+    saveStudyData();
+    _recReset();
+    _recStartCooldown();
+    renderWordLearnCard();
+
+  } else if (mode === 'learn-biz') {
+    var lesson = lessons[currentIndex];
+    if (!lesson) { _recReset(); return; }
+    var scores = stageData.speakScores[lesson.id] || {};
+    scores['s' + recState.testIdx] = score;
+    stageData.speakScores[lesson.id] = scores;
+    var allPass = true;
+    for (var i = 0; i < lesson.sentences.length; i++) {
+      if (!scores['s' + i] || scores['s' + i] < 80) { allPass = false; break; }
+    }
+    if (allPass && !stageData.mastered.includes(lesson.id)) {
+      stageData.mastered.push(lesson.id);
+      showToast('恭喜！已掌握 ' + lesson.title);
+    }
+    saveStudyData();
+    _recReset();
+    _recStartCooldown();
+    renderLessonLearnCard();
+
+  } else if (mode === 'test') {
+    var testIdxSaved = recState.testIdx;
+    testSubScores[testIdxSaved] = score;
+    _recReset();
+    _recStartCooldown();
+    _updateRecButtonUI(mode, testIdxSaved, false);
+    var ids = _getRecIds(mode, testIdxSaved);
+    var scoreEl = document.getElementById(ids.score);
+    if (scoreEl) {
+      scoreEl.style.display = 'block';
+      scoreEl.textContent = score + '分';
+      scoreEl.className = 'rec-score ' + (score >= 80 ? 'pass' : 'fail');
+    }
+    _checkTestAllPass();
+  }
+}
+
+function _checkTestAllPass() {
+  var allPass = true;
+  var totalScore = 0;
+  var count = 0;
+  for (var i = 0; i < testSubItems.length; i++) {
+    if (testSubScores[i] === undefined) { allPass = false; break; }
+    if (testSubScores[i] < 80) { allPass = false; }
+    totalScore += testSubScores[i];
+    count++;
+  }
+  if (allPass && count > 0) {
+    var avgScore = Math.round(totalScore / count);
+    testScores[testWordIndex] = avgScore;
+    var passEl = document.getElementById('test-all-pass');
+    if (passEl) {
+      passEl.style.display = 'block';
+      passEl.textContent = '✅ 全部通过！平均分 ' + avgScore + '，点击「下一题」继续';
+    }
+    showToast('本题全部通过！' + avgScore + '分');
+  }
+}
+
+function submitVoiceInput() {
+  if (!recState.active) return;
+  _stopRecording();
+}
+
+function _restoreVoiceArea(type, idx, wordId, score) {
+  var ids = _getRecIds('test', idx);
+  var area = document.getElementById(ids.area);
+  if (!area) return;
+  var btn = area.querySelector('.rec-btn, .rec-btn-sm');
+  var scoreEl = document.getElementById(ids.score);
+  if (btn) btn.classList.remove('recording');
+  if (scoreEl) {
+    if (score) {
+      scoreEl.style.display = 'block';
+      scoreEl.textContent = score + '分';
+      scoreEl.className = 'rec-score ' + (score >= 80 ? 'pass' : 'fail');
+    } else {
+      scoreEl.style.display = 'none';
+    }
+  }
+}
+
+function cancelVoiceInput() {
+  var mode = recState.mode;
+  var idx = recState.testIdx;
+  var wordId = recState.wordId;
+  if (recState.active) {
+    if (recState.mediaRecorder && recState.mediaRecorder.state === 'recording') {
+      try { recState.mediaRecorder.stop(); } catch(e) {}
+    }
+  }
+  isAudioActive = false;
+  _recReset();
+  _recStartCooldown();
+  if (mode === 'learn') renderWordLearnCard();
+  else if (mode === 'learn-biz') renderLessonLearnCard();
+  else if (mode === 'test') _restoreVoiceArea('test', idx, wordId, undefined);
+}
+
+function _recStartCooldown() {
+  recState.cooldown = true;
+  if (recState.cooldownTimer) clearTimeout(recState.cooldownTimer);
+  recState.cooldownTimer = setTimeout(function() { recState.cooldown = false; }, 800);
+}
+
+function _recReset() {
+  recState.active = false;
+  recState.startTime = 0;
+  recState.mode = null;
+  recState.wordId = null;
+  recState.testIdx = null;
+  recState.targetText = '';
+  recState.audioChunks = [];
+  recState.micStarting = false;
+  recState.userReleased = false;
+  recState.evaluatedAlready = false;
+  recState.usingTouch = false;
+  if (recState.maxTimer) { clearTimeout(recState.maxTimer); recState.maxTimer = null; }
+  if (recState.uploadTimer) { clearTimeout(recState.uploadTimer); recState.uploadTimer = null; }
+  if (recState.mediaStream) {
+    recState.mediaStream.getTracks().forEach(function(t) { t.stop(); });
+    recState.mediaStream = null;
+  }
+  if (recState.mediaRecorder) {
+    try { recState.mediaRecorder.stop(); } catch(e) {}
+    recState.mediaRecorder = null;
+  }
+  isAudioActive = false;
+  _removeReleaseListeners();
+}
+
+// ===== Event delegation for recording buttons =====
+function _setupRecEventDelegation() {
+  var containers = ['s-learn-content', 's-weekly-content', 's-monthly-content'];
+  containers.forEach(function(id) {
+    var el = document.getElementById(id);
+    if (!el || el._recPatched) return;
+    // touchstart：移动端按下
+    el.addEventListener('touchstart', function(ev) {
+      var btn = ev.target.closest('.rec-btn, .rec-btn-sm');
+      if (!btn) return;
+      ev.preventDefault();
+      var mode = btn.getAttribute('data-mode');
+      var arg = btn.getAttribute('data-arg');
+      if (mode && arg !== null) startVoiceInput(mode, arg, true);
+    }, { passive: false });
+    // mousedown：桌面端按下
+    el.addEventListener('mousedown', function(ev) {
+      var btn = ev.target.closest('.rec-btn, .rec-btn-sm');
+      if (!btn) return;
+      var mode = btn.getAttribute('data-mode');
+      var arg = btn.getAttribute('data-arg');
+      if (mode && arg !== null) startVoiceInput(mode, arg, false);
+    });
+    el._recPatched = true;
+  });
+}
+
+
+// ===== Word navigation =====
+function prevWord() {
+  if (currentIndex > 0) {
+    currentIndex--;
+    if (currentStage === 'basic') renderWordLearnCard();
+    else renderLessonLearnCard();
+  }
+}
+
+function nextWord() {
+  var stageData = studyData[currentStage];
+  currentIndex++;
+  if (currentIndex > stageData.readIndex) {
+    stageData.readIndex = currentIndex;
+  }
+  if (currentStage === 'basic') {
+    var prevWordId = words[currentIndex - 1] ? words[currentIndex - 1].id : null;
+    if (prevWordId && !stageData.learned.includes(prevWordId)) {
+      stageData.learned.push(prevWordId);
+    }
+  } else {
+    var prevLessonId = lessons[currentIndex - 1] ? lessons[currentIndex - 1].id : null;
+    if (prevLessonId && !stageData.learned.includes(prevLessonId)) {
+      stageData.learned.push(prevLessonId);
+    }
+  }
+  saveStudyData();
+  if (currentStage === 'basic') renderWordLearnCard();
+  else renderLessonLearnCard();
+}
+
+// ===== Spell Practice =====
+function showSpellPage() {
+  document.querySelectorAll('#student-app .page').forEach(function(p){ p.classList.remove('active'); });
+  document.getElementById('s-page-spell').classList.add('active');
+
+  var total = currentStage === 'basic' ? words.length : lessons.length;
+  if (currentIndex >= total) {
+    document.getElementById('s-spell-content').innerHTML = '<div class="test-locked"><div class="lock-icon">🎉</div><div class="lock-msg">拼写练习已完成</div></div>';
+    return;
+  }
+
+  if (currentStage === 'basic') {
+    var word = words[currentIndex];
+    var progressPercent = Math.floor((currentIndex / total) * 100);
+    document.getElementById('s-spell-content').innerHTML =
+      '<div class="learn-header">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+          '<span style="font-size:13px;color:var(--text-sub);">第 ' + (currentIndex + 1) + ' / ' + total + ' 词</span>' +
+          '<span style="font-size:13px;color:var(--primary);">独立进度</span>' +
+        '</div>' +
+        '<div class="progress-bar"><div class="fill" style="width:' + progressPercent + '%;background:var(--success);"></div></div>' +
+      '</div>' +
+      '<div class="learn-section" style="text-align:center;padding:30px 16px;">' +
+        '<button onclick="speakWithTimer(\'' + escapeQuotes(word.word) + '\')" style="border:none;background:none;font-size:48px;cursor:pointer;">🔊</button>' +
+        '<div style="font-size:13px;color:var(--text-sub);margin-top:8px;">点击播放发音</div>' +
+        '<div style="margin-top:20px;">' +
+          '<div style="font-size:18px;margin-bottom:8px;">' + (word.pos || '') + ' ' + (word.cn || '') + '</div>' +
+          '<input type="text" id="spell-input" placeholder="请输入英文单词" style="width:100%;padding:12px;border:2px solid var(--border);border-radius:8px;font-size:18px;text-align:center;outline:none;" onfocus="this.style.borderColor=\'var(--primary)\'" onblur="this.style.borderColor=\'var(--border)\'" onkeydown="if(event.key===\'Enter\')submitSpell()">' +
+        '</div>' +
+        '<div id="spell-result"></div>' +
+        '<button class="btn btn-primary btn-block" style="margin-top:16px;" onclick="submitSpell()">提交</button>' +
+      '</div>' +
+      '<div class="alert-box alert-info">ℹ️ 拼写练习进度独立于跟读学习，各有自己的学习节奏</div>' +
+      '<div style="display:flex;gap:8px;padding:12px;">' +
+        '<button class="btn btn-outline" style="flex:1;" onclick="backHome()">返回首页</button>' +
+        '<button class="btn btn-outline" style="flex:1;" onclick="nextSpell()">跳过 ›</button>' +
+      '</div>';
+    setTimeout(function() { document.getElementById('spell-input').focus(); }, 100);
+  } else {
+    // Business stage: fill-in-the-blank with high-frequency words from lesson sentences
+    renderBusinessSpellPage();
+  }
+}
+
+// Business spell practice: extract keywords from lesson sentences, create fill-in-the-blank
+function renderBusinessSpellPage() {
+  var total = lessons.length;
+  var lesson = lessons[currentIndex];
+  var progressPercent = Math.floor((currentIndex / total) * 100);
+
+  // Common English stop words to filter out
+  var stopWords = {'the':1,'a':1,'an':1,'is':1,'are':1,'was':1,'were':1,'be':1,'been':1,'being':1,'have':1,'has':1,'had':1,'do':1,'does':1,'did':1,'will':1,'would':1,'could':1,'should':1,'may':1,'might':1,'must':1,'can':1,'shall':1,'to':1,'of':1,'in':1,'on':1,'at':1,'by':1,'for':1,'with':1,'about':1,'as':1,'into':1,'like':1,'through':1,'after':1,'over':1,'between':1,'out':1,'against':1,'during':1,'without':1,'before':1,'under':1,'around':1,'among':1,'and':1,'but':1,'or':1,'not':1,'no':1,'so':1,'than':1,'too':1,'very':1,'just':1,'also':1,'only':1,'up':1,'down':1,'off':1,'again':1,'then':1,'once':1,'here':1,'there':1,'when':1,'where':1,'why':1,'how':1,'all':1,'each':1,'every':1,'both':1,'few':1,'more':1,'most':1,'other':1,'some':1,'such':1,'any':1,'this':1,'that':1,'these':1,'those':1,'i':1,'you':1,'he':1,'she':1,'it':1,'we':1,'they':1,'me':1,'him':1,'her':1,'us':1,'them':1,'my':1,'your':1,'his':1,'its':1,'our':1,'their':1,'what':1,'which':1,'who':1,'whom':1,'whose':1,'if':1,'because':1,'while':1,'though':1,'although':1,'since':1,'until':1,'unless':1,"don't":1,"i'll":1,"i've":1,"it's":1,"that's":1,"let's":1};
+
+  // Collect keyword candidates from all sentences (length >= 4, not stop words)
+  var candidates = [];
+  lesson.sentences.forEach(function(s, sIdx) {
+    var sentWords = s.en.replace(/[^a-zA-Z\s']/g, '').split(/\s+/);
+    sentWords.forEach(function(w) {
+      var lower = w.toLowerCase();
+      if (lower.length >= 4 && !stopWords[lower]) {
+        // Avoid duplicates - prefer first occurrence
+        var exists = candidates.find(function(c) { return c.word.toLowerCase() === lower; });
+        if (!exists) {
+          candidates.push({word: w, sentence: s.en, zh: s.zh, speaker: s.speaker, sIdx: sIdx});
+        }
+      }
+    });
+  });
+
+  if (candidates.length === 0) {
+    document.getElementById('s-spell-content').innerHTML =
+      '<div class="test-locked"><div class="lock-icon">📝</div><div class="lock-msg">本课暂无适合的拼写练习词汇</div></div>' +
+      '<div style="display:flex;gap:8px;padding:12px;">' +
+        '<button class="btn btn-outline" style="flex:1;" onclick="backHome()">返回首页</button>' +
+        '<button class="btn btn-outline" style="flex:1;" onclick="nextSpell()">跳过 ›</button>' +
+      '</div>';
+    return;
+  }
+
+  // Pick a word for this lesson (deterministic based on lesson id for stability)
+  var pickIdx = (lesson.id * 7 + 3) % candidates.length;
+  var target = candidates[pickIdx];
+
+  // Create fill-in-the-blank sentence
+  var escapedWord = target.word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  var blanked = target.sentence.replace(new RegExp('\\b' + escapedWord + '\\b', 'i'), '______');
+
+  // Store target for submitSpell
+  bizSpellTarget = target.word;
+
+  document.getElementById('s-spell-content').innerHTML =
+    '<div class="learn-header">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+        '<span style="font-size:13px;color:var(--text-sub);">第 ' + (currentIndex + 1) + ' / ' + total + ' 课</span>' +
+        '<span style="font-size:13px;color:var(--primary);">独立进度</span>' +
+      '</div>' +
+      '<div class="progress-bar"><div class="fill" style="width:' + progressPercent + '%;background:var(--success);"></div></div>' +
+    '</div>' +
+    '<div class="learn-section" style="padding:20px 16px;">' +
+      '<div style="font-size:13px;color:var(--text-sub);margin-bottom:10px;">' + (target.speaker === 'A' ? '👤 A' : '👤 B') + ' · 来自本课例句</div>' +
+      '<div style="font-size:16px;line-height:1.8;margin-bottom:8px;color:var(--text);">' + blanked + '</div>' +
+      '<div style="font-size:14px;color:var(--text-sub);margin-bottom:20px;">' + target.zh + '</div>' +
+      '<div style="text-align:center;">' +
+        '<button onclick="speakWithTimer(\'' + escapeQuotes(target.word) + '\')" style="border:none;background:none;font-size:36px;cursor:pointer;">🔊</button>' +
+        '<div style="font-size:13px;color:var(--text-sub);margin-top:4px;">点击播放单词发音</div>' +
+      '</div>' +
+      '<div style="margin-top:16px;">' +
+        '<input type="text" id="spell-input" placeholder="请输入缺失的单词" style="width:100%;padding:12px;border:2px solid var(--border);border-radius:8px;font-size:18px;text-align:center;outline:none;" onfocus="this.style.borderColor=\'var(--primary)\'" onblur="this.style.borderColor=\'var(--border)\'" onkeydown="if(event.key===\'Enter\')submitSpell()">' +
+      '</div>' +
+      '<div id="spell-result"></div>' +
+      '<button class="btn btn-primary btn-block" style="margin-top:16px;" onclick="submitSpell()">提交</button>' +
+    '</div>' +
+    '<div class="alert-box alert-info">ℹ️ 拼写练习进度独立于跟读学习，各有自己的学习节奏</div>' +
+    '<div style="display:flex;gap:8px;padding:12px;">' +
+      '<button class="btn btn-outline" style="flex:1;" onclick="backHome()">返回首页</button>' +
+      '<button class="btn btn-outline" style="flex:1;" onclick="nextSpell()">跳过 ›</button>' +
+    '</div>';
+  setTimeout(function() { document.getElementById('spell-input').focus(); }, 100);
+}
+
+function submitSpell() {
+  var input = document.getElementById('spell-input').value.trim().toLowerCase();
+  if (currentStage === 'basic') {
+    var word = words[currentIndex];
+    if (input === word.word.toLowerCase()) {
+      document.getElementById('spell-result').innerHTML = '<div style="padding:10px;background:var(--success-light);color:var(--success);border-radius:8px;margin-top:12px;font-size:14px;">✅ 正确！' + word.word + ' — ' + (word.ipa || '') + '</div>';
+      speakWithTimer(word.word);
+      setTimeout(function() { nextSpell(); }, 2000);
+    } else {
+      document.getElementById('spell-result').innerHTML = '<div style="padding:10px;background:var(--danger-light);color:var(--danger);border-radius:8px;margin-top:12px;font-size:14px;">❌ 错误。正确答案：' + word.word + '</div>';
+    }
+  } else {
+    // Business stage
+    var targetWord = bizSpellTarget || '';
+    if (input && input === targetWord.toLowerCase()) {
+      document.getElementById('spell-result').innerHTML = '<div style="padding:10px;background:var(--success-light);color:var(--success);border-radius:8px;margin-top:12px;font-size:14px;">✅ 正确！' + targetWord + '</div>';
+      speakWithTimer(targetWord);
+      setTimeout(function() { nextSpell(); }, 2000);
+    } else {
+      document.getElementById('spell-result').innerHTML = '<div style="padding:10px;background:var(--danger-light);color:var(--danger);border-radius:8px;margin-top:12px;font-size:14px;">❌ 错误。正确答案：' + targetWord + '</div>';
+    }
+  }
+}
+
+function nextSpell() {
+  var stageData = studyData[currentStage];
+  currentIndex++;
+  if (currentIndex > stageData.spellIndex) stageData.spellIndex = currentIndex;
+  saveStudyData();
+  showSpellPage();
+}
+
+// ===== Tests =====
+function prepareTest(type) {
+  var stageData = studyData[currentStage];
+  var pool;
+
+  if (type === 'weekly') {
+    pool = getWeeklyTestPool();
+    var testCount = currentStage === 'basic' ? 10 : 1;
+    if (pool.length === 0) {
+      showToast('暂无上周学习内容，请先进行跟读学习');
+      return;
+    }
+    testWords = pool.slice().sort(function() { return Math.random() - 0.5; }).slice(0, Math.min(testCount, pool.length));
+  } else {
+    pool = getMonthlyTestPool();
+    var testCount2 = currentStage === 'basic' ? 20 : 2;
+    if (pool.length === 0) {
+      showToast('暂无上月学习内容，请先进行跟读学习');
+      return;
+    }
+    testWords = pool.slice().sort(function() { return Math.random() - 0.5; }).slice(0, Math.min(testCount2, pool.length));
+  }
+
+  testWordIndex = 0;
+  testScores = {};
+  testSubItems = [];
+  testSubScores = {};
+  sNav(type);
+  if (type === 'weekly') renderWeeklyTest(false);
+  else renderMonthlyTest(false);
+}
+
+// Get last week's should-learn content (Saturday to Friday, 10 words/day or 1 lesson/day)
+function getWeeklyTestPool() {
+  var stageData = studyData[currentStage];
+  var dailyCount = currentStage === 'basic' ? 10 : 1;
+  var weeklyCount = dailyCount * 7;
+
+  // Determine start date from first check-in
+  var firstCheckIn = stageData.checkIns.length > 0 ? stageData.checkIns[0].date : null;
+  if (!firstCheckIn) {
+    if (currentStage === 'basic') return words.slice(0, Math.min(weeklyCount, words.length));
+    return lessons.slice(0, Math.min(weeklyCount, lessons.length));
+  }
+
+  var startDate = new Date(firstCheckIn);
+  startDate.setHours(0, 0, 0, 0);
+  var now = new Date();
+  now.setHours(0, 0, 0, 0);
+
+  var daysDiff = Math.floor((now - startDate) / 86400000);
+  var currentWeek = Math.floor(daysDiff / 7) + 1;
+
+  // Last week's range
+  var lastWeekStart = Math.max(0, (currentWeek - 2) * weeklyCount);
+  var lastWeekEnd = lastWeekStart + weeklyCount;
+
+  if (currentStage === 'basic') {
+    var pool = words.slice(lastWeekStart, Math.min(words.length, lastWeekEnd));
+    if (pool.length === 0) {
+      // Fallback: use learned words
+      pool = stageData.learned.map(function(id) {
+        return words.find(function(w) { return String(w.id) === String(id); });
+      }).filter(Boolean);
+    }
+    return pool;
+  } else {
+    var pool = lessons.slice(lastWeekStart, Math.min(lessons.length, lastWeekEnd));
+    if (pool.length === 0) {
+      pool = lessons.slice(0, Math.min(weeklyCount, lessons.length));
+    }
+    return pool;
+  }
+}
+
+// Get last month's should-learn content (10 words/day → 300 words, or 1 lesson/day → 30 lessons)
+function getMonthlyTestPool() {
+  var stageData = studyData[currentStage];
+  var dailyCount = currentStage === 'basic' ? 10 : 1;
+  var monthlyCount = dailyCount * 30;
+
+  var firstCheckIn = stageData.checkIns.length > 0 ? stageData.checkIns[0].date : null;
+  if (!firstCheckIn) {
+    if (currentStage === 'basic') return words.slice(0, Math.min(monthlyCount, words.length));
+    return lessons.slice(0, Math.min(monthlyCount, lessons.length));
+  }
+
+  var startDate = new Date(firstCheckIn);
+  startDate.setHours(0, 0, 0, 0);
+  var now = new Date();
+  now.setHours(0, 0, 0, 0);
+
+  var monthsDiff = (now.getFullYear() - startDate.getFullYear()) * 12 + (now.getMonth() - startDate.getMonth());
+  var currentMonth = monthsDiff + 1;
+
+  // Last month's range
+  var lastMonthStart = Math.max(0, (currentMonth - 2) * monthlyCount);
+  var lastMonthEnd = lastMonthStart + monthlyCount;
+
+  if (currentStage === 'basic') {
+    var pool = words.slice(lastMonthStart, Math.min(words.length, lastMonthEnd));
+    if (pool.length === 0) {
+      pool = stageData.learned.map(function(id) {
+        return words.find(function(w) { return String(w.id) === String(id); });
+      }).filter(Boolean);
+    }
+    return pool;
+  } else {
+    var pool = lessons.slice(lastMonthStart, Math.min(lessons.length, lastMonthEnd));
+    if (pool.length === 0) {
+      pool = lessons.slice(0, Math.min(monthlyCount, lessons.length));
+    }
+    return pool;
+  }
+}
+
+function renderWeeklyTest(locked) {
+  var content = document.getElementById('s-weekly-content');
+  if (locked) {
+    content.innerHTML = '<div class="test-locked"><div class="lock-icon">⏰</div><div class="lock-msg">未到周测时间，请每周六、日进行测试</div><div style="margin-top:24px;"><button class="btn btn-outline" onclick="backHome()">返回首页</button></div></div>';
+    return;
+  }
+  renderTestCard('weekly', content);
+}
+
+function renderMonthlyTest(locked) {
+  var content = document.getElementById('s-monthly-content');
+  if (locked) {
+    content.innerHTML = '<div class="test-locked"><div class="lock-icon">📅</div><div class="lock-msg">未到月测时间，请每月1日~5日进行测试</div><div style="margin-top:24px;"><button class="btn btn-outline" onclick="backHome()">返回首页</button></div></div>';
+    return;
+  }
+  renderTestCard('monthly', content);
+}
+
+function renderTestCard(type, content) {
+  var totalCount = testWords.length;
+  var testItem = testWords[testWordIndex];
+  if (!testItem) {
+    content.innerHTML = '<div class="test-locked"><div class="lock-icon">📝</div><div class="lock-msg">暂无测试内容，请先学习</div></div>';
+    return;
+  }
+
+  var testCountLabel = type === 'weekly' ? '10个单词' : '20个单词';
+  if (currentStage === 'business') {
+    testCountLabel = type === 'weekly' ? '1门微课' : '2门微课';
+  }
+
+  // Build sub-items: each has its own Chinese text, English target, and mic button
+  testSubItems = [];
+  testSubScores = {};
+
+  if (currentStage === 'basic') {
+    var word = testItem;
+    testSubItems = [
+      {label: '📌 词组', zh: word.phrase_cn, en: word.phrase_en, key: 'phrase'},
+      {label: '💬 例句1', zh: word.s1_cn, en: word.s1_en, key: 'ex1'},
+      {label: '💬 例句2', zh: word.s2_cn, en: word.s2_en, key: 'ex2'},
+      {label: '💬 例句3', zh: word.s3_cn, en: word.s3_en, key: 'ex3'},
+    ];
+  } else {
+    var lesson = testItem;
+    lesson.sentences.forEach(function(s, i) {
+      testSubItems.push({
+        label: s.speaker === 'A' ? '👤 A' : '👤 B',
+        zh: s.zh,
+        en: s.en,
+        key: 's' + i
+      });
+    });
+  }
+
+  var intro =
+    '<div class="test-intro">' +
+      '<div class="test-icon">' + (type === 'weekly' ? '📝' : '📅') + '</div>' +
+      '<h3>' + (type === 'weekly' ? '本周周测' : '本月月测') + '</h3>' +
+      '<div class="test-sub">' + (type === 'weekly' ? '上周应学内容随机抽取（' + testCountLabel + '）' : '上月应学内容随机抽取（' + testCountLabel + '）') + '</div>' +
+      '<div class="alert-box alert-info" style="text-align:left;">ℹ️ 测试规则：只显示中文，长按麦克风朗读英文，松手后自动评分，每项80分以上通过</div>' +
+    '</div>';
+
+  // Each sub-item gets its own card with Chinese text + recording button
+  var itemsHTML = testSubItems.map(function(item, idx) {
+    return '<div class="test-sub-card">' +
+      '<div style="font-size:13px;color:var(--primary);font-weight:600;margin-bottom:6px;">' + item.label + '（看中文说英文）</div>' +
+      '<div style="font-size:17px;color:var(--text);margin-bottom:10px;line-height:1.6;">' + item.zh + '</div>' +
+      '<div id="voice-area-test-' + idx + '" style="">' +
+        '<button class="rec-btn-sm" data-mode="test" data-arg="' + idx + '">🎤</button>' +
+        '<div style="flex:1;">' +
+          '<div class="rec-score" id="rec-score-test-' + idx + '" style="display:none;"></div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+
+  var cardHTML =
+    '<div class="test-card">' +
+      '<div class="test-num">第 ' + (testWordIndex + 1) + ' / ' + totalCount + ' 题' + (currentStage === 'business' ? ' · ' + testItem.title : '') + '</div>' +
+      itemsHTML +
+      '<div id="test-all-pass" style="display:none;text-align:center;padding:12px;background:var(--success-light);border-radius:8px;margin-top:12px;font-size:14px;color:var(--success);font-weight:600;"></div>' +
+    '</div>';
+
+  var nav =
+    '<div style="display:flex;gap:8px;padding:12px;">' +
+      '<button class="btn btn-outline" style="flex:1;" onclick="backHome()">退出测试</button>' +
+      '<button class="btn btn-primary" style="flex:1;" onclick="nextTestWord(\'' + type + '\')">下一题 ›</button>' +
+    '</div>' +
+    '<div class="alert-box alert-info">📊 本轮进度：' + (testWordIndex + 1) + '/' + totalCount + ' · 已通过 ' + Object.keys(testScores).length + ' 题</div>';
+
+  content.innerHTML = intro + cardHTML + nav;
+  _setupRecEventDelegation();
+}
+
+function nextTestWord(type) {
+  testWordIndex++;
+  if (testWordIndex >= testWords.length) {
+    // Test complete
+    var passed = Object.keys(testScores).length;
+    var total = testWords.length;
+    var avgScore = total > 0 && passed > 0 ? Math.round(Object.values(testScores).reduce(function(a,b){return a+b;}, 0) / passed) : 0;
+
+    // Record test result
+    var stageData = studyData[currentStage];
+    var testResult = {date: HiEnglish.today(), avgScore: avgScore, passed: passed, total: total};
+    if (type === 'weekly') {
+      stageData.weeklyTests.push(testResult);
+    } else {
+      stageData.monthlyTests.push(testResult);
+    }
+    saveStudyData();
+
+    showToast('测试完成！通过 ' + passed + '/' + total + ' 题，平均分 ' + avgScore);
+    setTimeout(function() { backHome(); }, 1500);
+    return;
+  }
+  var content = document.getElementById(type === 'weekly' ? 's-weekly-content' : 's-monthly-content');
+  renderTestCard(type, content);
+}
+
+// ===== Word List (ALL 850 words) =====
+var wlFilter = 'all';
+var wlSearch = '';
+
+function renderWordList(filter) {
+  if (filter) wlFilter = filter;
+  var stageData = studyData[currentStage];
+  var container = document.getElementById('s-wordlist-content');
+
+  // Stats overview
+  var learnedCount = stageData.learned.length;
+  var masteredCount = stageData.mastered.length;
+  var learningCount = learnedCount - masteredCount;
+  var totalWords = currentStage === 'basic' ? words.length : lessons.length;
+  var progressPercent = totalWords > 0 ? Math.floor((learnedCount / totalWords) * 100) : 0;
+
+  var statsHTML =
+    '<div class="card" style="text-align:center;">' +
+      '<div class="stat-grid" style="margin:0;">' +
+        '<div class="stat-card"><div class="stat-val">' + learnedCount + '</div><div class="stat-key">已学</div></div>' +
+        '<div class="stat-card"><div class="stat-val">' + masteredCount + '</div><div class="stat-key">已掌握</div></div>' +
+        '<div class="stat-card"><div class="stat-val">' + (learningCount > 0 ? learningCount : 0) + '</div><div class="stat-key">学习中</div></div>' +
+      '</div>' +
+      '<div style="margin-top:10px;font-size:13px;color:var(--text-sub);">共 ' + totalWords + (currentStage === 'basic' ? ' 词' : ' 课') + ' · 进度 ' + progressPercent + '%</div>' +
+    '</div>';
+
+  // Filter buttons
+  var filterHTML =
+    '<div class="wl-filter">' +
+      '<button class="wl-filter-btn ' + (wlFilter === 'all' ? 'active' : '') + '" onclick="renderWordList(\'all\')">全部</button>' +
+      '<button class="wl-filter-btn ' + (wlFilter === 'mastered' ? 'active' : '') + '" onclick="renderWordList(\'mastered\')">已掌握</button>' +
+      '<button class="wl-filter-btn ' + (wlFilter === 'learned' ? 'active' : '') + '" onclick="renderWordList(\'learned\')">学习中</button>' +
+      '<button class="wl-filter-btn ' + (wlFilter === 'unlearned' ? 'active' : '') + '" onclick="renderWordList(\'unlearned\')">未学</button>' +
+    '</div>';
+
+  // Search
+  var searchHTML = '<div style="padding:0 12px 8px;"><input type="text" class="wl-search" placeholder="搜索单词或中文..." value="' + wlSearch + '" oninput="onWlSearch(this.value)"></div>';
+
+  // Filter words
+  var displayItems = currentStage === 'basic' ? words : lessons;
+  if (wlFilter === 'learned') {
+    displayItems = displayItems.filter(function(w) { return stageData.learned.includes(w.id) && !stageData.mastered.includes(w.id); });
+  } else if (wlFilter === 'mastered') {
+    displayItems = displayItems.filter(function(w) { return stageData.mastered.includes(w.id); });
+  } else if (wlFilter === 'unlearned') {
+    displayItems = displayItems.filter(function(w) { return !stageData.learned.includes(w.id); });
+  }
+
+  if (wlSearch) {
+    var s = wlSearch.toLowerCase();
+    displayItems = displayItems.filter(function(w) {
+      if (currentStage === 'basic') {
+        return (w.word && w.word.toLowerCase().includes(s)) || (w.cn && w.cn.includes(wlSearch));
+      } else {
+        return (w.title && w.title.toLowerCase().includes(s)) || (w.titleCn && w.titleCn.includes(wlSearch));
+      }
+    });
+  }
+
+  // Render ALL items (no limit)
+  var statusText = {mastered: '已掌握', learned: '学习中', unlearned: '未学'};
+  var listHTML = displayItems.map(function(w) {
+    var isMastered = stageData.mastered.includes(w.id);
+    var isLearned = stageData.learned.includes(w.id);
+    var status = isMastered ? 'mastered' : (isLearned ? 'learned' : 'unlearned');
+    if (currentStage === 'basic') {
+      return '<div class="word-list-item">' +
+        '<div class="wl-num ' + status + '">' + w.id + '</div>' +
+        '<div style="flex:1;">' +
+          '<div class="wl-word">' + w.word + ' <span class="wl-ipa">' + (w.ipa || '') + '</span></div>' +
+          '<div class="wl-zh">' + (w.cn || '') + '</div>' +
+        '</div>' +
+        '<span class="wl-status ' + status + '">' + statusText[status] + '</span>' +
+      '</div>';
+    } else {
+      return '<div class="word-list-item">' +
+        '<div class="wl-num ' + status + '">' + w.id + '</div>' +
+        '<div style="flex:1;">' +
+          '<div class="wl-word">' + w.title + '</div>' +
+          '<div class="wl-zh">' + (w.titleCn || '') + '</div>' +
+        '</div>' +
+        '<span class="wl-status ' + status + '">' + statusText[status] + '</span>' +
+      '</div>';
+    }
+  }).join('');
+
+  var countInfo = '<div style="padding:0 12px 4px;font-size:12px;color:var(--text-sub);">显示 ' + displayItems.length + ' / ' + totalWords + (currentStage === 'basic' ? ' 个单词' : ' 门微课') + '</div>';
+
+  container.innerHTML = statsHTML + filterHTML + searchHTML + countInfo + '<div id="wl-list" style="padding:0 12px 12px;">' + (listHTML || '<div style="text-align:center;padding:20px;color:var(--text-sub);">暂无数据</div>') + '</div>';
+}
+
+function onWlSearch(val) {
+  wlSearch = val;
+  renderWordList();
+}
+
+// ===== Report Page =====
+function renderReport() {
+  // Refresh user info to pick up any admin changes
+  refreshUserInfo();
+
+  var stageData = studyData[currentStage];
+  var totalDays = stageData.checkIns.length;
+  var completedDays = stageData.checkIns.filter(function(c){return c.completed;}).length;
+  var masteredCount = stageData.mastered.length;
+  var learnedCount = stageData.learned.length;
+  var totalItems = currentStage === 'basic' ? words.length : lessons.length;
+  var progressPercent = totalItems > 0 ? Math.floor((learnedCount / totalItems) * 100) : 0;
+  var totalSeconds = stageData.checkIns.reduce(function(s, c){return s + (c.seconds || 0);}, 0);
+  var totalMinutes = Math.floor(totalSeconds / 60);
+
+  // Calculate score
+  var checkinScore = Math.round(completedDays * 0.3 * 10) / 10;
+  var weeklyScore = stageData.weeklyTests.length > 0 ? Math.round(stageData.weeklyTests.reduce(function(s, t){return s + (t.avgScore || 0);}, 0) / stageData.weeklyTests.length * 0.3 * 10) / 10 : 0;
+  var monthlyScore = stageData.monthlyTests.length > 0 ? Math.round(stageData.monthlyTests.reduce(function(s, t){return s + (t.avgScore || 0);}, 0) / stageData.monthlyTests.length * 0.4 * 10) / 10 : 0;
+  var totalScore = Math.round((checkinScore + weeklyScore + monthlyScore) * 10) / 10;
+
+  var scoreHTML =
+    '<div class="card" style="text-align:center;">' +
+      '<div style="font-size:12px;color:var(--text-sub);">综合得分</div>' +
+      '<div style="font-size:40px;font-weight:700;color:var(--primary);margin:8px 0;">' + totalScore + '</div>' +
+    '</div>';
+
+  var statsHTML =
+    '<div class="stat-grid">' +
+      '<div class="stat-card"><div class="stat-val">' + learnedCount + '</div><div class="stat-key">已学</div></div>' +
+      '<div class="stat-card"><div class="stat-val">' + masteredCount + '</div><div class="stat-key">已掌握</div></div>' +
+      '<div class="stat-card"><div class="stat-val">' + progressPercent + '%</div><div class="stat-key">学习进度</div></div>' +
+      '<div class="stat-card"><div class="stat-val">' + totalMinutes + '分</div><div class="stat-key">累计学习</div></div>' +
+      '<div class="stat-card"><div class="stat-val">' + completedDays + '</div><div class="stat-key">学习天数</div></div>' +
+      '<div class="stat-card"><div class="stat-val">' + (stageData.weeklyTests.length > 0 ? Math.round(stageData.weeklyTests.reduce(function(s,t){return s+(t.avgScore||0);},0)/stageData.weeklyTests.length) : 0) + '</div><div class="stat-key">周测均分</div></div>' +
+    '</div>';
+
+  // Rankings
+  var users = HiEnglish.getUsers();
+  var user = HiEnglish.getCurrentUser();
+  var allStudyData = JSON.parse(localStorage.getItem('hi_english_study') || '{}');
+
+  var personalScores = Object.keys(users).map(function(empid) {
+    var sd = allStudyData[empid] || {basic: {mastered: [], checkIns: []}};
+    var mastered = sd.basic && sd.basic.mastered ? sd.basic.mastered.length : 0;
+    var checkInDays = sd.basic && sd.basic.checkIns ? sd.basic.checkIns.filter(function(c){return c.completed;}).length : 0;
+    var score = Math.round(mastered * 0.4 + checkInDays * 0.6);
+    return {empid: empid, name: users[empid].name, group: users[empid].group, score: score, mastered: mastered, checkInDays: checkInDays};
+  }).sort(function(a, b) { return b.score - a.score; });
+
+  var personalRankHTML = personalScores.slice(0, 10).map(function(item, i) {
+    var cls = i === 0 ? 'top1' : (i === 1 ? 'top2' : (i === 2 ? 'top3' : ''));
+    var selfCls = item.empid === user.empid ? ' self' : '';
+    return '<div class="rank-item' + selfCls + '"><span class="rank-num ' + cls + '">' + (i + 1) + '</span><span class="rank-name">' + item.name + ' · ' + (item.group || '') + '</span><span class="rank-score">' + item.score + '.0</span></div>';
+  }).join('');
+
+  // Group rankings
+  var groupScores = {};
+  personalScores.forEach(function(p) {
+    if (!groupScores[p.group]) groupScores[p.group] = {name: p.group, total: 0, count: 0};
+    groupScores[p.group].total += p.score;
+    groupScores[p.group].count++;
+  });
+  var groupList = Object.values(groupScores).map(function(g) {
+    return {name: g.name, avg: Math.round(g.total / g.count * 10) / 10};
+  }).sort(function(a, b) { return b.avg - a.avg; });
+
+  var groupRankHTML = groupList.slice(0, 10).map(function(item, i) {
+    var cls = i === 0 ? 'top1' : (i === 1 ? 'top2' : (i === 2 ? 'top3' : ''));
+    var selfCls = item.name === user.group ? ' self' : '';
+    return '<div class="rank-item' + selfCls + '"><span class="rank-num ' + cls + '">' + (i + 1) + '</span><span class="rank-name">' + item.name + (item.name === user.group ? '（我组）' : '') + '</span><span class="rank-score">' + item.avg + '</span></div>';
+  }).join('');
+
+  var scoreBreakdownHTML =
+    '<div class="section-title">📊 成绩构成</div>' +
+    '<div class="card">' +
+      '<div style="display:flex;justify-content:space-between;margin-bottom:8px;"><span>打卡天数占比（30%）</span><span style="font-weight:600;">' + checkinScore + '</span></div>' +
+      '<div style="display:flex;justify-content:space-between;margin-bottom:8px;"><span>周测平均分（30%）</span><span style="font-weight:600;">' + weeklyScore + '</span></div>' +
+      '<div style="display:flex;justify-content:space-between;margin-bottom:8px;"><span>月测成绩（40%）</span><span style="font-weight:600;">' + monthlyScore + '</span></div>' +
+      '<div style="border-top:1px solid var(--border);padding-top:8px;display:flex;justify-content:space-between;"><span style="font-weight:700;">总成绩</span><span style="font-weight:700;color:var(--primary);font-size:18px;">' + totalScore + '</span></div>' +
+    '</div>';
+
+  document.getElementById('s-report-content').innerHTML = scoreHTML + statsHTML +
+    '<div class="section-title">🏆 个人学习排行榜</div>' +
+    '<div class="rank-list">' + (personalRankHTML || '<div style="text-align:center;padding:20px;color:var(--text-sub);">暂无排行数据</div>') + '</div>' +
+    '<div class="section-title">🏆 小组学习排行榜</div>' +
+    '<div class="rank-list">' + (groupRankHTML || '<div style="text-align:center;padding:20px;color:var(--text-sub);">暂无排行数据</div>') + '</div>' +
+    scoreBreakdownHTML;
+}
+
+// ===== Messages =====
+function renderMessages() {
+  var user = HiEnglish.getCurrentUser();
+  var messages = HiEnglish.getMessages(user.empid);
+  var defaultMsgs = [
+    {id: 'd1', title: '今日打卡提醒', content: '您好，今日学习打卡还未完成，请尽快完成15分钟跟读学习。每天自动提醒，助您坚持学习！', time: '今天 09:00', read: false, type: 'reminder'},
+    {id: 'd2', title: '学习进度提醒', content: '您已掌握' + studyData.basic.mastered.length + '个单词，继续加油！', time: '昨天 10:00', read: false, type: 'weekly'},
+    {id: 'd3', title: '系统通知', content: '管理员已添加新的商务英语微课内容，完成基础词汇阶段后可解锁学习。', time: '前天 14:00', read: false, type: 'system'},
+  ];
+  var allMsgs = defaultMsgs.concat(messages);
+  var unreadCount = allMsgs.filter(function(m){return !m.read;}).length;
+
+  var msgsHTML = allMsgs.map(function(m) {
+    var typeText = {reminder: '打卡提醒', weekly: '周测提醒', monthly: '月测提醒', system: '系统通知', progress: '进度提醒'};
+    return '<div class="msg-item ' + (m.read ? '' : 'unread') + '">' +
+      '<div class="msg-header">' +
+        '<span class="msg-type type-' + (m.type || 'system') + '">' + (typeText[m.type] || '系统通知') + '</span>' +
+        '<span class="msg-time">' + (m.time || '') + '</span>' +
+      '</div>' +
+      '<div class="msg-title">' + (m.title || '') + '</div>' +
+      '<div class="msg-body">' + (m.content || '') + '</div>' +
+      '<div class="msg-actions">' +
+        (m.type === 'reminder' ? '<button class="btn btn-primary" style="padding:6px 14px;font-size:12px;" onclick="goLearn();markMsgRead(this)">去学习</button>' : '') +
+        '<button class="btn btn-outline" style="padding:6px 14px;font-size:12px;" onclick="markMsgRead(this)">标记已读</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+
+  document.getElementById('s-messages-content').innerHTML =
+    '<div class="card">' +
+      '<div style="font-size:14px;font-weight:600;margin-bottom:10px;">🔔 提醒设置</div>' +
+      '<div style="display:flex;flex-direction:column;gap:10px;">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;"><div><div style="font-size:14px;">手机通知栏提醒</div><div style="font-size:12px;color:var(--text-sub);">每日自动推送打卡提醒至手机通知栏</div></div><div style="width:44px;height:24px;background:var(--primary);border-radius:12px;position:relative;cursor:pointer;" onclick="toggleSwitch(this)"><div style="width:20px;height:20px;background:#fff;border-radius:50%;position:absolute;top:2px;right:2px;transition:all .2s;"></div></div></div>' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;"><div><div style="font-size:14px;">钉钉消息提醒</div><div style="font-size:12px;color:var(--text-sub);">每日自动通过钉钉发送学习提醒</div></div><div style="width:44px;height:24px;background:var(--primary);border-radius:12px;position:relative;cursor:pointer;" onclick="toggleSwitch(this)"><div style="width:20px;height:20px;background:#fff;border-radius:50%;position:absolute;top:2px;right:2px;transition:all .2s;"></div></div></div>' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;"><div><div style="font-size:14px;">每日自动提醒</div><div style="font-size:12px;color:var(--text-sub);">每天定时提醒未完成打卡</div></div><div style="width:44px;height:24px;background:var(--primary);border-radius:12px;position:relative;cursor:pointer;" onclick="toggleSwitch(this)"><div style="width:20px;height:20px;background:#fff;border-radius:50%;position:absolute;top:2px;right:2px;transition:all .2s;"></div></div></div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="section-title">📨 消息列表</div>' +
+    '<div style="margin:0 12px;">' + (msgsHTML || '<div style="text-align:center;padding:20px;color:var(--text-sub);">暂无消息</div>') + '</div>';
+}
+
+function toggleSwitch(el) {
+  var dot = el.querySelector('div');
+  if (el.style.background === 'rgb(232, 232, 232)' || el.style.background === 'var(--border)') {
+    el.style.background = 'var(--primary)';
+    dot.style.right = '2px';
+    showToast('提醒已开启');
+  } else {
+    el.style.background = 'var(--border)';
+    dot.style.right = '22px';
+    showToast('提醒已关闭');
+  }
+}
+
+function markAllRead() {
+  var user = HiEnglish.getCurrentUser();
+  var messages = HiEnglish.getMessages(user.empid);
+  messages.forEach(function(m) { m.read = true; });
+  HiEnglish.saveMessages(user.empid, messages);
+  document.querySelectorAll('.msg-item.unread').forEach(function(item) { item.classList.remove('unread'); });
+  var badge = document.getElementById('s-msg-badge');
+  if (badge) badge.style.display = 'none';
+  showToast('已全部标记为已读');
+}
+
+function markMsgRead(btn) {
+  var item = btn.closest('.msg-item');
+  if (item) item.classList.remove('unread');
+  updateMessageBadge();
+}
+
+function updateMessageBadge() {
+  var user = HiEnglish.getCurrentUser();
+  if (!user) return;
+  var messages = HiEnglish.getMessages(user.empid);
+  var unread = messages.filter(function(m) { return !m.read; }).length + 3;
+  var badge = document.getElementById('s-msg-badge');
+  if (badge) {
+    if (unread > 0) {
+      badge.textContent = unread;
+      badge.style.display = 'flex';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+}
+
+// ===== Calendar =====
+function showCalendar() {
+  var stageData = studyData[currentStage];
+  var now = new Date();
+  var year = now.getFullYear();
+  var month = now.getMonth();
+  document.getElementById('cal-title').textContent = '📅 ' + year + '年' + (month + 1) + '月 打卡日历';
+
+  var firstDay = new Date(year, month, 1).getDay();
+  var daysInMonth = new Date(year, month + 1, 0).getDate();
+  var todayDate = now.getDate();
+  var dayOfWeek = now.getDay();
+  var mondayDiff = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+  var weekStartDay = todayDate - mondayDiff;
+  var weekEndDay = weekStartDay + 6;
+
+  var html = '';
+  var heads = ['日','一','二','三','四','五','六'];
+  heads.forEach(function(h) { html += '<div class="cal-head">' + h + '</div>'; });
+
+  for (var i = 0; i < firstDay; i++) {
+    html += '<div class="cal-day empty"></div>';
+  }
+
+  for (var d = 1; d <= daysInMonth; d++) {
+    var classes = 'cal-day';
+    var dateStr = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+    var checkIn = stageData.checkIns.find(function(c) { return c.date === dateStr; });
+    var isInCurrentWeek = d >= weekStartDay && d <= weekEndDay;
+
+    if (d > todayDate) {
+      classes += ' future';
+      html += '<div class="' + classes + '">' + d + '</div>';
+    } else if (d < todayDate) {
+      if (!checkIn || !checkIn.completed) {
+        classes += ' undone';
+        if (isInCurrentWeek) {
+          html += '<div class="' + classes + '" style="cursor:pointer;text-decoration:underline;" onclick="startMakeup(\'' + dateStr + '\')">' + d + '</div>';
+        } else {
+          html += '<div class="' + classes + '" onclick="showToast(\'该日期不在当周，无法补卡\')">' + d + '</div>';
+        }
+      } else {
+        classes += ' done';
+        html += '<div class="' + classes + '">' + d + '</div>';
+      }
+    } else {
+      if (checkIn && checkIn.completed) {
+        classes += ' done';
+      } else {
+        classes += ' today undone';
+      }
+      html += '<div class="' + classes + '">' + d + '</div>';
+    }
+  }
+
+  document.getElementById('calendar-grid').innerHTML = html;
+  document.getElementById('calendar-modal').classList.add('show');
+}
+
+// Makeup: start study session for the selected date (not direct completion)
+function startMakeup(dateStr) {
+  makeupDate = dateStr;
+  closeCalendar();
+  showToast('开始为 ' + dateStr + ' 补卡，请完成15分钟学习');
+  goLearn();
+}
+
+function closeCalendar() {
+  document.getElementById('calendar-modal').classList.remove('show');
+}
+
+function goLearnFromCalendar() {
+  closeCalendar();
+  goLearn();
+}
+
+// ===== Study Timer (only counts when audio is active) =====
+function startStudyTimer() {
+  stopStudyTimer();
+  studyTimer = setInterval(function() {
+    if (!isAudioActive) return; // Only count when audio playing or mic recording
+    var stageData = studyData[currentStage];
+    var targetDate = makeupDate || HiEnglish.today();
+    var checkIn = stageData.checkIns.find(function(c) { return c.date === targetDate; });
+    if (!checkIn) {
+      checkIn = {date: targetDate, seconds: 0, completed: false};
+      stageData.checkIns.push(checkIn);
+    }
+    if (checkIn.completed) return;
+    checkIn.seconds += 1;
+    if (checkIn.seconds >= 900) {
+      checkIn.completed = true;
+      if (makeupDate) {
+        showToast('🎉 ' + makeupDate + ' 补卡成功！');
+        makeupDate = null;
+      } else {
+        showToast('🎉 今日打卡完成！');
+      }
+    }
+    saveStudyData();
+    renderCheckIn();
+    // Skip card re-render during voice input to prevent DOM destruction (keyboard collapse)
+    if (recState.active) return;
+    // Update check-in progress in learn page if visible
+    var learnCheckin = document.querySelector('#s-learn-content .checkin-progress');
+    if (learnCheckin && currentStage === 'basic') {
+      renderWordLearnCard();
+    } else if (learnCheckin && currentStage === 'business') {
+      renderLessonLearnCard();
+    }
+  }, 1000);
+}
+
+function stopStudyTimer() {
+  if (studyTimer) { clearInterval(studyTimer); studyTimer = null; }
+}
+
+// ===== Save Study Data =====
+function saveStudyData() {
+  var user = HiEnglish.getCurrentUser();
+  if (user) HiEnglish.saveStudyData(user.empid, studyData);
+}
+
+// ===== Change Password =====
+function showChangePasswordModal() {
+  document.getElementById('change-pw-old').value = '';
+  document.getElementById('change-pw-new').value = '';
+  document.getElementById('change-pw-confirm').value = '';
+  document.getElementById('change-password-modal').classList.add('show');
+}
+
+function changeStudentPassword() {
+  var oldPw = document.getElementById('change-pw-old').value;
+  var newPw = document.getElementById('change-pw-new').value;
+  var confirmPw = document.getElementById('change-pw-confirm').value;
+  if (!oldPw) { showToast('请输入当前密码'); return; }
+  if (!newPw) { showToast('请输入新密码'); return; }
+  if (newPw !== confirmPw) { showToast('两次输入的新密码不一致'); return; }
+
+  var user = HiEnglish.getCurrentUser();
+  var users = HiEnglish.getUsers();
+  if (users[user.empid] && users[user.empid].password !== oldPw) {
+    showToast('当前密码错误');
+    return;
+  }
+  users[user.empid].password = newPw;
+  HiEnglish.saveUsers(users);
+  showToast('密码修改成功！下次登录请使用新密码');
+  closeModal('change-password-modal');
+}
+
+// ===== Modal helpers =====
+function closeModal(id) {
+  var el = document.getElementById(id);
+  if (el) el.classList.remove('show');
+}
+
+// ===== Toast =====
+function showToast(msg) {
+  var toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(function() { toast.classList.remove('show'); }, 2500);
+}
+
+// ===== Init =====
+window.addEventListener('DOMContentLoaded', init);
