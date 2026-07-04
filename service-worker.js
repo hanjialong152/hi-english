@@ -1,11 +1,11 @@
 // ===================================================
-// Hi English - Service Worker v13 (移除读单词板块)
+// Hi English - Service Worker v14 (录音功能完整修复)
 // ===================================================
-// v13: 跟读练习移除"读单词"选项，只保留读词组和读例句
+// v14: 修复录音async时序bug + 时长降级评分 + iOS mp4格式支持
 
-var CACHE_VERSION = 'hi-english-v13';
-var CORE_CACHE = 'hi-english-core-v13';
-var AUDIO_CACHE = 'hi-english-audio-v13';
+var CACHE_VERSION = 'hi-english-v14';
+var CORE_CACHE = 'hi-english-core-v14';
+var AUDIO_CACHE = 'hi-english-audio-v14';
 
 var CORE_FILES = [
   './',
