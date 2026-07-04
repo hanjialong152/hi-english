@@ -2,337 +2,464 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#4A90D9">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Hi English 管理">
-<link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icon-apple.png">
-<link rel="icon" type="image/png" href="favicon.png">
-<title>Hi English - 管理后台</title>
-<link rel="stylesheet" href="admin.css">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Hi English - 管理员端</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+:root {
+  --primary:#4A90D9; --primary-dark:#3A7BC8; --primary-light:#E8F2FC;
+  --success:#52C41A; --success-light:#F6FFED; --danger:#FF4D4F; --danger-light:#FFF1F0;
+  --warning:#FAAD14; --warning-light:#FFFBE6;
+  --bg:#F5F7FA; --card:#FFFFFF; --text:#333; --text-sub:#999; --text-light:#666;
+  --border:#E8E8E8; --radius:12px; --shadow:0 2px 8px rgba(0,0,0,0.06);
+}
+body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; background:var(--bg); color:var(--text); font-size:14px; line-height:1.5; margin:0; }
+
+.admin-frame { max-width:100%; margin:0 auto; min-height:100vh; background:var(--bg); padding:0 24px; }
+.admin-top { background:var(--primary); color:#fff; padding:16px 20px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100; }
+.admin-nav { display:flex; background:var(--card); border-bottom:1px solid var(--border); position:sticky; top:57px; z-index:99; }
+.admin-nav-item { flex:1; text-align:center; padding:12px; cursor:pointer; font-size:14px; color:var(--text-sub); border-bottom:2px solid transparent; }
+.admin-nav-item.active { color:var(--primary); border-bottom-color:var(--primary); font-weight:600; }
+.admin-page { display:none; padding:16px; }
+.admin-page.active { display:block; }
+
+.card { background:var(--card); border-radius:var(--radius); padding:16px; margin:12px; box-shadow:var(--shadow); }
+.section-title { font-size:16px; font-weight:700; margin:16px 12px 8px; display:flex; align-items:center; gap:6px; }
+
+.data-table { width:100%; border-collapse:collapse; background:var(--card); border-radius:var(--radius); overflow:hidden; box-shadow:var(--shadow); font-size:13px; }
+.data-table th { background:var(--primary-light); color:var(--text-light); padding:10px 8px; text-align:left; font-weight:600; white-space:nowrap; }
+.data-table td { padding:10px 8px; border-top:1px solid var(--border); }
+.data-table tr:hover { background:var(--primary-light); }
+.status-tag { font-size:11px; padding:2px 8px; border-radius:4px; }
+.status-tag.active { background:var(--success-light); color:var(--success); }
+.status-tag.disabled { background:var(--danger-light); color:var(--danger); }
+
+.stat-card { background:var(--card); border-radius:10px; padding:12px 8px; text-align:center; box-shadow:var(--shadow); }
+.stat-card .stat-val { font-size:22px; font-weight:700; color:var(--primary); }
+.stat-card .stat-key { font-size:11px; color:var(--text-sub); margin-top:2px; }
+
+.btn { display:inline-block; padding:10px 20px; border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; transition:all .2s; }
+.btn-primary { background:var(--primary); color:#fff; }
+.btn-success { background:var(--success); color:#fff; }
+.btn-danger { background:var(--danger); color:#fff; }
+.btn-outline { background:transparent; border:1px solid var(--border); color:var(--text); }
+.btn:active { transform:scale(0.97); }
+
+.modal-mask { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:999; display:none; align-items:center; justify-content:center; }
+.modal-mask.show { display:flex; }
+.modal-box { background:#fff; border-radius:16px; padding:24px; width:90%; max-width:380px; }
+.modal-box h3 { margin-bottom:16px; }
+.form-group { margin-bottom:12px; }
+.form-group label { display:block; font-size:13px; color:var(--text-sub); margin-bottom:4px; }
+.form-group input, .form-group select { width:100%; padding:10px; border:1px solid var(--border); border-radius:8px; font-size:14px; }
+.modal-actions { display:flex; gap:8px; margin-top:20px; }
+.modal-actions .btn { flex:1; }
+
+.export-card { background:var(--card); border-radius:var(--radius); padding:16px; margin-bottom:12px; box-shadow:var(--shadow); cursor:pointer; transition:all .2s; }
+.export-card:active { transform:scale(0.98); }
+.export-card h4 { font-size:15px; margin-bottom:4px; }
+.export-card p { font-size:12px; color:var(--text-sub); }
+
+.group-chip { display:inline-flex; align-items:center; gap:4px; background:var(--primary-light); color:var(--primary); padding:6px 12px; border-radius:20px; font-size:13px; margin:4px; }
+.group-chip .del-btn { cursor:pointer; font-size:14px; }
+.group-chip .edit-btn { cursor:pointer; font-size:14px; margin-left:4px; }
+
+.toast { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(0,0,0,0.8); color:#fff; padding:10px 20px; border-radius:8px; font-size:14px; z-index:9999; opacity:0; transition:opacity .3s; pointer-events:none; }
+.toast.show { opacity:1; }
+
+.alert-box { border-radius:8px; padding:10px 14px; margin:8px 12px; font-size:13px; display:flex; align-items:flex-start; gap:8px; }
+.alert-info { background:var(--primary-light); color:var(--primary); }
+
+/* Desktop sidebar */
+@media screen and (min-width: 1024px) {
+  .admin-frame { max-width: 100%; }
+  .admin-top { padding: 16px 32px; }
+  .admin-body { display: flex; align-items: flex-start; }
+  .admin-nav {
+    flex-direction: column;
+    width: 200px;
+    flex-shrink: 0;
+    align-self: flex-start;
+    position: sticky;
+    top: 57px;
+    height: calc(100vh - 57px);
+    border-bottom: none;
+    border-right: 1px solid var(--border);
+    padding: 12px 0;
+    overflow-y: auto;
+  }
+  .admin-nav-item {
+    flex: none;
+    text-align: left;
+    padding: 14px 24px;
+    border-bottom: none;
+    border-left: 3px solid transparent;
+    font-size: 15px;
+    transition: all .2s;
+  }
+  .admin-nav-item:hover { background: var(--primary-light); }
+  .admin-nav-item.active {
+    border-bottom: none;
+    border-left-color: var(--primary);
+    background: var(--primary-light);
+  }
+  .admin-content { flex: 1; min-width: 0; padding: 24px 32px; }
+  .admin-page { padding: 0; }
+  .section-title { margin: 28px 0 12px; font-size: 18px; }
+  .section-title:first-child { margin-top: 0; }
+  .card { margin: 0 0 16px; padding: 20px; }
+  .data-table { font-size: 14px; }
+  .data-table th { padding: 14px 12px; }
+  .data-table td { padding: 12px; }
+  .stat-card { padding: 20px 12px; }
+  .stat-card .stat-val { font-size: 28px; }
+  .stat-card .stat-key { font-size: 13px; }
+  .export-card { padding: 20px; margin-bottom: 16px; }
+  .export-card h4 { font-size: 17px; }
+  .export-card p { font-size: 13px; }
+  .alert-box { margin: 0 0 12px; }
+}
+</style>
 </head>
 <body>
 
-<!-- 管理员登录遮罩 -->
-<div id="admin-login-mask" class="admin-login-mask" style="display:flex">
-  <div class="admin-login-box">
-    <div class="admin-login-logo">📚</div>
-    <h2>Hi English 管理后台</h2>
+<div id="admin-app" class="admin-frame">
+  <div class="admin-top">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <a href="index.html" style="background:rgba(255,255,255,0.2);border:none;color:#fff;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:13px;text-decoration:none;">← 返回</a>
+      <span style="font-size:18px;font-weight:700;">Hi English 管理后台</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span style="font-size:13px;opacity:0.8;">管理员 · admin</span>
+      <button onclick="showAdminChangePasswordModal()" style="background:rgba(255,255,255,0.2);border:none;color:#fff;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:13px;">修改密码</button>
+    </div>
+  </div>
+
+  <div class="admin-body">
+    <div class="admin-nav">
+      <div class="admin-nav-item active" onclick="aNav('dashboard',this)">总览</div>
+      <div class="admin-nav-item" onclick="aNav('students',this)">学员管理</div>
+      <div class="admin-nav-item" onclick="aNav('groups',this)">分组管理</div>
+      <div class="admin-nav-item" onclick="aNav('export',this)">数据导出</div>
+      <div class="admin-nav-item" onclick="aNav('content',this)">内容管理</div>
+    </div>
+    <div class="admin-content">
+
+      <!-- 总览页 -->
+      <div id="a-page-dashboard" class="admin-page active">
+        <div id="a-dashboard-stats"></div>
+        <div id="a-dashboard-rankings"></div>
+        <div id="a-dashboard-reminders"></div>
+      </div>
+
+      <!-- 学员管理页 -->
+      <div id="a-page-students" class="admin-page">
+        <div id="a-students-toolbar"></div>
+        <div style="overflow-x:auto;">
+          <table class="data-table" id="student-table">
+            <thead>
+              <tr>
+                <th>账号</th><th>姓名</th><th>组别</th><th>学习进度</th><th>已掌握</th><th>打卡天数</th><th>平均分</th><th>状态</th><th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="student-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 分组管理页 -->
+      <div id="a-page-groups" class="admin-page">
+        <div class="card">
+          <h4 style="margin-bottom:12px;">现有组别</h4>
+          <div id="group-list"></div>
+          <div style="margin-top:16px;display:flex;gap:8px;">
+            <input type="text" id="new-group-input" placeholder="输入新组别名称" style="flex:1;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:14px;">
+            <button class="btn btn-primary" onclick="addGroup()">+ 添加组别</button>
+          </div>
+          <p style="font-size:12px;color:var(--text-sub);margin-top:8px;">点击 ✎ 可修改组别名称，修改后所有属于该组的学员自动更新</p>
+        </div>
+        <div class="section-title">分组学员统计</div>
+        <div style="display:flex;justify-content:flex-end;margin-bottom:8px;">
+          <button class="btn btn-outline" onclick="exportGroupStats()">📥 导出分组统计</button>
+        </div>
+        <div id="a-group-stats" style="overflow-x:auto;"></div>
+      </div>
+
+      <!-- 数据导出页 -->
+      <div id="a-page-export" class="admin-page">
+        <div class="export-card" onclick="exportAllReport()">
+          <h4>📊 全员学习报告</h4>
+          <p>账号、姓名、组别、学习阶段完成情况、月度打卡完成率、周测成绩、月测成绩、累计总成绩</p>
+        </div>
+        <div class="export-card" onclick="exportTeamReport()">
+          <h4>🏢 团队学习报告</h4>
+          <p>每个团队的学习阶段完成情况、月度团队日打卡平均完成率、团队周测/月测平均分、累计总成绩平均分</p>
+        </div>
+        <div class="export-card" onclick="showDetailedReportModal()">
+          <h4>📋 详细报表</h4>
+          <p>按起止日期/日/周/月筛选，可分别导出每位学员日、周、月打卡情况</p>
+        </div>
+      </div>
+
+      <!-- 内容管理页 -->
+      <div id="a-page-content" class="admin-page">
+        <div class="section-title">基础词汇练习阶段</div>
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <span id="word-count-text">当前共 850 个单词</span>
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-primary" onclick="showAddWordModal()">+ 添加单词</button>
+              <button class="btn btn-outline" onclick="showBatchImportWordModal()">📥 批量导入</button>
+            </div>
+          </div>
+          <p style="font-size:12px;color:var(--text-sub);">添加单词后，系统自动生成音标、词义、翻译、词组及例句，并支持自动发音朗读</p>
+        </div>
+
+        <div class="section-title">商务英语练习阶段</div>
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <span>当前共 116 门微课</span>
+          </div>
+          <p style="font-size:12px;color:var(--text-sub);">添加来源后，系统自动识别并添加英文对话及翻译，形成学习内容</p>
+          <div style="margin-top:12px;">
+            <div style="display:flex;gap:8px;align-items:center;">
+              <input type="text" id="new-video-url" placeholder="输入B站视频URL，自动提取微课内容" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:13px;">
+              <button class="btn btn-primary" style="padding:8px 14px;font-size:13px;" onclick="addVideoSource()">添加来源</button>
+            </div>
+            <p style="font-size:11px;color:var(--text-sub);margin-top:4px;">新增视频URL后系统将自动提取文本和读音，经管理员审核后发布</p>
+          </div>
+        </div>
+      </div>
+    </div><!-- admin-content -->
+  </div><!-- admin-body -->
+</div>
+
+<!-- 添加学员弹窗 -->
+<div id="add-student-modal" class="modal-mask">
+  <div class="modal-box">
+    <h3>添加学员</h3>
     <div class="form-group">
-      <input type="text" id="admin-username" placeholder="管理员账号" value="admin" readonly>
+      <label>账号</label>
+      <input type="text" id="add-empid" placeholder="请输入账号" value="">
     </div>
     <div class="form-group">
-      <input type="password" id="admin-password" placeholder="请输入密码" onkeydown="if(event.key==='Enter')adminLogin()">
+      <label>姓名</label>
+      <input type="text" id="add-name" placeholder="请输入姓名" value="">
     </div>
-    <button class="btn-primary" onclick="adminLogin()">登录</button>
-    <a href="index.html" class="back-student-link">← 返回学员端</a>
+    <div class="form-group">
+      <label>分组</label>
+      <select id="add-group"></select>
+    </div>
+    <div class="form-group">
+      <label>初始密码</label>
+      <input type="text" id="add-password" value="123@456.com">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('add-student-modal')">取消</button>
+      <button class="btn btn-primary" onclick="addStudent()">确认添加</button>
+    </div>
   </div>
 </div>
 
-<div class="admin-layout">
-  <!-- 侧边栏 -->
-  <aside class="sidebar">
-    <div class="sidebar-logo">
-      <span class="logo-icon">📚</span>
-      <div>
-        <div class="logo-title">Hi English 管理</div>
-        <div class="logo-sub">英语学习系统</div>
-      </div>
+<!-- 编辑学员弹窗 -->
+<div id="edit-student-modal" class="modal-mask">
+  <div class="modal-box">
+    <h3>编辑学员信息</h3>
+    <div class="form-group">
+      <label>账号</label>
+      <input type="text" id="edit-empid" style="background:#f5f5f5;">
     </div>
-    <nav class="sidebar-nav">
-      <div class="nav-item active" onclick="showTab('tab-overview')">
-        <span>📊</span> 总览
-      </div>
-      <div class="nav-item" onclick="showTab('tab-students')">
-        <span>👥</span> 学员管理
-      </div>
-      <div class="nav-item" onclick="showTab('tab-progress')">
-        <span>📈</span> 进度跟踪
-      </div>
-      <div class="nav-item" onclick="showTab('tab-notify')">
-        <span>📢</span> 催学提醒
-      </div>
-      <div class="nav-item" onclick="showTab('tab-export')">
-        <span>📤</span> 导出数据
-      </div>
-    </nav>
-    <div class="sidebar-footer">
-      <button class="btn-admin-pwd" onclick="showAdminPwdModal()">🔑 修改密码</button>
-      <button class="btn-admin-logout" onclick="adminLogout()">🚪 退出</button>
-      <a href="index.html" class="btn-back-student">← 学员端</a>
+    <div class="form-group">
+      <label>姓名</label>
+      <input type="text" id="edit-name">
     </div>
-  </aside>
-
-  <!-- 主内容区 -->
-  <main class="main-content">
-    <!-- 总览 -->
-    <div id="tab-overview" class="tab-content active">
-      <div class="page-header">
-        <h1>学习总览</h1>
-        <div class="header-actions">
-          <button class="btn-refresh" onclick="refreshData()">🔄 刷新数据</button>
-          <span class="update-time" id="update-time"></span>
-        </div>
-      </div>
-
-      <!-- 总体统计卡片 -->
-      <div class="stats-grid">
-        <div class="stat-card blue">
-          <div class="stat-icon">👥</div>
-          <div class="stat-info">
-            <div class="stat-num" id="total-students">0</div>
-            <div class="stat-label">学员总数</div>
-          </div>
-        </div>
-        <div class="stat-card green">
-          <div class="stat-icon">✅</div>
-          <div class="stat-info">
-            <div class="stat-num" id="active-today">0</div>
-            <div class="stat-label">今日学习</div>
-          </div>
-        </div>
-        <div class="stat-card orange">
-          <div class="stat-icon">⚠️</div>
-          <div class="stat-info">
-            <div class="stat-num" id="inactive-students">0</div>
-            <div class="stat-label">3天未学习</div>
-          </div>
-        </div>
-        <div class="stat-card purple">
-          <div class="stat-icon">📊</div>
-          <div class="stat-info">
-            <div class="stat-num" id="avg-progress">0%</div>
-            <div class="stat-label">平均进度</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 进度分布 -->
-      <div class="card">
-        <div class="card-title">📊 学习进度分布</div>
-        <div id="progress-distribution" class="dist-bars"></div>
-      </div>
-
-      <!-- 活跃排行 -->
-      <div class="card">
-        <div class="card-title">🏆 学习排行榜（前10名）</div>
-        <div id="top-students-list"></div>
-      </div>
-
-      <!-- 最近活跃 -->
-      <div class="card">
-        <div class="card-title">🕐 最近学习记录</div>
-        <div id="recent-activity"></div>
-      </div>
+    <div class="form-group">
+      <label>分组</label>
+      <select id="edit-group"></select>
     </div>
-
-    <!-- 学员管理 -->
-    <div id="tab-students" class="tab-content">
-      <div class="page-header">
-        <h1>学员管理</h1>
-        <div class="header-actions">
-          <button class="btn-primary" onclick="showAddStudentModal()">➕ 新增学员</button>
-          <button class="btn-secondary" onclick="downloadImportTemplate()">📥 下载模板</button>
-          <button class="btn-secondary" onclick="document.getElementById('import-file').click()">📤 批量导入</button>
-          <input type="file" id="import-file" accept=".xlsx,.xls" style="display:none" onchange="importStudents(event)">
-          <input type="search" id="student-search" placeholder="搜索工号/姓名..." class="search-input" oninput="renderStudents()">
-        </div>
-      </div>
-
-      <div class="filter-row">
-        <select id="student-filter" onchange="renderStudents()" class="filter-select">
-          <option value="all">全部学员</option>
-          <option value="active">今日学习</option>
-          <option value="inactive3">3天未学习</option>
-          <option value="inactive7">7天未学习</option>
-          <option value="not-started">未开始学习</option>
-        </select>
-        <select id="student-sort" onchange="renderStudents()" class="filter-select">
-          <option value="lastLogin">按最近登录</option>
-          <option value="progress">按学习进度</option>
-          <option value="score">按综合评分</option>
-          <option value="name">按姓名</option>
-        </select>
-        <span id="student-count" class="count-badge">共0人</span>
-      </div>
-
-      <div class="table-wrap">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>工号</th>
-              <th>姓名</th>
-              <th>学习进度</th>
-              <th>已掌握</th>
-              <th>学习天数</th>
-              <th>平均分</th>
-              <th>最近学习</th>
-              <th>状态</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody id="students-tbody"></tbody>
-        </table>
-      </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('edit-student-modal')">取消</button>
+      <button class="btn btn-primary" onclick="saveStudent()">保存</button>
     </div>
-
-    <!-- 进度跟踪 -->
-    <div id="tab-progress" class="tab-content">
-      <div class="page-header">
-        <h1>进度跟踪</h1>
-      </div>
-
-      <div class="progress-track-wrap">
-        <div class="card">
-          <div class="card-title">📉 学习进度落后提醒</div>
-          <div id="lagging-list" class="lagging-list"></div>
-        </div>
-
-        <div class="card">
-          <div class="card-title">📈 进度完成情况</div>
-          <div id="progress-chart" class="progress-chart"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 催学提醒 -->
-    <div id="tab-notify" class="tab-content">
-      <div class="page-header">
-        <h1>催学提醒</h1>
-      </div>
-
-      <div class="card">
-        <div class="card-title">⚙️ 提醒设置</div>
-        <div class="notify-settings">
-          <div class="setting-item">
-            <label>未学习天数提醒阈值</label>
-            <select id="notify-days">
-              <option value="1">1天未学习</option>
-              <option value="3" selected>3天未学习</option>
-              <option value="7">7天未学习</option>
-            </select>
-          </div>
-          <div class="setting-item">
-            <label>进度低于</label>
-            <select id="notify-progress">
-              <option value="10">10%</option>
-              <option value="20" selected>20%</option>
-              <option value="30">30%</option>
-            </select>
-          </div>
-          <button class="btn-primary" onclick="checkNotifyList()">🔍 筛选需提醒学员</button>
-        </div>
-      </div>
-
-      <div class="card" id="notify-result-card" style="display:none">
-        <div class="card-title">📋 需要催学的学员</div>
-        <div id="notify-list"></div>
-        <div class="notify-actions">
-          <button class="btn-primary" onclick="exportNotifyList()">📤 导出名单</button>
-          <button class="btn-secondary" onclick="copyNotifyMsg()">📋 复制提醒语</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- 导出数据 -->
-    <div id="tab-export" class="tab-content">
-      <div class="page-header">
-        <h1>数据导出</h1>
-      </div>
-
-      <div class="export-grid">
-        <div class="export-card" onclick="exportAllStudents()">
-          <div class="export-icon">📊</div>
-          <div class="export-title">全员学习报告</div>
-          <div class="export-desc">导出所有学员的学习数据（Excel格式）</div>
-          <button class="btn-export">导出 Excel</button>
-        </div>
-        <div class="export-card" onclick="exportProgressReport()">
-          <div class="export-icon">📈</div>
-          <div class="export-title">进度分析报告</div>
-          <div class="export-desc">导出学习进度分析报告（Word格式）</div>
-          <button class="btn-export">导出报告</button>
-        </div>
-        <div class="export-card" onclick="exportRankList()">
-          <div class="export-icon">🏆</div>
-          <div class="export-title">排行榜</div>
-          <div class="export-desc">导出学习排行榜（按进度排序）</div>
-          <button class="btn-export">导出排行</button>
-        </div>
-      </div>
-    </div>
-  </main>
-</div>
-
-<!-- 学员详情弹窗 -->
-<div id="student-modal" class="modal" style="display:none">
-  <div class="modal-backdrop" onclick="closeModal()"></div>
-  <div class="modal-content">
-    <div class="modal-header">
-      <h3 id="modal-title">学员详情</h3>
-      <button onclick="closeModal()" class="modal-close">✕</button>
-    </div>
-    <div id="modal-body" class="modal-body"></div>
   </div>
 </div>
 
-<!-- 新增学员弹窗 -->
-<div id="add-student-modal" class="modal" style="display:none">
-  <div class="modal-backdrop" onclick="closeAddStudentModal()"></div>
-  <div class="modal-content" style="max-width:380px">
-    <div class="modal-header">
-      <h3>➕ 新增学员</h3>
-      <button onclick="closeAddStudentModal()" class="modal-close">✕</button>
+<!-- 重置密码弹窗 -->
+<div id="reset-password-modal" class="modal-mask">
+  <div class="modal-box">
+    <h3>🔑 重置学员密码</h3>
+    <div style="padding:12px;background:var(--warning-light);border-radius:8px;margin-bottom:16px;font-size:13px;color:var(--warning);">
+      ⚠️ 重置密码后，学员将无法使用原密码登录，需使用新密码首次登录
     </div>
-    <div class="modal-body">
-      <div class="form-group" style="margin-bottom:14px">
-        <label style="font-size:13px;color:#666;display:block;margin-bottom:4px">工号</label>
-        <input type="text" id="add-empid" placeholder="请输入工号" style="width:100%;height:40px;border:1.5px solid #E8EAF0;border-radius:8px;padding:0 12px;font-size:15px">
+    <div class="form-group">
+      <label>学员账号</label>
+      <input type="text" id="reset-pw-empid" readonly style="background:#f5f5f5;">
+    </div>
+    <div class="form-group">
+      <label>学员姓名</label>
+      <input type="text" id="reset-pw-name" readonly style="background:#f5f5f5;">
+    </div>
+    <div class="form-group">
+      <label>新密码</label>
+      <div style="display:flex;gap:8px;">
+        <input type="text" id="reset-pw-value" value="123@456.com" style="flex:1;">
+        <button class="btn btn-outline" style="padding:10px;font-size:13px;" onclick="document.getElementById('reset-pw-value').value='123@456.com';showToast('已恢复默认密码')">恢复默认</button>
       </div>
-      <div class="form-group" style="margin-bottom:16px">
-        <label style="font-size:13px;color:#666;display:block;margin-bottom:4px">姓名</label>
-        <input type="text" id="add-name" placeholder="请输入姓名" style="width:100%;height:40px;border:1.5px solid #E8EAF0;border-radius:8px;padding:0 12px;font-size:15px">
-      </div>
-      <button class="btn-primary" style="width:100%" onclick="addStudent()">确认添加</button>
-      <p style="font-size:12px;color:#999;margin-top:8px;text-align:center">初始密码：123@456.com</p>
+      <div style="font-size:12px;color:var(--text-sub);margin-top:4px;">默认密码：123@456.com，管理员可自定义</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('reset-password-modal')">取消</button>
+      <button class="btn btn-primary" onclick="confirmResetPassword()">确认重置</button>
     </div>
   </div>
 </div>
 
 <!-- 管理员修改密码弹窗 -->
-<div id="admin-pwd-modal" class="modal" style="display:none">
-  <div class="modal-backdrop" onclick="closeAdminPwdModal()"></div>
-  <div class="modal-content" style="max-width:380px">
-    <div class="modal-header">
-      <h3>🔑 修改管理员密码</h3>
-      <button onclick="closeAdminPwdModal()" class="modal-close">✕</button>
+<div id="admin-change-password-modal" class="modal-mask">
+  <div class="modal-box">
+    <h3>🔐 修改管理员密码</h3>
+    <div class="form-group">
+      <label>当前密码</label>
+      <input type="password" id="admin-change-pw-old" placeholder="请输入当前密码">
     </div>
-    <div class="modal-body">
-      <div class="form-group" style="margin-bottom:14px">
-        <label style="font-size:13px;color:#666;display:block;margin-bottom:4px">原密码</label>
-        <input type="password" id="admin-pwd-old" placeholder="请输入原密码" style="width:100%;height:40px;border:1.5px solid #E8EAF0;border-radius:8px;padding:0 12px;font-size:15px">
-      </div>
-      <div class="form-group" style="margin-bottom:14px">
-        <label style="font-size:13px;color:#666;display:block;margin-bottom:4px">新密码（至少6位）</label>
-        <input type="password" id="admin-pwd-new" placeholder="请输入新密码" style="width:100%;height:40px;border:1.5px solid #E8EAF0;border-radius:8px;padding:0 12px;font-size:15px">
-      </div>
-      <div class="form-group" style="margin-bottom:16px">
-        <label style="font-size:13px;color:#666;display:block;margin-bottom:4px">确认新密码</label>
-        <input type="password" id="admin-pwd-confirm" placeholder="请再次输入" style="width:100%;height:40px;border:1.5px solid #E8EAF0;border-radius:8px;padding:0 12px;font-size:15px">
-      </div>
-      <button class="btn-primary" style="width:100%" onclick="submitAdminChangePassword()">确认修改</button>
+    <div class="form-group">
+      <label>新密码</label>
+      <input type="password" id="admin-change-pw-new" placeholder="请输入新密码">
+    </div>
+    <div class="form-group">
+      <label>确认新密码</label>
+      <input type="password" id="admin-change-pw-confirm" placeholder="请再次输入新密码">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('admin-change-password-modal')">取消</button>
+      <button class="btn btn-primary" onclick="changeAdminPassword()">确认修改</button>
     </div>
   </div>
 </div>
 
+<!-- 修改分组名称弹窗 -->
+<div id="edit-group-modal" class="modal-mask">
+  <div class="modal-box">
+    <h3>✎ 修改组别名称</h3>
+    <div class="form-group">
+      <label>当前名称</label>
+      <input type="text" id="edit-group-old-name" readonly style="background:#f5f5f5;">
+    </div>
+    <div class="form-group">
+      <label>新名称</label>
+      <input type="text" id="edit-group-new-name" placeholder="请输入新的组别名称">
+    </div>
+    <div style="padding:12px;background:var(--primary-light);border-radius:8px;margin-bottom:8px;font-size:13px;color:var(--primary);">
+      ℹ️ 修改后，所有属于该组的学员将自动更新组别名称
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('edit-group-modal')">取消</button>
+      <button class="btn btn-primary" onclick="saveGroupName()">确认修改</button>
+    </div>
+  </div>
+</div>
+
+<!-- 详细报表弹窗 -->
+<div id="detail-report-modal" class="modal-mask">
+  <div class="modal-box" style="max-width:420px;">
+    <h3>📋 详细报表筛选</h3>
+    <div class="form-group">
+      <label>起始日期</label>
+      <input type="date" id="report-start" value="2026-07-01">
+    </div>
+    <div class="form-group">
+      <label>结束日期</label>
+      <input type="date" id="report-end" value="2026-07-03">
+    </div>
+    <div class="form-group">
+      <label>筛选维度</label>
+      <select id="report-dim">
+        <option>按日</option>
+        <option>按周</option>
+        <option>按月</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>组别（可选）</label>
+      <select id="report-group"></select>
+    </div>
+    <div style="margin-top:8px;padding:10px;background:var(--primary-light);border-radius:8px;font-size:12px;color:var(--primary);">
+      报表内容：账号、姓名、筛选日期对应的每日打卡情况（已打卡/未打卡标记）
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('detail-report-modal')">取消</button>
+      <button class="btn btn-primary" onclick="exportDetailReport()">导出Excel</button>
+    </div>
+  </div>
+</div>
+
+<!-- 批量导入学员弹窗 -->
+<div id="batch-import-modal" class="modal-mask">
+  <div class="modal-box" style="max-width:420px;">
+    <h3>📥 批量导入学员</h3>
+    <div style="padding:10px;background:var(--primary-light);border-radius:8px;margin-bottom:12px;font-size:12px;color:var(--primary);">
+      请上传Excel文件，格式：第一列账号、第二列姓名、第三列分组<br>
+      支持格式：.xlsx、.xls、.csv<br>
+      分组需已存在，如不存在将自动创建
+    </div>
+    <div class="form-group">
+      <label>选择Excel文件</label>
+      <input type="file" id="batch-import-file" accept=".xlsx,.xls,.csv" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:14px;" onchange="onBatchImportFileChange(this)">
+    </div>
+    <div id="batch-import-preview" style="display:none;margin-top:8px;">
+      <div style="font-size:13px;color:var(--text-sub);margin-bottom:4px;">预览（前5行）：</div>
+      <div id="batch-import-preview-content" style="background:var(--bg);border-radius:8px;padding:8px;font-size:12px;max-height:120px;overflow-y:auto;"></div>
+    </div>
+    <div style="margin-top:8px;">
+      <button class="btn btn-outline" style="font-size:12px;padding:6px 12px;" onclick="downloadImportTemplate()">📥 下载导入模板</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('batch-import-modal')">取消</button>
+      <button class="btn btn-primary" onclick="batchImportStudents()">确认导入</button>
+    </div>
+  </div>
+</div>
+
+<!-- 添加单词弹窗 -->
+<div id="add-word-modal" class="modal-mask">
+  <div class="modal-box">
+    <h3>添加单词</h3>
+    <div class="form-group">
+      <label>英文单词</label>
+      <input type="text" id="add-word-input" placeholder="输入英文单词">
+    </div>
+    <div style="padding:10px;background:var(--primary-light);border-radius:8px;margin-bottom:12px;font-size:12px;color:var(--primary);">
+      系统将自动生成：音标、词性、中文词义、常见词组（英文+中文）、3条例句（英文+中文），并支持自动发音
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('add-word-modal')">取消</button>
+      <button class="btn btn-primary" onclick="addWord()">确认添加</button>
+    </div>
+  </div>
+</div>
+
+<!-- 批量导入单词弹窗 -->
+<div id="batch-import-word-modal" class="modal-mask">
+  <div class="modal-box" style="max-width:420px;">
+    <h3>📥 批量导入单词</h3>
+    <div style="padding:10px;background:var(--primary-light);border-radius:8px;margin-bottom:12px;font-size:12px;color:var(--primary);">
+      每行一个单词，系统自动生成音标、词义、词组及例句
+    </div>
+    <div class="form-group">
+      <label>粘贴单词列表</label>
+      <textarea id="batch-import-word-text" rows="10" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:13px;" placeholder="manufacture&#10;assembly&#10;welding"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('batch-import-word-modal')">取消</button>
+      <button class="btn btn-primary" onclick="batchImportWords()">确认导入</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script src="admin.js"></script>
-<script>
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./service-worker.js').catch(function(){});
-}
-</script>
+<script src="js/common.js"></script>
+<script src="js/admin.js"></script>
 </body>
 </html>
