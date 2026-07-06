@@ -542,7 +542,7 @@
       "checkIns": [
         {
           "date": "2026-07-06",
-          "seconds": 44,
+          "seconds": 46,
           "completed": false
         }
       ],
@@ -633,7 +633,11 @@
       "mastered": [],
       "monthlyTests": [],
       "readIndex": 3,
-      "speakScores": {},
+      "speakScores": {
+        "4": {
+          "s0": 0
+        }
+      },
       "spellIndex": 0,
       "totalSeconds": 0,
       "unlocked": true,
