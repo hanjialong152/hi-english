@@ -1,40 +1,4 @@
 {
-  "10001": {
-    "empid": "10001",
-    "name": "张三",
-    "password_hash": "714b27d08022948034dc3225f8dd2b02b07bbaba25e045fc8229c2f67f235ed1",
-    "salt": "9a4134b512b7de26",
-    "created_at": 1782399746424,
-    "created_by": "admin",
-    "last_login": 1782401119932,
-    "login_count": 2,
-    "must_change_password": true,
-    "status": "disabled"
-  },
-  "10002": {
-    "empid": "10002",
-    "name": "李四",
-    "password_hash": "50a3f5252bf524345f5c2a9ed122ca04e7de94cf62dfca864faea792e614c785",
-    "salt": "1043d01aff2a0aa6",
-    "created_at": 1782399759418,
-    "created_by": "admin",
-    "last_login": 0,
-    "login_count": 0,
-    "must_change_password": false,
-    "status": "disabled"
-  },
-  "10003": {
-    "empid": "10003",
-    "name": "王五",
-    "password_hash": "63d9a3745f4719f4cad0ab7563bee0700884983d72c31d117d29a9ad39d48fa4",
-    "salt": "91b0181bff91d83c",
-    "created_at": 1782399759418,
-    "created_by": "admin",
-    "last_login": 0,
-    "login_count": 0,
-    "must_change_password": false,
-    "status": "disabled"
-  },
   "gw00147407": {
     "empid": "gw00147407",
     "name": "韩家龙",
@@ -116,7 +80,7 @@
     "empid": "test001",
     "name": "TestUser",
     "group": "RD",
-    "status": "active",
+    "status": "disabled",
     "password_hash": "ccaa726b1c56c109024c75c85d55f49fc1232bd24cdf7c5121bf529ea6b5246a",
     "salt": "0678e5c51c03b5a3",
     "created_at": 1783355038782,
