@@ -108,5 +108,18 @@
     "last_login": 1782806494568,
     "login_count": 7,
     "must_change_password": false
+  },
+  "test001": {
+    "empid": "test001",
+    "name": "TestUser",
+    "group": "RD",
+    "status": "active",
+    "password_hash": "ccaa726b1c56c109024c75c85d55f49fc1232bd24cdf7c5121bf529ea6b5246a",
+    "salt": "0678e5c51c03b5a3",
+    "created_at": 1783355038782,
+    "created_by": "admin",
+    "last_login": 1783355043408,
+    "login_count": 1,
+    "must_change_password": false
   }
 }
