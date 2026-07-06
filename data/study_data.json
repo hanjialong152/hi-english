@@ -331,22 +331,6 @@
     "totalStudySeconds": 733,
     "updatedAt": 1783069530532
   },
-  "GW00058704": {
-    "createdAt": 1782402602907,
-    "empid": "GW00058704",
-    "favoriteIds": [],
-    "lastIndex": 0,
-    "learnedIds": [],
-    "masteredIds": [],
-    "name": "刘桂霄",
-    "sessions": [],
-    "speakScores": {},
-    "studyDates": [],
-    "totalStudySeconds": 0,
-    "updatedAt": 1782476899002,
-    "lastLogin": 1782476892584,
-    "loginCount": 1
-  },
   "GW0100031": {
     "empid": "GW0100031",
     "name": "鹿文军",
@@ -374,22 +358,6 @@
     "totalStudySeconds": 0,
     "createdAt": 1782473882507,
     "updatedAt": 1782473882507
-  },
-  "GW00073508": {
-    "createdAt": 1782473962876,
-    "empid": "GW00073508",
-    "favoriteIds": [],
-    "lastIndex": 0,
-    "lastLogin": 1782601685353,
-    "learnedIds": [],
-    "loginCount": 3,
-    "masteredIds": [],
-    "name": "吴浩",
-    "sessions": [],
-    "speakScores": {},
-    "studyDates": [],
-    "totalStudySeconds": 9,
-    "updatedAt": 1782601702319
   },
   "GW00345316": {
     "createdAt": 1782788041860,
