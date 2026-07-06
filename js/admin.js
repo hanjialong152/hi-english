@@ -9,9 +9,10 @@ async function init() {
     window.location.href = 'index.html';
     return;
   }
-  // 从服务端同步用户列表和分组（跨终端数据一致性）
+  // 从服务端同步用户列表、分组和学习数据（跨终端数据一致性）
   await HiEnglish.syncUsersFromServer();
   await HiEnglish.syncGroupsFromServer();
+  await HiEnglish.syncStudyDataFromServer();
   renderDashboard();
   renderStudentTable();
   renderGroupList();
@@ -568,6 +569,32 @@ function saveStudent() {
   closeModal('edit-student-modal');
   showToast('修改已保存');
   renderStudentTable();
+
+  // 同步到服务端
+  var token = sessionStorage.getItem('hi_english_admin_token') || '';
+  fetch(HiEnglish.getServerUrl() + '/api/admin/edit-user', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      oldEmpid: editingEmpid,
+      newEmpid: newEmpid,
+      name: newName,
+      group: newGroup,
+      token: token
+    })
+  }).then(function(r) { return r.json(); }).then(function(d) {
+    if (!d.success) {
+      showToast('服务端同步失败: ' + (d.error || '未知错误'), 'error');
+    } else {
+      // 同步成功后重新拉取学习数据（empid可能变了）
+      HiEnglish.syncStudyDataFromServer().then(function() {
+        renderStudentTable();
+        renderDashboard();
+      });
+    }
+  }).catch(function(e) {
+    console.error('[Admin] 修改学员同步失败:', e);
+  });
 }
 
 function resetPassword(empid) {

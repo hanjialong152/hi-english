@@ -74,20 +74,45 @@ const HiEnglish = {
 
   // ===== Push study data to server (debounced) =====
   _syncTimer: null,
+  _lastPushedData: null,
   pushServerStudyData(empid, data) {
     var self = this;
+    this._lastPushedData = { empid: empid, data: data };
     if (this._syncTimer) clearTimeout(this._syncTimer);
     this._syncTimer = setTimeout(function() {
-      fetch(self.getServerUrl() + '/api/study-data', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ empid: empid, studyData: data })
-      }).then(function(resp) {
-        console.log('[Sync] 学习数据已推送到服务端');
-      }).catch(function(e) {
-        console.log('[Sync] 推送学习数据失败:', e.message);
-      });
+      self._doPush(empid, data);
     }, 2000); // 2秒防抖
+  },
+
+  // 立即推送未保存的数据（页面隐藏/关闭时调用）
+  flushServerStudyData() {
+    if (this._syncTimer && this._lastPushedData) {
+      clearTimeout(this._syncTimer);
+      this._syncTimer = null;
+      var pending = this._lastPushedData;
+      this._lastPushedData = null;
+      // 使用 sendBeacon 确保页面关闭时数据也能发送
+      if (navigator.sendBeacon) {
+        var blob = new Blob([JSON.stringify({ empid: pending.empid, studyData: pending.data })], { type: 'application/json' });
+        navigator.sendBeacon(this.getServerUrl() + '/api/study-data', blob);
+        console.log('[Sync] 学习数据已通过sendBeacon紧急推送');
+      } else {
+        this._doPush(pending.empid, pending.data);
+      }
+    }
+  },
+
+  _doPush(empid, data) {
+    var self = this;
+    fetch(self.getServerUrl() + '/api/study-data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ empid: empid, studyData: data })
+    }).then(function(resp) {
+      console.log('[Sync] 学习数据已推送到服务端');
+    }).catch(function(e) {
+      console.log('[Sync] 推送学习数据失败:', e.message);
+    });
   },
 
   // ===== Sync users from server (for admin) =====
@@ -96,9 +121,9 @@ const HiEnglish = {
       var resp = await fetch(this.getServerUrl() + '/api/users');
       var data = await resp.json();
       if (data.success && data.users) {
-        // 将服务端用户合并到 localStorage（保留本地密码用于离线登录）
-        var localUsers = this.getUsers();
+        // 服务端数据为唯一数据源，完全覆盖本地
         var merged = {};
+        var localUsers = this.getUsers();
         for (var empid in data.users) {
           var serverUser = data.users[empid];
           var localUser = localUsers[empid];
@@ -109,12 +134,6 @@ const HiEnglish = {
             status: serverUser.status || 'active',
             password: localUser ? localUser.password : '123@456.com'
           };
-        }
-        // 保留本地有但服务端没有的用户（可能是刚创建还没同步）
-        for (var localEmpid in localUsers) {
-          if (!merged[localEmpid]) {
-            merged[localEmpid] = localUsers[localEmpid];
-          }
         }
         this.saveUsers(merged);
         console.log('[Sync] 从服务端同步用户列表成功:', Object.keys(merged).length, '人');
@@ -138,6 +157,23 @@ const HiEnglish = {
       }
     } catch(e) {
       console.log('[Sync] 同步分组失败:', e.message);
+    }
+    return null;
+  },
+
+  async syncStudyDataFromServer() {
+    try {
+      var token = sessionStorage.getItem('hi_english_admin_token') || '';
+      var resp = await fetch(this.getServerUrl() + '/api/admin/study-data?token=' + encodeURIComponent(token));
+      var data = await resp.json();
+      if (data.success && data.studyData) {
+        // 服务端数据为唯一数据源，完全覆盖本地
+        localStorage.setItem('hi_english_study', JSON.stringify(data.studyData));
+        console.log('[Sync] 从服务端同步学习数据成功，共', Object.keys(data.studyData).length, '人');
+        return data.studyData;
+      }
+    } catch(e) {
+      console.log('[Sync] 同步学习数据失败:', e.message);
     }
     return null;
   },

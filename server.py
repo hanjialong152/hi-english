@@ -625,6 +625,59 @@ def handle_admin_delete_user():
     return jsonify({'success': True, 'message': '已删除'})
 
 
+@app.route('/api/admin/edit-user', methods=['POST'])
+def handle_admin_edit_user():
+    body = request.json or {}
+    old_empid = (body.get('oldEmpid') or '').strip()
+    new_empid = (body.get('newEmpid') or '').strip()
+    new_name = (body.get('name') or '').strip()
+    new_group = (body.get('group') or '').strip()
+    token = body.get('token', '')
+    admin = load_json(os.path.join(DATA_DIR, 'admin.json'))
+    if token != admin.get('admin', {}).get('session_token', ''):
+        return jsonify({'success': False, 'error': '未授权'}), 401
+    if not new_empid or not new_name:
+        return jsonify({'success': False, 'error': '账号和姓名不能为空'}), 400
+    with data_lock:
+        users = load_json(os.path.join(DATA_DIR, 'users.json'))
+        study_data = load_json(os.path.join(DATA_DIR, 'study_data.json'))
+        if old_empid not in users:
+            return jsonify({'success': False, 'error': '原账号不存在'}), 404
+        if new_empid != old_empid and new_empid in users:
+            return jsonify({'success': False, 'error': '新账号已存在'}), 409
+        # 复制用户信息到新 empid
+        old_user = users[old_empid]
+        users[new_empid] = {
+            'empid': new_empid,
+            'name': new_name,
+            'group': new_group,
+            'status': old_user.get('status', 'active'),
+            'password_hash': old_user.get('password_hash', ''),
+            'salt': old_user.get('salt', ''),
+            'created_at': old_user.get('created_at', 0)
+        }
+        # 如果 empid 变了，删除旧记录
+        if new_empid != old_empid:
+            del users[old_empid]
+            # 迁移学习数据
+            if old_empid in study_data:
+                study_data[new_empid] = study_data[old_empid]
+                del study_data[old_empid]
+        save_json(os.path.join(DATA_DIR, 'users.json'), users)
+        save_json(os.path.join(DATA_DIR, 'study_data.json'), study_data)
+    return jsonify({'success': True, 'message': '修改成功'})
+
+
+@app.route('/api/admin/study-data', methods=['GET'])
+def handle_admin_get_study_data():
+    token = (request.args.get('token') or '').strip()
+    admin = load_json(os.path.join(DATA_DIR, 'admin.json'))
+    if token != admin.get('admin', {}).get('session_token', ''):
+        return jsonify({'success': False, 'error': '未授权'}), 401
+    study_data = load_json(os.path.join(DATA_DIR, 'study_data.json'))
+    return jsonify({'success': True, 'studyData': study_data})
+
+
 # ---- 语音识别 API ----
 @app.route('/api/transcribe', methods=['POST'])
 def handle_transcribe():

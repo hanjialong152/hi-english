@@ -91,6 +91,34 @@ async function init() {
   initNotifications();
   // Start watching for new messages from admin
   startMessageWatcher();
+
+  // 页面隐藏/关闭时立即推送学习数据到服务端（防止数据丢失）
+  document.addEventListener('visibilitychange', function() {
+    if (document.visibilityState === 'hidden') {
+      HiEnglish.flushServerStudyData();
+    }
+  });
+  window.addEventListener('beforeunload', function() {
+    HiEnglish.flushServerStudyData();
+  });
+  // 从后台切回前台时，重新拉取服务端最新数据
+  document.addEventListener('visibilitychange', function() {
+    if (document.visibilityState === 'visible') {
+      var user = HiEnglish.getCurrentUser();
+      if (user) {
+        HiEnglish.fetchServerStudyData(user.empid).then(function(serverData) {
+          if (serverData) {
+            studyData = serverData;
+            if (!studyData.basic) studyData.basic = { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: {}, checkIns: [], weeklyTests: [], monthlyTests: [], totalSeconds: 0 };
+            if (!studyData.business) studyData.business = { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: {}, checkIns: [], weeklyTests: [], monthlyTests: [], totalSeconds: 0, unlocked: false };
+            renderHome();
+            renderStageSwitcher();
+            console.log('[Sync] 从后台切回，已同步服务端最新数据');
+          }
+        });
+      }
+    }
+  });
 }
 
 // Refresh user info display from latest localStorage data

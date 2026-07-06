@@ -1,11 +1,11 @@
 // ===================================================
-// Hi English - Service Worker v18 (PWA安装支持)
+// Hi English - Service Worker v20 (PWA安装支持)
 // ===================================================
-// v18: 修复跨浏览器自动登录、管理员闪退问题
+// v20: 修复跨终端数据同步 - API请求不缓存，数据完全走服务端
 
-var CACHE_VERSION = 'hi-english-v18';
-var CORE_CACHE = 'hi-english-core-v18';
-var AUDIO_CACHE = 'hi-english-audio-v18';
+var CACHE_VERSION = 'hi-english-v20';
+var CORE_CACHE = 'hi-english-core-v20';
+var AUDIO_CACHE = 'hi-english-audio-v20';
 
 var CORE_FILES = [
   './',
@@ -55,6 +55,19 @@ self.addEventListener('activate', function(event) {
 self.addEventListener('fetch', function(event) {
   var url = new URL(event.request.url);
   if (event.request.method !== 'GET') return;
+
+  // API 请求：永远走网络，不缓存（确保跨终端数据一致性）
+  if (url.pathname.indexOf('/api/') !== -1) {
+    event.respondWith(
+      fetch(event.request).catch(function() {
+        return new Response('{"success":false,"error":"offline"}', {
+          status: 503,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      })
+    );
+    return;
+  }
 
   // 音频文件：网络优先
   if (url.pathname.indexOf('/audio/') !== -1 || url.pathname.match(/\.(mp3|wav)$/)) {
