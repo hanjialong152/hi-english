@@ -79,5 +79,38 @@
       "totalSeconds": 0,
       "unlocked": false
     }
+  },
+  "147407": {
+    "basic": {
+      "readIndex": 0,
+      "spellIndex": 0,
+      "learned": [],
+      "learnedDates": {},
+      "mastered": [],
+      "speakScores": {},
+      "checkIns": [
+        {
+          "date": "2026-07-06",
+          "seconds": 0,
+          "completed": false
+        }
+      ],
+      "weeklyTests": [],
+      "monthlyTests": [],
+      "totalSeconds": 0
+    },
+    "business": {
+      "readIndex": 0,
+      "spellIndex": 0,
+      "learned": [],
+      "learnedDates": {},
+      "mastered": [],
+      "speakScores": {},
+      "checkIns": [],
+      "weeklyTests": [],
+      "monthlyTests": [],
+      "totalSeconds": 0,
+      "unlocked": false
+    }
   }
 }
