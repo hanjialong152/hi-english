@@ -1,26 +1,4 @@
 {
-  "GW0100256": {
-    "empid": "GW0100256",
-    "name": "刘海玲",
-    "password_hash": "f67b0ca71287fbb18f3da761cd394550f2ddc2f2099213e4169dc8739a3c1412",
-    "salt": "f122fb51d7001cb6",
-    "created_at": 1782402576147,
-    "created_by": "admin",
-    "last_login": 1783374692468,
-    "login_count": 6,
-    "must_change_password": false
-  },
-  "GW00345316": {
-    "empid": "GW00345316",
-    "name": "阿迦",
-    "password_hash": "3d20a5ebdc71ecce872d18a3730ace8b9f61a0481e3274ef4df9124562abbee0",
-    "salt": "0327103488282a72",
-    "created_at": 1782788041859,
-    "created_by": "admin",
-    "last_login": 1782806494568,
-    "login_count": 7,
-    "must_change_password": false
-  },
   "test002": {
     "empid": "test002",
     "name": "TestUser2",
@@ -40,5 +18,23 @@
     "password_hash": "f394bcfb3ae8bdb9815ed3c187da5b908a1152e8f7fc8edf449a211ccad3d993",
     "salt": "928f03f19da3df6e",
     "created_at": 1782400169193
+  },
+  "345316": {
+    "empid": "345316",
+    "name": "阿迦",
+    "group": "",
+    "status": "active",
+    "password_hash": "3d20a5ebdc71ecce872d18a3730ace8b9f61a0481e3274ef4df9124562abbee0",
+    "salt": "0327103488282a72",
+    "created_at": 1782788041859
+  },
+  "100256": {
+    "empid": "100256",
+    "name": "刘海玲",
+    "group": "",
+    "status": "active",
+    "password_hash": "f67b0ca71287fbb18f3da761cd394550f2ddc2f2099213e4169dc8739a3c1412",
+    "salt": "f122fb51d7001cb6",
+    "created_at": 1782402576147
   }
 }
