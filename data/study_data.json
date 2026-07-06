@@ -443,7 +443,7 @@
         {
           "completed": false,
           "date": "2026-07-06",
-          "seconds": 0
+          "seconds": 1
         }
       ],
       "learned": [
@@ -591,9 +591,9 @@
     "business": {
       "checkIns": [
         {
+          "completed": false,
           "date": "2026-07-06",
-          "seconds": 47,
-          "completed": false
+          "seconds": 47
         }
       ],
       "learned": [
