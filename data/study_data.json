@@ -443,7 +443,7 @@
         {
           "completed": false,
           "date": "2026-07-06",
-          "seconds": 1
+          "seconds": 7
         }
       ],
       "learned": [
@@ -583,7 +583,11 @@
       "mastered": [],
       "monthlyTests": [],
       "readIndex": 0,
-      "speakScores": {},
+      "speakScores": {
+        "1": {
+          "phrase": 0
+        }
+      },
       "spellIndex": 0,
       "totalSeconds": 0,
       "weeklyTests": []
