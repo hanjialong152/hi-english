@@ -33,7 +33,7 @@ os.makedirs(DATA_DIR, exist_ok=True)
 data_lock = threading.Lock()
 
 DEFAULT_PASSWORD = '123@456.com'
-DEFAULT_ADMIN_PASSWORD = '123@456.com'
+DEFAULT_ADMIN_PASSWORD = '1234.com'
 
 # ---- GitHub 数据持久化同步 ----
 # Render 免费版文件系统不持久化，每次重启/部署会重置 data/ 目录
@@ -189,8 +189,6 @@ def init_data_files():
     users_path = os.path.join(DATA_DIR, 'users.json')
     admin_path = os.path.join(DATA_DIR, 'admin.json')
     study_path = os.path.join(DATA_DIR, 'study_data.json')
-    if not os.path.exists(users_path):
-        save_json(users_path, {})
     if not os.path.exists(study_path):
         save_json(study_path, {})
     if not os.path.exists(admin_path):
@@ -203,6 +201,35 @@ def init_data_files():
                 'created_at': int(time.time() * 1000)
             }
         })
+    # 创建默认学生用户（仅首次）
+    if not os.path.exists(users_path):
+        default_users = {}
+        default_groups = ['冲压车间', '焊装车间', '涂装车间', '总装车间', '研发部']
+        default_students = [
+            ('100001', '张三', '冲压车间'),
+            ('100002', '李四', '焊装车间'),
+            ('100003', '王五', '研发部'),
+        ]
+        for empid, name, group in default_students:
+            hashed, salt = hash_password(DEFAULT_PASSWORD)
+            default_users[empid] = {
+                'empid': empid, 'name': name, 'group': group, 'status': 'active',
+                'password_hash': hashed, 'salt': salt,
+                'created_at': int(time.time() * 1000), 'created_by': 'system',
+                'last_login': 0, 'login_count': 0, 'must_change_password': False
+            }
+        save_json(users_path, default_users)
+        # 为默认用户创建学习数据
+        default_study = {}
+        for empid, name, group in default_students:
+            default_study[empid] = {
+                'basic': {'readIndex': 0, 'spellIndex': 0, 'learned': [], 'learnedDates': {}, 'mastered': [], 'speakScores': {}, 'checkIns': [], 'weeklyTests': [], 'monthlyTests': [], 'totalSeconds': 0},
+                'business': {'readIndex': 0, 'spellIndex': 0, 'learned': [], 'learnedDates': {}, 'mastered': [], 'speakScores': {}, 'checkIns': [], 'weeklyTests': [], 'monthlyTests': [], 'totalSeconds': 0, 'unlocked': empid == '100003'}
+            }
+        save_json(study_path, default_study)
+        # 保存默认分组
+        save_json(os.path.join(DATA_DIR, 'groups.json'), default_groups)
+        print('[Init] 已创建默认用户和学习数据', flush=True)
 
 init_data_files()
 
@@ -280,7 +307,11 @@ def handle_login():
         save_json(os.path.join(DATA_DIR, 'users.json'), users)
     return jsonify({
         'success': True,
-        'user': {'empid': user['empid'], 'name': user['name'], 'must_change_password': user.get('must_change_password', False)}
+        'user': {
+            'empid': user['empid'], 'name': user['name'],
+            'group': user.get('group', ''), 'status': user.get('status', 'active'),
+            'must_change_password': user.get('must_change_password', False)
+        }
     })
 
 
@@ -288,26 +319,27 @@ def handle_login():
 def handle_register():
     body = request.json or {}
     empid = (body.get('empid') or '').strip()
-    name = (body.get('name') or '').strip()
+    name = (body.get('name', '')).strip()
+    group = (body.get('group', '')).strip()
+    password = (body.get('password') or '').strip() or DEFAULT_PASSWORD
     if not empid or not name:
         return jsonify({'success': False, 'error': '工号和姓名不能为空'}), 400
     with data_lock:
         users = load_json(os.path.join(DATA_DIR, 'users.json'))
         if empid in users:
             return jsonify({'success': False, 'error': '该工号已存在'}), 400
-        hashed, salt = hash_password(DEFAULT_PASSWORD)
+        hashed, salt = hash_password(password)
         users[empid] = {
-            'empid': empid, 'name': name, 'password_hash': hashed, 'salt': salt,
+            'empid': empid, 'name': name, 'group': group, 'status': 'active',
+            'password_hash': hashed, 'salt': salt,
             'created_at': int(time.time() * 1000), 'created_by': 'admin',
             'last_login': 0, 'login_count': 0, 'must_change_password': False
         }
         save_json(os.path.join(DATA_DIR, 'users.json'), users)
         study_data = load_json(os.path.join(DATA_DIR, 'study_data.json'))
         study_data[empid] = {
-            'empid': empid, 'name': name, 'learnedIds': [], 'masteredIds': [],
-            'favoriteIds': [], 'speakScores': {}, 'sessions': [], 'studyDates': [],
-            'lastIndex': 0, 'totalStudySeconds': 0,
-            'createdAt': int(time.time() * 1000), 'updatedAt': int(time.time() * 1000)
+            'basic': {'readIndex': 0, 'spellIndex': 0, 'learned': [], 'learnedDates': {}, 'mastered': [], 'speakScores': {}, 'checkIns': [], 'weeklyTests': [], 'monthlyTests': [], 'totalSeconds': 0},
+            'business': {'readIndex': 0, 'spellIndex': 0, 'learned': [], 'learnedDates': {}, 'mastered': [], 'speakScores': {}, 'checkIns': [], 'weeklyTests': [], 'monthlyTests': [], 'totalSeconds': 0, 'unlocked': False}
         }
         save_json(os.path.join(DATA_DIR, 'study_data.json'), study_data)
     return jsonify({'success': True, 'message': f'已添加学员 {name}，初始密码 {DEFAULT_PASSWORD}'})
@@ -325,6 +357,7 @@ def handle_import_students():
         for s in students:
             empid = str(s.get('empid', '')).strip()
             name = str(s.get('name', '')).strip()
+            group = str(s.get('group', '')).strip()
             if not empid or not name:
                 skipped.append(f'{empid} - 工号或姓名为空')
                 continue
@@ -333,15 +366,14 @@ def handle_import_students():
                 continue
             hashed, salt = hash_password(DEFAULT_PASSWORD)
             users[empid] = {
-                'empid': empid, 'name': name, 'password_hash': hashed, 'salt': salt,
+                'empid': empid, 'name': name, 'group': group, 'status': 'active',
+                'password_hash': hashed, 'salt': salt,
                 'created_at': int(time.time() * 1000), 'created_by': 'admin',
                 'last_login': 0, 'login_count': 0, 'must_change_password': False
             }
             study_data[empid] = {
-                'empid': empid, 'name': name, 'learnedIds': [], 'masteredIds': [],
-                'favoriteIds': [], 'speakScores': {}, 'sessions': [], 'studyDates': [],
-                'lastIndex': 0, 'totalStudySeconds': 0,
-                'createdAt': int(time.time() * 1000), 'updatedAt': int(time.time() * 1000)
+                'basic': {'readIndex': 0, 'spellIndex': 0, 'learned': [], 'learnedDates': {}, 'mastered': [], 'speakScores': {}, 'checkIns': [], 'weeklyTests': [], 'monthlyTests': [], 'totalSeconds': 0},
+                'business': {'readIndex': 0, 'spellIndex': 0, 'learned': [], 'learnedDates': {}, 'mastered': [], 'speakScores': {}, 'checkIns': [], 'weeklyTests': [], 'monthlyTests': [], 'totalSeconds': 0, 'unlocked': False}
             }
             added += 1
         save_json(os.path.join(DATA_DIR, 'users.json'), users)
@@ -350,6 +382,58 @@ def handle_import_students():
         'success': True, 'added': added, 'skipped': skipped,
         'message': f'成功导入 {added} 人' + (f'，跳过 {len(skipped)} 人' if skipped else '')
     })
+
+
+# ---- 用户列表 API（公开，不含密码哈希）----
+@app.route('/api/users', methods=['GET'])
+def handle_get_users():
+    users = load_json(os.path.join(DATA_DIR, 'users.json'))
+    safe_users = {}
+    for empid, user in users.items():
+        safe_users[empid] = {
+            'empid': empid,
+            'name': user.get('name', ''),
+            'group': user.get('group', ''),
+            'status': user.get('status', 'active'),
+            'created_at': user.get('created_at', 0),
+            'last_login': user.get('last_login', 0),
+            'login_count': user.get('login_count', 0)
+        }
+    return jsonify({'success': True, 'users': safe_users})
+
+
+# ---- 分组 API ----
+@app.route('/api/groups', methods=['GET'])
+def handle_get_groups():
+    groups_path = os.path.join(DATA_DIR, 'groups.json')
+    if os.path.exists(groups_path):
+        groups = load_json(groups_path)
+    else:
+        groups = ['冲压车间', '焊装车间', '涂装车间', '总装车间', '研发部']
+        save_json(groups_path, groups)
+    return jsonify({'success': True, 'groups': groups})
+
+
+@app.route('/api/groups', methods=['POST'])
+def handle_save_groups():
+    body = request.json or {}
+    groups = body.get('groups', [])
+    save_json(os.path.join(DATA_DIR, 'groups.json'), groups)
+    return jsonify({'success': True})
+
+
+@app.route('/api/admin/toggle-user', methods=['POST'])
+def handle_toggle_user():
+    body = request.json or {}
+    empid = (body.get('empid') or '').strip()
+    with data_lock:
+        users = load_json(os.path.join(DATA_DIR, 'users.json'))
+        user = users.get(empid)
+        if not user:
+            return jsonify({'success': False, 'error': '用户不存在'}), 404
+        user['status'] = 'disabled' if user.get('status', 'active') == 'active' else 'active'
+        save_json(os.path.join(DATA_DIR, 'users.json'), users)
+    return jsonify({'success': True, 'status': user['status']})
 
 
 # ---- 学习数据 API ----
@@ -371,7 +455,6 @@ def handle_save_study_data():
     with data_lock:
         all_data = load_json(os.path.join(DATA_DIR, 'study_data.json'))
         all_data[empid] = sd
-        all_data[empid]['updatedAt'] = int(time.time() * 1000)
         save_json(os.path.join(DATA_DIR, 'study_data.json'), all_data)
     return jsonify({'success': True})
 
@@ -470,19 +553,53 @@ def handle_admin_get_users():
     all_users = []
     for empid, user in users.items():
         sd = study_data.get(empid, {})
-        speak_scores = sd.get('speakScores', {})
-        scores = list(speak_scores.values()) if isinstance(speak_scores, dict) else []
-        avg_score = round(sum(scores) / len(scores)) if scores else 0
+        # 兼容新旧格式：新格式有 basic/business 子对象
+        basic = sd.get('basic', {}) if isinstance(sd, dict) else {}
+        business = sd.get('business', {}) if isinstance(sd, dict) else {}
+        # 汇总两个阶段的 learned/mastered
+        learned_basic = basic.get('learned', []) if isinstance(basic, dict) else []
+        learned_business = business.get('learned', []) if isinstance(business, dict) else []
+        mastered_basic = basic.get('mastered', []) if isinstance(basic, dict) else []
+        mastered_business = business.get('mastered', []) if isinstance(business, dict) else []
+        speak_scores_basic = basic.get('speakScores', {}) if isinstance(basic, dict) else {}
+        speak_scores_business = business.get('speakScores', {}) if isinstance(business, dict) else {}
+        checkins_basic = basic.get('checkIns', []) if isinstance(basic, dict) else []
+        checkins_business = business.get('checkIns', []) if isinstance(business, dict) else []
+        total_seconds_basic = basic.get('totalSeconds', 0) if isinstance(basic, dict) else 0
+        total_seconds_business = business.get('totalSeconds', 0) if isinstance(business, dict) else 0
+
+        learned_count = len(learned_basic) + len(learned_business)
+        mastered_count = len(mastered_basic) + len(mastered_business)
+        total_seconds = total_seconds_basic + total_seconds_business
+        # 汇总 speak scores
+        all_scores = []
+        for sc in [speak_scores_basic, speak_scores_business]:
+            if isinstance(sc, dict):
+                for v in sc.values():
+                    if isinstance(v, dict):
+                        all_scores.extend(v.values())
+                    elif isinstance(v, (int, float)):
+                        all_scores.append(v)
+        avg_score = round(sum(all_scores) / len(all_scores)) if all_scores else 0
+        # 汇总 study dates (from checkIns)
+        study_dates = set()
+        for cl in [checkins_basic, checkins_business]:
+            if isinstance(cl, list):
+                for c in cl:
+                    if isinstance(c, dict) and c.get('date'):
+                        study_dates.add(c['date'])
+
         all_users.append({
             'empid': empid, 'name': user['name'],
+            'group': user.get('group', ''),
+            'status': user.get('status', 'active'),
             'createdAt': user.get('created_at', 0),
             'lastLogin': user.get('last_login', 0),
             'loginCount': user.get('login_count', 0),
-            'learnedCount': len(sd.get('learnedIds', [])),
-            'masteredCount': len(sd.get('masteredIds', [])),
-            'totalStudySeconds': sd.get('totalStudySeconds', 0),
-            'sessions': sd.get('sessions', []),
-            'studyDates': sd.get('studyDates', []),
+            'learnedCount': learned_count,
+            'masteredCount': mastered_count,
+            'totalStudySeconds': total_seconds,
+            'studyDates': sorted(list(study_dates)),
             'avgScore': avg_score
         })
     return jsonify({'success': True, 'users': all_users})

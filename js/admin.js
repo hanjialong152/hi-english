@@ -3,12 +3,15 @@ var currentEditGroupEl = null;
 var editingEmpid = null;
 
 // ===== Initialize =====
-function init() {
+async function init() {
   var user = HiEnglish.getCurrentUser();
   if (!user || user.role !== 'admin') {
     window.location.href = 'index.html';
     return;
   }
+  // 从服务端同步用户列表和分组（跨终端数据一致性）
+  await HiEnglish.syncUsersFromServer();
+  await HiEnglish.syncGroupsFromServer();
   renderDashboard();
   renderStudentTable();
   renderGroupList();
@@ -369,6 +372,19 @@ function addStudent() {
   closeModal('add-student-modal');
   showToast('学员添加成功');
   renderStudentTable();
+
+  // 同步到服务端（跨终端可见）
+  fetch(HiEnglish.getServerUrl() + '/api/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ empid: empid, name: name, group: group, password: password })
+  }).then(function(resp) { return resp.json(); }).then(function(data) {
+    if (data.success) {
+      console.log('[Sync] 学员已同步到服务端:', empid);
+    }
+  }).catch(function(e) {
+    console.log('[Sync] 学员同步到服务端失败:', e.message);
+  });
 }
 
 // Batch import via Excel file upload
@@ -481,6 +497,24 @@ function batchImportStudents() {
   closeModal('batch-import-modal');
   showToast('导入完成：成功 ' + successCount + ' 条' + (skipCount > 0 ? '，跳过已存在 ' + skipCount + ' 条' : '') + (failCount > 0 ? '，失败 ' + failCount + ' 条' : ''));
   renderStudentTable();
+
+  // 同步到服务端
+  var serverStudents = batchImportData.filter(function(row) {
+    return row.empid && row.name && !batchImportData.some(function(r) { return r !== row && r.empid === row.empid; });
+  }).map(function(row) {
+    return { empid: row.empid, name: row.name, group: row.group || '未分组' };
+  });
+  if (serverStudents.length > 0) {
+    fetch(HiEnglish.getServerUrl() + '/api/import-students', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ students: serverStudents })
+    }).then(function(resp) { return resp.json(); }).then(function(data) {
+      console.log('[Sync] 批量导入同步到服务端:', data.message);
+    }).catch(function(e) {
+      console.log('[Sync] 批量导入同步失败:', e.message);
+    });
+  }
 }
 
 function editStudent(empid) {
@@ -565,6 +599,12 @@ function toggleStatus(empid) {
     HiEnglish.saveUsers(users);
     showToast(users[empid].name + ' 已' + (users[empid].status === 'active' ? '启用' : '禁用'));
     renderStudentTable();
+    // 同步到服务端
+    fetch(HiEnglish.getServerUrl() + '/api/admin/toggle-user', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ empid: empid })
+    }).catch(function(e) { console.log('[Sync] 切换状态失败:', e.message); });
   }
 }
 
@@ -582,6 +622,18 @@ function deleteStudent(empid) {
   localStorage.setItem('hi_english_study', JSON.stringify(allStudy));
   showToast('学员已删除');
   renderStudentTable();
+
+  // 同步到服务端
+  var token = sessionStorage.getItem('hi_english_admin_token') || '';
+  fetch(HiEnglish.getServerUrl() + '/api/admin/delete-user', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ empid: empid, token: token })
+  }).then(function(resp) { return resp.json(); }).then(function(data) {
+    console.log('[Sync] 服务端删除学员:', empid, data.success ? '成功' : '失败');
+  }).catch(function(e) {
+    console.log('[Sync] 服务端删除学员失败:', e.message);
+  });
 }
 
 // ===== Group Management =====

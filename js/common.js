@@ -7,6 +7,141 @@ const HiEnglish = {
   _ttsVoices: [],
   _bestVoice: null,
 
+  // ===== Server URL detection =====
+  // 自动检测服务端地址：线上部署用同域，本地开发用 Render
+  getServerUrl() {
+    var host = window.location.hostname;
+    // 线上部署（Render / CloudStudio）或本地 Flask 服务器：同域
+    if (host.indexOf('onrender.com') >= 0 || host.indexOf('codebuddy.work') >= 0 ||
+        host === 'localhost' || host === '127.0.0.1') {
+      return window.location.origin;
+    }
+    return 'https://hi-english.onrender.com';
+  },
+
+  // ===== Server login (cross-device authentication) =====
+  async serverLogin(account, password) {
+    try {
+      var resp = await fetch(this.getServerUrl() + '/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ empid: account, password: password })
+      });
+      var data = await resp.json();
+      if (data.success) {
+        // 将服务端用户信息同步到 localStorage（供离线使用）
+        var users = this.getUsers();
+        users[account] = {
+          empid: data.user.empid,
+          name: data.user.name,
+          group: data.user.group || '',
+          status: data.user.status || 'active',
+          password: password
+        };
+        this.saveUsers(users);
+        // 设置 sessionStorage 登录状态（仅当前浏览器标签页有效）
+        this.currentUser = Object.assign({}, users[account], { role: 'student' });
+        sessionStorage.setItem('hi_english_user', JSON.stringify(this.currentUser));
+        return { success: true, user: this.currentUser };
+      }
+      return { success: false, message: data.error || '账号或密码错误' };
+    } catch(e) {
+      console.log('[ServerLogin] 服务端不可达，降级到本地:', e.message);
+      return null; // null 表示服务端不可达
+    }
+  },
+
+  // ===== Fetch study data from server =====
+  async fetchServerStudyData(empid) {
+    try {
+      var resp = await fetch(this.getServerUrl() + '/api/study-data?empid=' + encodeURIComponent(empid));
+      var data = await resp.json();
+      if (data.success && data.studyData) {
+        // 将服务端数据写入 localStorage
+        var all = JSON.parse(localStorage.getItem('hi_english_study') || '{}');
+        all[empid] = data.studyData;
+        localStorage.setItem('hi_english_study', JSON.stringify(all));
+        console.log('[Sync] 从服务端拉取学习数据成功');
+        return data.studyData;
+      }
+      console.log('[Sync] 服务端无学习数据');
+      return null;
+    } catch(e) {
+      console.log('[Sync] 拉取学习数据失败:', e.message);
+      return null;
+    }
+  },
+
+  // ===== Push study data to server (debounced) =====
+  _syncTimer: null,
+  pushServerStudyData(empid, data) {
+    var self = this;
+    if (this._syncTimer) clearTimeout(this._syncTimer);
+    this._syncTimer = setTimeout(function() {
+      fetch(self.getServerUrl() + '/api/study-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ empid: empid, studyData: data })
+      }).then(function(resp) {
+        console.log('[Sync] 学习数据已推送到服务端');
+      }).catch(function(e) {
+        console.log('[Sync] 推送学习数据失败:', e.message);
+      });
+    }, 2000); // 2秒防抖
+  },
+
+  // ===== Sync users from server (for admin) =====
+  async syncUsersFromServer() {
+    try {
+      var resp = await fetch(this.getServerUrl() + '/api/users');
+      var data = await resp.json();
+      if (data.success && data.users) {
+        // 将服务端用户合并到 localStorage（保留本地密码用于离线登录）
+        var localUsers = this.getUsers();
+        var merged = {};
+        for (var empid in data.users) {
+          var serverUser = data.users[empid];
+          var localUser = localUsers[empid];
+          merged[empid] = {
+            empid: serverUser.empid,
+            name: serverUser.name,
+            group: serverUser.group || '',
+            status: serverUser.status || 'active',
+            password: localUser ? localUser.password : '123@456.com'
+          };
+        }
+        // 保留本地有但服务端没有的用户（可能是刚创建还没同步）
+        for (var localEmpid in localUsers) {
+          if (!merged[localEmpid]) {
+            merged[localEmpid] = localUsers[localEmpid];
+          }
+        }
+        this.saveUsers(merged);
+        console.log('[Sync] 从服务端同步用户列表成功:', Object.keys(merged).length, '人');
+        return merged;
+      }
+    } catch(e) {
+      console.log('[Sync] 同步用户列表失败:', e.message);
+    }
+    return null;
+  },
+
+  // ===== Sync groups from server =====
+  async syncGroupsFromServer() {
+    try {
+      var resp = await fetch(this.getServerUrl() + '/api/groups');
+      var data = await resp.json();
+      if (data.success && data.groups) {
+        this.saveGroups(data.groups);
+        console.log('[Sync] 从服务端同步分组成功');
+        return data.groups;
+      }
+    } catch(e) {
+      console.log('[Sync] 同步分组失败:', e.message);
+    }
+    return null;
+  },
+
   // API: Load 850 words
   async loadWords() {
     if (this.words850) return this.words850;
@@ -288,8 +423,8 @@ const HiEnglish = {
     var all = JSON.parse(localStorage.getItem('hi_english_study') || '{}');
     if (!all[empid]) {
       all[empid] = {
-        basic: { readIndex: 0, spellIndex: 0, learned: [], mastered: [], speakScores: {}, checkIns: [], weeklyTests: [], monthlyTests: [], totalSeconds: 0 },
-        business: { readIndex: 0, spellIndex: 0, learned: [], mastered: [], speakScores: {}, checkIns: [], weeklyTests: [], monthlyTests: [], totalSeconds: 0, unlocked: false }
+        basic: { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: {}, checkIns: [], weeklyTests: [], monthlyTests: [], totalSeconds: 0 },
+        business: { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: {}, checkIns: [], weeklyTests: [], monthlyTests: [], totalSeconds: 0, unlocked: false }
       };
       localStorage.setItem('hi_english_study', JSON.stringify(all));
     }
@@ -300,6 +435,8 @@ const HiEnglish = {
     var all = JSON.parse(localStorage.getItem('hi_english_study') || '{}');
     all[empid] = data;
     localStorage.setItem('hi_english_study', JSON.stringify(all));
+    // 异步推送到服务端（防抖2秒，跨终端同步）
+    this.pushServerStudyData(empid, data);
   },
 
   // Groups
@@ -309,6 +446,12 @@ const HiEnglish = {
 
   saveGroups(groups) {
     localStorage.setItem('hi_english_groups', JSON.stringify(groups));
+    // 同步到服务端
+    fetch(this.getServerUrl() + '/api/groups', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ groups: groups })
+    }).catch(function(e) { console.log('[Sync] 分组同步失败:', e.message); });
   },
 
   // Messages
@@ -417,11 +560,11 @@ const HiEnglish = {
       var allStudy = JSON.parse(localStorage.getItem('hi_english_study') || '{}');
       if (!allStudy['100003']) {
         allStudy['100003'] = {
-          basic: { readIndex: 0, spellIndex: 0, learned: [], mastered: [], speakScores: {}, checkIns: [], weeklyTests: [], monthlyTests: [], totalSeconds: 0 },
-          business: { readIndex: 0, spellIndex: 0, learned: [], mastered: [], speakScores: {}, checkIns: [], weeklyTests: [], monthlyTests: [], totalSeconds: 0, unlocked: true }
+          basic: { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: {}, checkIns: [], weeklyTests: [], monthlyTests: [], totalSeconds: 0 },
+          business: { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: {}, checkIns: [], weeklyTests: [], monthlyTests: [], totalSeconds: 0, unlocked: true }
         };
       } else if (!allStudy['100003'].business) {
-        allStudy['100003'].business = { readIndex: 0, spellIndex: 0, learned: [], mastered: [], speakScores: {}, checkIns: [], weeklyTests: [], monthlyTests: [], totalSeconds: 0, unlocked: true };
+        allStudy['100003'].business = { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: {}, checkIns: [], weeklyTests: [], monthlyTests: [], totalSeconds: 0, unlocked: true };
       } else {
         allStudy['100003'].business.unlocked = true;
       }
@@ -517,3 +660,14 @@ HiEnglish.initVoices();
 
 // Init default data on load
 HiEnglish.initDefaultData();
+
+// PWA Service Worker 注册（所有页面通用）
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('./service-worker.js').then(function(reg) {
+      console.log('[PWA] SW registered');
+    }).catch(function(err) {
+      console.log('[PWA] SW registration failed:', err);
+    });
+  });
+}

@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Hi English - 登录</title>
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icon-apple.png">
+<meta name="theme-color" content="#4A90D9">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Hi English">
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 :root {
@@ -98,7 +104,7 @@ body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Mi
 
 <div class="toast" id="toast"></div>
 
-<script src="js/common.js"></script>
+<script src="js/common.js?v=20260707a"></script>
 <script>
 function switchToAdmin() {
   document.getElementById('view-student').classList.remove('active');
@@ -116,36 +122,92 @@ function doStudentLogin() {
   var account = document.getElementById('login-account').value.trim();
   var password = document.getElementById('login-password').value;
   var remember = document.getElementById('remember-password').checked;
-
+  var btn = document.querySelector('.entry-btn.student');
   if (!account) { showToast('请输入账号'); return; }
   if (!password) { showToast('请输入密码'); return; }
 
-  var result = HiEnglish.login(account, password, false);
-  if (result.success) {
-    if (remember) {
-      localStorage.setItem('hi_english_saved_credentials', JSON.stringify({account:account, password:password}));
+  btn.disabled = true;
+  btn.textContent = '登录中...';
+
+  // 先尝试服务端登录（跨终端认证）
+  HiEnglish.serverLogin(account, password).then(function(serverResult) {
+    if (serverResult && serverResult.success) {
+      // 服务端登录成功
+      if (remember) {
+        localStorage.setItem('hi_english_saved_credentials', JSON.stringify({account:account, password:password}));
+      } else {
+        localStorage.removeItem('hi_english_saved_credentials');
+      }
+      window.location.href = 'student.html';
+    } else if (serverResult && !serverResult.success) {
+      // 服务端返回了明确的错误
+      btn.disabled = false;
+      btn.textContent = '登录学员端';
+      showToast(serverResult.message);
     } else {
-      localStorage.removeItem('hi_english_saved_credentials');
+      // 服务端不可达，降级到本地登录
+      var result = HiEnglish.login(account, password, false);
+      btn.disabled = false;
+      btn.textContent = '登录学员端';
+      if (result.success) {
+        if (remember) {
+          localStorage.setItem('hi_english_saved_credentials', JSON.stringify({account:account, password:password}));
+        } else {
+          localStorage.removeItem('hi_english_saved_credentials');
+        }
+        window.location.href = 'student.html';
+      } else {
+        showToast(result.message);
+      }
     }
-    window.location.href = 'student.html';
-  } else {
-    showToast(result.message);
-  }
+  });
 }
 
 function doAdminLogin() {
   var account = document.getElementById('admin-account').value.trim();
   var password = document.getElementById('admin-password').value;
+  var btn = document.querySelector('#view-admin .entry-btn');
 
   if (!account) { showToast('请输入管理员账号'); return; }
   if (!password) { showToast('请输入管理员密码'); return; }
 
-  var result = HiEnglish.login(account, password, true);
-  if (result.success) {
-    window.location.href = 'admin.html';
-  } else {
-    showToast(result.message);
-  }
+  btn.disabled = true;
+  btn.textContent = '登录中...';
+
+  // 先尝试服务端管理员登录
+  fetch(HiEnglish.getServerUrl() + '/api/admin-login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username: account, password: password })
+  }).then(function(resp) { return resp.json(); }).then(function(data) {
+    btn.disabled = false;
+    btn.textContent = '登录管理员端';
+    if (data.success) {
+      sessionStorage.setItem('hi_english_admin_token', data.token);
+      sessionStorage.setItem('hi_english_admin_name', account);
+      // 设置 hi_english_user 供 admin.js init() 验证登录状态
+      sessionStorage.setItem('hi_english_user', JSON.stringify({ empid: 'admin', role: 'admin', name: account }));
+      window.location.href = 'admin.html';
+    } else {
+      // 降级到本地登录
+      var result = HiEnglish.login(account, password, true);
+      if (result.success) {
+        window.location.href = 'admin.html';
+      } else {
+        showToast(data.error || result.message || '用户名或密码错误');
+      }
+    }
+  }).catch(function(e) {
+    btn.disabled = false;
+    btn.textContent = '登录管理员端';
+    // 降级到本地登录
+    var result = HiEnglish.login(account, password, true);
+    if (result.success) {
+      window.location.href = 'admin.html';
+    } else {
+      showToast('服务端不可达，本地登录: ' + result.message);
+    }
+  });
 }
 
 function showToast(msg) {

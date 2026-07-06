@@ -1,8 +1,9 @@
 {
-  "name": "Hi English - 英语单词学习",
+  "name": "Hi English - 汽车商务英语学习平台",
   "short_name": "Hi English",
-  "description": "830个基础英语单词学习，跟读评分，学习报告",
+  "description": "基础英语850词 + 商务英语116课，跟读评分、周月测、学习报告",
   "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#4A90D9",

@@ -23,16 +23,8 @@ async function init() {
   var user = HiEnglish.getCurrentUser();
   // getCurrentUser() now returns null if account was deleted or disabled
   if (!user || user.role !== 'student') {
-    // 自动测试登录：如果没有登录，自动用测试账号登录（方便测试）
-    HiEnglish.initDefaultData();
-    var testResult = HiEnglish.login('100001', '123@456.com', false);
-    if (testResult.success) {
-      user = testResult.user;
-      console.log('[AUTO LOGIN] 测试账号自动登录成功');
-    } else {
-      window.location.href = 'index.html';
-      return;
-    }
+    window.location.href = 'index.html';
+    return;
   }
 
   refreshUserInfo(user);
@@ -43,6 +35,42 @@ async function init() {
   lessons = lessonsData.lessons || [];
 
   studyData = HiEnglish.getStudyData(user.empid);
+  // 从服务端拉取最新学习数据（跨终端同步）
+  var serverData = await HiEnglish.fetchServerStudyData(user.empid);
+  if (serverData) {
+    studyData = serverData;
+    // 旧格式数据迁移（learnedIds/masteredIds → basic.learned/mastered）
+    if (studyData.learnedIds || studyData.masteredIds || studyData.lastIndex !== undefined) {
+      console.log('[Migrate] 检测到旧格式学习数据，开始迁移...');
+      studyData.basic = {
+        readIndex: studyData.lastIndex || 0,
+        spellIndex: 0,
+        learned: studyData.learnedIds || [],
+        learnedDates: {},
+        mastered: studyData.masteredIds || [],
+        speakScores: {},
+        checkIns: [],
+        weeklyTests: [],
+        monthlyTests: [],
+        totalSeconds: studyData.totalStudySeconds || 0
+      };
+      // 迁移 studyDates (array of date strings → learnedDates map)
+      if (studyData.studyDates && studyData.studyDates.length) {
+        studyData.studyDates.forEach(function(d) { studyData.basic.learnedDates[d] = true; });
+      }
+      studyData.business = { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: {}, checkIns: [], weeklyTests: [], monthlyTests: [], totalSeconds: 0, unlocked: false };
+      delete studyData.learnedIds; delete studyData.masteredIds; delete studyData.lastIndex;
+      delete studyData.studyDates; delete studyData.totalStudySeconds; delete studyData.sessions;
+      saveStudyData();
+      console.log('[Migrate] 数据迁移完成');
+    }
+    // 确保结构完整
+    if (!studyData.basic) studyData.basic = { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: {}, checkIns: [], weeklyTests: [], monthlyTests: [], totalSeconds: 0 };
+    if (!studyData.business) studyData.business = { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: {}, checkIns: [], weeklyTests: [], monthlyTests: [], totalSeconds: 0, unlocked: false };
+  }
+  // Migrate: ensure learnedDates exists (backward compat)
+  if (!studyData.basic.learnedDates) studyData.basic.learnedDates = {};
+  if (!studyData.business.learnedDates) studyData.business.learnedDates = {};
   // Unlock business for 100003
   if (user.empid === '100003') {
     studyData.business.unlocked = true;
@@ -249,10 +277,32 @@ function goSpell() {
 }
 
 function goWeeklyTest() {
+  // 周测仅每周六、周日可以测试
+  var dayOfWeek = new Date().getDay(); // 0=Sun, 6=Sat
+  if (dayOfWeek !== 6 && dayOfWeek !== 0) {
+    testWordIndex = 0;
+    testWords = [];
+    testSubItems = [];
+    testSubScores = {};
+    sNav('weekly');
+    renderWeeklyTest(true);
+    return;
+  }
   prepareTest('weekly');
 }
 
 function goMonthlyTest() {
+  // 月测仅每月1日至5日可以测试
+  var dayOfMonth = new Date().getDate();
+  if (dayOfMonth < 1 || dayOfMonth > 5) {
+    testWordIndex = 0;
+    testWords = [];
+    testSubItems = [];
+    testSubScores = {};
+    sNav('monthly');
+    renderMonthlyTest(true);
+    return;
+  }
   prepareTest('monthly');
 }
 
@@ -685,6 +735,7 @@ var recState = {
   micPermissionGranted: false,
   maxTimer: null,
   uploadTimer: null,
+  onstopSafetyTimer: null,
   usingTouch: false
 };
 
@@ -924,6 +975,20 @@ function _stopRecording() {
   if (recState.mediaRecorder && recState.mediaRecorder.state === 'recording') {
     try { recState.mediaRecorder.stop(); } catch(e) { console.warn('[MIC] stop失败:', e); }
   }
+  // 安全机制：3秒后如果 onstop 未触发 uploadAndTranscribe，强制重置状态
+  // 防止某些浏览器（如Safari）MediaRecorder 卡死导致后续录音不可用
+  if (recState.onstopSafetyTimer) clearTimeout(recState.onstopSafetyTimer);
+  recState.onstopSafetyTimer = setTimeout(function() {
+    if (recState.active && !recState.evaluatedAlready) {
+      console.warn('[MIC] onstop超时未触发，强制重置录音状态');
+      _cleanupMic();
+      _restoreRecUI();
+      recState.evaluatedAlready = true;
+      showScoreModal(0, '录音处理超时，请重试');
+      _recReset();
+      _recStartCooldown();
+    }
+  }, 3000);
   // 显示"识别中"状态
   var ids = _getRecIds(recState.mode, recState.testIdx);
   var label = document.getElementById(ids.label);
@@ -943,6 +1008,8 @@ function _removeReleaseListeners() {
 
 // ===== 上传音频到后端识别 =====
 function uploadAndTranscribe() {
+  // onstop 已正常触发，清除安全定时器
+  if (recState.onstopSafetyTimer) { clearTimeout(recState.onstopSafetyTimer); recState.onstopSafetyTimer = null; }
   // 检查录音是否已被取消（如用户导航离开页面）
   if (recState.cancelled || !recState.mode) {
     console.log('[MIC] 录音已取消，跳过上传识别');
@@ -956,6 +1023,8 @@ function uploadAndTranscribe() {
       recState.evaluatedAlready = true;
       showScoreModal(0, '录音太短，请按住麦克风大声朗读');
     }
+    _recReset();
+    _recStartCooldown();
     return;
   }
 
@@ -969,6 +1038,8 @@ function uploadAndTranscribe() {
       recState.evaluatedAlready = true;
       showScoreModal(0, '录音太短，请按住麦克风大声朗读');
     }
+    _recReset();
+    _recStartCooldown();
     return;
   }
 
@@ -1385,6 +1456,7 @@ function _recReset() {
   recState.usingTouch = false;
   if (recState.maxTimer) { clearTimeout(recState.maxTimer); recState.maxTimer = null; }
   if (recState.uploadTimer) { clearTimeout(recState.uploadTimer); recState.uploadTimer = null; }
+  if (recState.onstopSafetyTimer) { clearTimeout(recState.onstopSafetyTimer); recState.onstopSafetyTimer = null; }
   if (recState.mediaStream) {
     recState.mediaStream.getTracks().forEach(function(t) { t.stop(); });
     recState.mediaStream = null;
@@ -1440,16 +1512,19 @@ function nextWord() {
   if (currentIndex > stageData.readIndex) {
     stageData.readIndex = currentIndex;
   }
+  var today = HiEnglish.today();
   if (currentStage === 'basic') {
     var prevWordId = words[currentIndex - 1] ? words[currentIndex - 1].id : null;
     if (prevWordId && !stageData.learned.includes(prevWordId)) {
       stageData.learned.push(prevWordId);
     }
+    if (prevWordId) stageData.learnedDates[prevWordId] = today;
   } else {
     var prevLessonId = lessons[currentIndex - 1] ? lessons[currentIndex - 1].id : null;
     if (prevLessonId && !stageData.learned.includes(prevLessonId)) {
       stageData.learned.push(prevLessonId);
     }
+    if (prevLessonId) stageData.learnedDates[prevLessonId] = today;
   }
   saveStudyData();
   if (currentStage === 'basic') renderWordLearnCard();
@@ -1610,25 +1685,22 @@ function nextSpell() {
 
 // ===== Tests =====
 function prepareTest(type) {
-  var stageData = studyData[currentStage];
   var pool;
 
   if (type === 'weekly') {
     pool = getWeeklyTestPool();
-    var testCount = currentStage === 'basic' ? 10 : 1;
-    if (pool.length === 0) {
-      showToast('暂无上周学习内容，请先进行跟读学习');
+    if (pool.length < 10) {
+      showToast('周学习内容少于10个单词或微课，请补卡');
       return;
     }
-    testWords = pool.slice().sort(function() { return Math.random() - 0.5; }).slice(0, Math.min(testCount, pool.length));
+    testWords = pool.slice().sort(function() { return Math.random() - 0.5; }).slice(0, 10);
   } else {
     pool = getMonthlyTestPool();
-    var testCount2 = currentStage === 'basic' ? 20 : 2;
-    if (pool.length === 0) {
-      showToast('暂无上月学习内容，请先进行跟读学习');
+    if (pool.length < 20) {
+      showToast('月学习内容少于20个单词或微课，请补卡');
       return;
     }
-    testWords = pool.slice().sort(function() { return Math.random() - 0.5; }).slice(0, Math.min(testCount2, pool.length));
+    testWords = pool.slice().sort(function() { return Math.random() - 0.5; }).slice(0, 20);
   }
 
   testWordIndex = 0;
@@ -1640,88 +1712,114 @@ function prepareTest(type) {
   else renderMonthlyTest(false);
 }
 
-// Get last week's should-learn content (Saturday to Friday, 10 words/day or 1 lesson/day)
+// Get last Saturday to this Friday's learned items
 function getWeeklyTestPool() {
   var stageData = studyData[currentStage];
-  var dailyCount = currentStage === 'basic' ? 10 : 1;
-  var weeklyCount = dailyCount * 7;
+  var learnedDates = stageData.learnedDates || {};
+  var learnedIds = stageData.learned || [];
 
-  // Determine start date from first check-in
-  var firstCheckIn = stageData.checkIns.length > 0 ? stageData.checkIns[0].date : null;
-  if (!firstCheckIn) {
-    if (currentStage === 'basic') return words.slice(0, Math.min(weeklyCount, words.length));
-    return lessons.slice(0, Math.min(weeklyCount, lessons.length));
-  }
-
-  var startDate = new Date(firstCheckIn);
-  startDate.setHours(0, 0, 0, 0);
+  // Calculate last Saturday and this Friday
   var now = new Date();
-  now.setHours(0, 0, 0, 0);
+  var dayOfWeek = now.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
 
-  var daysDiff = Math.floor((now - startDate) / 86400000);
-  var currentWeek = Math.floor(daysDiff / 7) + 1;
-
-  // Last week's range
-  var lastWeekStart = Math.max(0, (currentWeek - 2) * weeklyCount);
-  var lastWeekEnd = lastWeekStart + weeklyCount;
-
-  if (currentStage === 'basic') {
-    var pool = words.slice(lastWeekStart, Math.min(words.length, lastWeekEnd));
-    if (pool.length === 0) {
-      // Fallback: use learned words
-      pool = stageData.learned.map(function(id) {
-        return words.find(function(w) { return String(w.id) === String(id); });
-      }).filter(Boolean);
-    }
-    return pool;
+  var lastSaturday;
+  if (dayOfWeek === 6) {
+    // Today is Saturday — last Saturday is today
+    lastSaturday = new Date(now);
   } else {
-    var pool = lessons.slice(lastWeekStart, Math.min(lessons.length, lastWeekEnd));
-    if (pool.length === 0) {
-      pool = lessons.slice(0, Math.min(weeklyCount, lessons.length));
-    }
-    return pool;
+    // Go back to the most recent Saturday
+    var diff = dayOfWeek === 0 ? 1 : dayOfWeek + 1;
+    lastSaturday = new Date(now);
+    lastSaturday.setDate(now.getDate() - diff);
   }
+  lastSaturday.setHours(0, 0, 0, 0);
+
+  var thisFriday = new Date(lastSaturday);
+  thisFriday.setDate(lastSaturday.getDate() + 6);
+  thisFriday.setHours(23, 59, 59, 999);
+
+  var startDateStr = formatDateStr(lastSaturday);
+  var endDateStr = formatDateStr(thisFriday);
+
+  // Filter learned items by date range
+  var pool = [];
+  learnedIds.forEach(function(id) {
+    var learnedDate = learnedDates[id];
+    if (learnedDate && learnedDate >= startDateStr && learnedDate <= endDateStr) {
+      if (currentStage === 'basic') {
+        var word = words.find(function(w) { return String(w.id) === String(id); });
+        if (word) pool.push(word);
+      } else {
+        var lesson = lessons.find(function(l) { return l.id === id; });
+        if (lesson) pool.push(lesson);
+      }
+    }
+  });
+
+  // Fallback: if no date-tracked items, use position-based (backward compat)
+  if (pool.length === 0 && learnedIds.length > 0) {
+    pool = learnedIds.map(function(id) {
+      if (currentStage === 'basic') {
+        return words.find(function(w) { return String(w.id) === String(id); });
+      } else {
+        return lessons.find(function(l) { return l.id === id; });
+      }
+    }).filter(Boolean);
+  }
+
+  return pool;
 }
 
-// Get last month's should-learn content (10 words/day → 300 words, or 1 lesson/day → 30 lessons)
+// Get last month 1st to last day's learned items
 function getMonthlyTestPool() {
   var stageData = studyData[currentStage];
-  var dailyCount = currentStage === 'basic' ? 10 : 1;
-  var monthlyCount = dailyCount * 30;
+  var learnedDates = stageData.learnedDates || {};
+  var learnedIds = stageData.learned || [];
 
-  var firstCheckIn = stageData.checkIns.length > 0 ? stageData.checkIns[0].date : null;
-  if (!firstCheckIn) {
-    if (currentStage === 'basic') return words.slice(0, Math.min(monthlyCount, words.length));
-    return lessons.slice(0, Math.min(monthlyCount, lessons.length));
-  }
-
-  var startDate = new Date(firstCheckIn);
-  startDate.setHours(0, 0, 0, 0);
+  // Calculate last month start (1st) and end (last day)
   var now = new Date();
-  now.setHours(0, 0, 0, 0);
+  var lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  var lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+  lastMonthEnd.setHours(23, 59, 59, 999);
 
-  var monthsDiff = (now.getFullYear() - startDate.getFullYear()) * 12 + (now.getMonth() - startDate.getMonth());
-  var currentMonth = monthsDiff + 1;
+  var startDateStr = formatDateStr(lastMonthStart);
+  var endDateStr = formatDateStr(lastMonthEnd);
 
-  // Last month's range
-  var lastMonthStart = Math.max(0, (currentMonth - 2) * monthlyCount);
-  var lastMonthEnd = lastMonthStart + monthlyCount;
+  // Filter learned items by date range
+  var pool = [];
+  learnedIds.forEach(function(id) {
+    var learnedDate = learnedDates[id];
+    if (learnedDate && learnedDate >= startDateStr && learnedDate <= endDateStr) {
+      if (currentStage === 'basic') {
+        var word = words.find(function(w) { return String(w.id) === String(id); });
+        if (word) pool.push(word);
+      } else {
+        var lesson = lessons.find(function(l) { return l.id === id; });
+        if (lesson) pool.push(lesson);
+      }
+    }
+  });
 
-  if (currentStage === 'basic') {
-    var pool = words.slice(lastMonthStart, Math.min(words.length, lastMonthEnd));
-    if (pool.length === 0) {
-      pool = stageData.learned.map(function(id) {
+  // Fallback: if no date-tracked items, use position-based (backward compat)
+  if (pool.length === 0 && learnedIds.length > 0) {
+    pool = learnedIds.map(function(id) {
+      if (currentStage === 'basic') {
         return words.find(function(w) { return String(w.id) === String(id); });
-      }).filter(Boolean);
-    }
-    return pool;
-  } else {
-    var pool = lessons.slice(lastMonthStart, Math.min(lessons.length, lastMonthEnd));
-    if (pool.length === 0) {
-      pool = lessons.slice(0, Math.min(monthlyCount, lessons.length));
-    }
-    return pool;
+      } else {
+        return lessons.find(function(l) { return l.id === id; });
+      }
+    }).filter(Boolean);
   }
+
+  return pool;
+}
+
+// Format date as YYYY-MM-DD
+function formatDateStr(date) {
+  var y = date.getFullYear();
+  var m = String(date.getMonth() + 1).padStart(2, '0');
+  var d = String(date.getDate()).padStart(2, '0');
+  return y + '-' + m + '-' + d;
 }
 
 function renderWeeklyTest(locked) {
@@ -1750,10 +1848,7 @@ function renderTestCard(type, content) {
     return;
   }
 
-  var testCountLabel = type === 'weekly' ? '10个单词' : '20个单词';
-  if (currentStage === 'business') {
-    testCountLabel = type === 'weekly' ? '1门微课' : '2门微课';
-  }
+  var testCountLabel = type === 'weekly' ? '10个单词或微课' : '20个单词或微课';
 
   // Build sub-items: each has its own Chinese text, English target, and mic button
   testSubItems = [];
@@ -2123,46 +2218,91 @@ function showCalendar() {
   var now = new Date();
   var year = now.getFullYear();
   var month = now.getMonth();
+  var todayStr = formatDateStr(now);
   document.getElementById('cal-title').textContent = '📅 ' + year + '年' + (month + 1) + '月 打卡日历';
 
   var firstDay = new Date(year, month, 1).getDay();
   var daysInMonth = new Date(year, month + 1, 0).getDate();
   var todayDate = now.getDate();
-  var dayOfWeek = now.getDay();
-  var mondayDiff = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-  var weekStartDay = todayDate - mondayDiff;
-  var weekEndDay = weekStartDay + 6;
+
+  // Calculate this week's Saturday (week start) and Friday (week end) as Date objects
+  // Week = Saturday to Friday
+  var dayOfWeek = now.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+  var saturdayOffset;
+  if (dayOfWeek === 6) {
+    saturdayOffset = 0;
+  } else {
+    saturdayOffset = dayOfWeek === 0 ? 1 : dayOfWeek + 1;
+  }
+  var weekSaturday = new Date(now);
+  weekSaturday.setDate(now.getDate() - saturdayOffset);
+  weekSaturday.setHours(0, 0, 0, 0);
+  var weekFriday = new Date(weekSaturday);
+  weekFriday.setDate(weekSaturday.getDate() + 6);
+  weekFriday.setHours(23, 59, 59, 999);
+  var weekSaturdayStr = formatDateStr(weekSaturday);
+  var weekFridayStr = formatDateStr(weekFriday);
+
+  // Helper: check if a date string is in this week (Sat-Fri)
+  function isInThisWeekStr(dateStr) {
+    return dateStr >= weekSaturdayStr && dateStr <= weekFridayStr;
+  }
 
   var html = '';
   var heads = ['日','一','二','三','四','五','六'];
   heads.forEach(function(h) { html += '<div class="cal-head">' + h + '</div>'; });
 
+  // Fill leading empty cells + previous month's trailing days (if in this week)
+  var prevMonthDays = new Date(year, month, 0).getDate(); // last day of prev month
   for (var i = 0; i < firstDay; i++) {
-    html += '<div class="cal-day empty"></div>';
+    var prevDay = prevMonthDays - firstDay + 1 + i;
+    var prevMonth = month === 0 ? 11 : month - 1;
+    var prevYear = month === 0 ? year - 1 : year;
+    var prevDateStr = prevYear + '-' + String(prevMonth + 1).padStart(2, '0') + '-' + String(prevDay).padStart(2, '0');
+    var prevCheckIn = stageData.checkIns.find(function(c) { return c.date === prevDateStr; });
+    var prevInWeek = isInThisWeekStr(prevDateStr);
+    var prevIsPast = prevDateStr < todayStr;
+
+    if (prevInWeek && prevIsPast) {
+      var pClasses = 'cal-day prev-month';
+      if (!prevCheckIn || !prevCheckIn.completed) {
+        pClasses += ' undone';
+        html += '<div class="' + pClasses + '" style="cursor:pointer;text-decoration:underline;opacity:0.6;" onclick="startMakeup(\'' + prevDateStr + '\')">' + prevDay + '</div>';
+      } else {
+        pClasses += ' done';
+        html += '<div class="' + pClasses + '" style="opacity:0.6;">' + prevDay + '</div>';
+      }
+    } else {
+      html += '<div class="cal-day empty"></div>';
+    }
   }
 
   for (var d = 1; d <= daysInMonth; d++) {
     var classes = 'cal-day';
     var dateStr = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
     var checkIn = stageData.checkIns.find(function(c) { return c.date === dateStr; });
-    var isInCurrentWeek = d >= weekStartDay && d <= weekEndDay;
+    var isInThisWeek = isInThisWeekStr(dateStr);
 
     if (d > todayDate) {
+      // Future dates — cannot interact
       classes += ' future';
       html += '<div class="' + classes + '">' + d + '</div>';
     } else if (d < todayDate) {
+      // Past dates
       if (!checkIn || !checkIn.completed) {
         classes += ' undone';
-        if (isInCurrentWeek) {
+        if (isInThisWeek) {
+          // Only this week (Sat-Fri) past dates can be made up
           html += '<div class="' + classes + '" style="cursor:pointer;text-decoration:underline;" onclick="startMakeup(\'' + dateStr + '\')">' + d + '</div>';
         } else {
-          html += '<div class="' + classes + '" onclick="showToast(\'该日期不在当周，无法补卡\')">' + d + '</div>';
+          html += '<div class="' + classes + '" onclick="showToast(\'该日期不在本周（上周六至本周五），无法补卡\')">' + d + '</div>';
         }
       } else {
         classes += ' done';
         html += '<div class="' + classes + '">' + d + '</div>';
       }
     } else {
+      // Today — normal check-in, no makeup
       if (checkIn && checkIn.completed) {
         classes += ' done';
       } else {

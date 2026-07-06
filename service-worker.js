@@ -1,24 +1,30 @@
 // ===================================================
-// Hi English - Service Worker v14 (录音功能完整修复)
+// Hi English - Service Worker v18 (PWA安装支持)
 // ===================================================
-// v14: 修复录音async时序bug + 时长降级评分 + iOS mp4格式支持
+// v18: 修复跨浏览器自动登录、管理员闪退问题
 
-var CACHE_VERSION = 'hi-english-v14';
-var CORE_CACHE = 'hi-english-core-v14';
-var AUDIO_CACHE = 'hi-english-audio-v14';
+var CACHE_VERSION = 'hi-english-v18';
+var CORE_CACHE = 'hi-english-core-v18';
+var AUDIO_CACHE = 'hi-english-audio-v18';
 
 var CORE_FILES = [
   './',
   './index.html',
+  './student.html',
+  './admin.html',
   './style.css',
+  './css/style.css',
   './app.js',
   './words_data.js',
+  './js/common.js',
+  './js/student.js',
+  './js/admin.js',
   './manifest.json',
+  './service-worker.js',
   './icon-192.png',
   './icon-512.png',
   './icon-apple.png',
   './favicon.png',
-  './admin.html',
   './admin.css',
   './admin.js'
 ];
