@@ -95,14 +95,16 @@
         }
       ],
       "learned": [
-        1
+        1,
+        2
       ],
       "learnedDates": {
-        "1": "2026-07-07"
+        "1": "2026-07-07",
+        "2": "2026-07-07"
       },
       "mastered": [],
       "monthlyTests": [],
-      "readIndex": 1,
+      "readIndex": 2,
       "speakScores": {},
       "spellIndex": 0,
       "totalSeconds": 0,
