@@ -133,7 +133,8 @@
           "ex3": 30
         },
         "4": {
-          "phrase": 85
+          "phrase": 85,
+          "ex1": 83
         }
       },
       "spellIndex": 1,
