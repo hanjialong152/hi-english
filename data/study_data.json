@@ -110,14 +110,17 @@
         "2": "2026-07-07",
         "3": "2026-07-07"
       },
-      "mastered": [],
+      "mastered": [
+        "1"
+      ],
       "monthlyTests": [],
       "readIndex": 3,
       "speakScores": {
         "1": {
           "ex1": 89,
           "phrase": 85,
-          "ex2": 83
+          "ex2": 83,
+          "ex3": 85
         },
         "3": {
           "phrase": 28
