@@ -28,7 +28,9 @@
     "status": "active",
     "password_hash": "3d20a5ebdc71ecce872d18a3730ace8b9f61a0481e3274ef4df9124562abbee0",
     "salt": "0327103488282a72",
-    "created_at": 1782788041859
+    "created_at": 1782788041859,
+    "last_login": 1783387335008,
+    "login_count": 1
   },
   "100256": {
     "empid": "100256",
