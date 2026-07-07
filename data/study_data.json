@@ -123,7 +123,7 @@
       "checkIns": [
         {
           "date": "2026-07-07",
-          "seconds": 0,
+          "seconds": 3,
           "completed": false
         }
       ],
@@ -133,7 +133,7 @@
       "monthlyTests": [],
       "readIndex": 0,
       "speakScores": {},
-      "spellIndex": 0,
+      "spellIndex": 1,
       "totalSeconds": 0,
       "weeklyTests": []
     },
