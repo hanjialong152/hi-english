@@ -306,7 +306,8 @@ function renderStudentTable() {
 
   document.getElementById('a-students-toolbar').innerHTML =
     '<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">' +
-      '<input type="text" id="search-input" placeholder="搜索账号或姓名..." value="' + (search || '') + '" style="flex:1;min-width:200px;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:14px;" oninput="renderStudentTable()">' +
+      '<input type="password" autocomplete="new-password" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;" tabindex="-1" aria-hidden="true">' +
+      '<input type="text" id="search-input" name="search-query" autocomplete="off" placeholder="搜索账号或姓名..." value="' + (search || '') + '" style="flex:1;min-width:200px;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:14px;" oninput="renderStudentTable()">' +
       '<select id="filter-group" style="padding:10px;border:1px solid var(--border);border-radius:8px;font-size:14px;" onchange="renderStudentTable()">' + groupOptions + '</select>' +
       '<button class="btn btn-primary" onclick="showAddStudentModal()">+ 添加学员</button>' +
       '<button class="btn btn-outline" onclick="showBatchImportModal()">📥 批量导入</button>' +
