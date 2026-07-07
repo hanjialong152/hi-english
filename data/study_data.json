@@ -97,7 +97,7 @@
         {
           "completed": false,
           "date": "2026-07-07",
-          "seconds": 99
+          "seconds": 116
         }
       ],
       "learned": [
@@ -116,7 +116,8 @@
       "speakScores": {
         "1": {
           "ex1": 89,
-          "phrase": 85
+          "phrase": 85,
+          "ex2": 54
         },
         "3": {
           "phrase": 28
