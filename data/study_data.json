@@ -114,6 +114,9 @@
       "monthlyTests": [],
       "readIndex": 3,
       "speakScores": {
+        "1": {
+          "phrase": 85
+        },
         "3": {
           "phrase": 28
         },
