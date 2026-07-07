@@ -97,7 +97,7 @@
         {
           "completed": false,
           "date": "2026-07-07",
-          "seconds": 42
+          "seconds": 44
         }
       ],
       "learned": [
@@ -188,6 +188,33 @@
       "totalSeconds": 0,
       "unlocked": false,
       "weeklyTests": []
+    }
+  },
+  "102334": {
+    "basic": {
+      "readIndex": 0,
+      "spellIndex": 0,
+      "learned": [],
+      "learnedDates": {},
+      "mastered": [],
+      "speakScores": {},
+      "checkIns": [],
+      "weeklyTests": [],
+      "monthlyTests": [],
+      "totalSeconds": 0
+    },
+    "business": {
+      "readIndex": 0,
+      "spellIndex": 0,
+      "learned": [],
+      "learnedDates": {},
+      "mastered": [],
+      "speakScores": {},
+      "checkIns": [],
+      "weeklyTests": [],
+      "monthlyTests": [],
+      "totalSeconds": 0,
+      "unlocked": false
     }
   }
 }
