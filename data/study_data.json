@@ -124,7 +124,7 @@
         {
           "completed": false,
           "date": "2026-07-07",
-          "seconds": 9
+          "seconds": 10
         }
       ],
       "learned": [],
@@ -133,7 +133,7 @@
       "monthlyTests": [],
       "readIndex": 0,
       "speakScores": {},
-      "spellIndex": 12,
+      "spellIndex": 13,
       "totalSeconds": 0,
       "weeklyTests": []
     },
