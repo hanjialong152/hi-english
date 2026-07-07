@@ -130,16 +130,18 @@
       "learned": [
         1,
         2,
-        3
+        3,
+        4
       ],
       "learnedDates": {
         "1": "2026-07-07",
         "2": "2026-07-07",
-        "3": "2026-07-07"
+        "3": "2026-07-07",
+        "4": "2026-07-07"
       },
       "mastered": [],
       "monthlyTests": [],
-      "readIndex": 3,
+      "readIndex": 4,
       "speakScores": {},
       "spellIndex": 20,
       "totalSeconds": 0,
