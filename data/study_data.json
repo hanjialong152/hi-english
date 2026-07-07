@@ -87,6 +87,11 @@
           "completed": false,
           "date": "2026-07-06",
           "seconds": 6
+        },
+        {
+          "date": "2026-07-07",
+          "seconds": 0,
+          "completed": false
         }
       ],
       "learned": [],
