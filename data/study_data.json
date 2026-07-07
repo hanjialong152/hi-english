@@ -97,7 +97,7 @@
         {
           "completed": false,
           "date": "2026-07-07",
-          "seconds": 282
+          "seconds": 295
         }
       ],
       "learned": [
@@ -129,7 +129,8 @@
           "ex3": 53
         },
         "3": {
-          "phrase": 28
+          "phrase": 28,
+          "ex3": 30
         },
         "4": {
           "phrase": 73
