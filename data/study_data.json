@@ -122,9 +122,9 @@
     "basic": {
       "checkIns": [
         {
+          "completed": false,
           "date": "2026-07-07",
-          "seconds": 4,
-          "completed": false
+          "seconds": 5
         }
       ],
       "learned": [],
@@ -133,7 +133,7 @@
       "monthlyTests": [],
       "readIndex": 0,
       "speakScores": {},
-      "spellIndex": 3,
+      "spellIndex": 4,
       "totalSeconds": 0,
       "weeklyTests": []
     },
