@@ -1,11 +1,11 @@
 // ===================================================
-// Hi English - Service Worker v20 (PWA安装支持)
+// Hi English - Service Worker v21 (PWA安装支持)
 // ===================================================
-// v20: 修复跨终端数据同步 - API请求不缓存，数据完全走服务端
+// v21: 修复分组数据持久化 + 搜索栏禁止浏览器自动填充
 
-var CACHE_VERSION = 'hi-english-v20';
-var CORE_CACHE = 'hi-english-core-v20';
-var AUDIO_CACHE = 'hi-english-audio-v20';
+var CACHE_VERSION = 'hi-english-v21';
+var CORE_CACHE = 'hi-english-core-v21';
+var AUDIO_CACHE = 'hi-english-audio-v21';
 
 var CORE_FILES = [
   './',
