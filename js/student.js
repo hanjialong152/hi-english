@@ -2003,7 +2003,7 @@ function renderWordList(filter) {
     '</div>';
 
   // Search
-  var searchHTML = '<div style="padding:0 12px 8px;"><input type="text" class="wl-search" placeholder="搜索单词或中文..." value="' + wlSearch + '" oninput="onWlSearch(this.value)"></div>';
+  var searchHTML = '<div style="padding:0 12px 8px;position:relative;"><input type="password" autocomplete="new-password" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;" tabindex="-1" aria-hidden="true"><input type="text" class="wl-search" name="wl-search-query" autocomplete="off" placeholder="搜索单词或中文..." value="' + wlSearch + '" oninput="onWlSearch(this.value)"></div>';
 
   // Filter words
   var displayItems = currentStage === 'basic' ? words : lessons;
