@@ -2,13 +2,11 @@
   "test002": {
     "empid": "test002",
     "name": "TestUser2",
-    "group": "RD",
+    "group": "B组",
     "status": "disabled",
     "password_hash": "ccaa726b1c56c109024c75c85d55f49fc1232bd24cdf7c5121bf529ea6b5246a",
     "salt": "0678e5c51c03b5a3",
-    "created_at": 1783355038782,
-    "last_login": 1783373736663,
-    "login_count": 1
+    "created_at": 1783355038782
   },
   "147407": {
     "empid": "147407",
