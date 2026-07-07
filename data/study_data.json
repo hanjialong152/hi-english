@@ -97,24 +97,26 @@
         {
           "completed": false,
           "date": "2026-07-07",
-          "seconds": 325
+          "seconds": 327
         }
       ],
       "learned": [
         1,
         2,
-        3
+        3,
+        4
       ],
       "learnedDates": {
         "1": "2026-07-07",
         "2": "2026-07-07",
-        "3": "2026-07-07"
+        "3": "2026-07-07",
+        "4": "2026-07-07"
       },
       "mastered": [
         "1"
       ],
       "monthlyTests": [],
-      "readIndex": 3,
+      "readIndex": 4,
       "speakScores": {
         "1": {
           "ex1": 89,
