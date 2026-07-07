@@ -174,7 +174,7 @@ def init_data_files():
     # 先从 GitHub 拉取数据（覆盖本地初始文件）
     if GITHUB_TOKEN:
         print('[Sync] 从 GitHub data-sync 分支拉取最新数据...', flush=True)
-        for filename in ['users.json', 'study_data.json', 'admin.json']:
+        for filename in ['users.json', 'study_data.json', 'admin.json', 'groups.json']:
             rel_path = f'data/{filename}'
             remote_data = github_api_get(rel_path)
             if remote_data is not None:
