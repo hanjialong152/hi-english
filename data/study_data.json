@@ -186,7 +186,7 @@
         {
           "completed": false,
           "date": "2026-07-08",
-          "seconds": 123
+          "seconds": 129
         }
       ],
       "learned": [
@@ -218,6 +218,9 @@
         "9": {
           "ex1": 84,
           "ex2": 62,
+          "phrase": 85
+        },
+        "10": {
           "phrase": 85
         }
       },
