@@ -100,9 +100,9 @@
           "seconds": 355
         },
         {
+          "completed": false,
           "date": "2026-07-08",
-          "seconds": 7,
-          "completed": false
+          "seconds": 7
         }
       ],
       "learned": [
