@@ -185,7 +185,7 @@
         },
         {
           "date": "2026-07-08",
-          "seconds": 2,
+          "seconds": 5,
           "completed": false
         }
       ],
@@ -213,7 +213,7 @@
       "monthlyTests": [],
       "readIndex": 8,
       "speakScores": {},
-      "spellIndex": 41,
+      "spellIndex": 43,
       "totalSeconds": 0,
       "weeklyTests": []
     },
