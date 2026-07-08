@@ -175,5 +175,31 @@
     "last_login": 0,
     "login_count": 0,
     "must_change_password": false
+  },
+  "110233": {
+    "empid": "110233",
+    "name": "珍珍",
+    "group": "B组",
+    "status": "active",
+    "password_hash": "d0971b61ff387b61809242a3462d39df2a2204cae8f9a2adb13a19af610e3b5c",
+    "salt": "ce38eb21ca51a5f4",
+    "created_at": 1783477024963,
+    "created_by": "admin",
+    "last_login": 1783478502612,
+    "login_count": 1,
+    "must_change_password": false
+  },
+  "342114": {
+    "empid": "342114",
+    "name": "张祺",
+    "group": "B组",
+    "status": "active",
+    "password_hash": "b992eab5c20d6a8a904c4d3a3acce03399e63c4318b997dd4a556a5a3050a211",
+    "salt": "70f19010a974dd3a",
+    "created_at": 1783477054554,
+    "created_by": "admin",
+    "last_login": 0,
+    "login_count": 0,
+    "must_change_password": false
   }
 }
