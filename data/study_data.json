@@ -260,11 +260,15 @@
       "learned": [],
       "learnedDates": {},
       "mastered": [],
-      "speakScores": {},
+      "speakScores": {
+        "1": {
+          "phrase": 67
+        }
+      },
       "checkIns": [
         {
           "date": "2026-07-08",
-          "seconds": 5,
+          "seconds": 9,
           "completed": false
         }
       ],
