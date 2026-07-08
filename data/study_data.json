@@ -186,7 +186,7 @@
         {
           "completed": false,
           "date": "2026-07-08",
-          "seconds": 22
+          "seconds": 26
         }
       ],
       "learned": [
@@ -214,7 +214,7 @@
       "readIndex": 8,
       "speakScores": {
         "9": {
-          "phrase": 66
+          "phrase": 31
         }
       },
       "spellIndex": 43,
