@@ -182,6 +182,11 @@
           "completed": false,
           "date": "2026-07-07",
           "seconds": 15
+        },
+        {
+          "date": "2026-07-08",
+          "seconds": 2,
+          "completed": false
         }
       ],
       "learned": [
@@ -208,7 +213,7 @@
       "monthlyTests": [],
       "readIndex": 8,
       "speakScores": {},
-      "spellIndex": 39,
+      "spellIndex": 40,
       "totalSeconds": 0,
       "weeklyTests": []
     },
