@@ -101,7 +101,7 @@
         },
         {
           "date": "2026-07-08",
-          "seconds": 3,
+          "seconds": 7,
           "completed": false
         }
       ],
@@ -268,7 +268,7 @@
       "checkIns": [
         {
           "date": "2026-07-08",
-          "seconds": 18,
+          "seconds": 23,
           "completed": false
         }
       ],
