@@ -186,7 +186,7 @@
         {
           "completed": false,
           "date": "2026-07-08",
-          "seconds": 167
+          "seconds": 169
         }
       ],
       "learned": [
@@ -231,7 +231,7 @@
           "phrase": 85
         }
       },
-      "spellIndex": 50,
+      "spellIndex": 52,
       "totalSeconds": 0,
       "weeklyTests": []
     },
