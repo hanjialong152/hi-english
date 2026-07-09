@@ -57,7 +57,9 @@
     "status": "active",
     "password_hash": "54aa4d970d0c1309bd413c249b37db9fa4f6fbf775e3fc0d8e9e0c31f276f29f",
     "salt": "68d6f645e0691086",
-    "created_at": 1783374967375
+    "created_at": 1783374967375,
+    "last_login": 1783596825685,
+    "login_count": 1
   },
   "407556": {
     "empid": "407556",
