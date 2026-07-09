@@ -4,7 +4,7 @@
 // v22: 移动端通知栏推送（showNotification + notificationclick）
 // v21: 修复分组数据持久化 + 搜索栏禁止浏览器自动填充
 
-var CACHE_VERSION = 'hi-english-v22';
+var CACHE_VERSION = 'hi-english-v23';
 var CORE_CACHE = 'hi-english-core-v22';
 var AUDIO_CACHE = 'hi-english-audio-v22';
 
