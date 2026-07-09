@@ -107,7 +107,7 @@
         {
           "completed": false,
           "date": "2026-07-09",
-          "seconds": 48
+          "seconds": 69
         }
       ],
       "learned": [
@@ -162,6 +162,9 @@
         },
         "6": {
           "phrase": 15
+        },
+        "7": {
+          "phrase": 35
         }
       },
       "spellIndex": 1,
@@ -796,33 +799,6 @@
     }
   },
   "228174": {
-    "basic": {
-      "readIndex": 0,
-      "spellIndex": 0,
-      "learned": [],
-      "learnedDates": {},
-      "mastered": [],
-      "speakScores": {},
-      "checkIns": [],
-      "weeklyTests": [],
-      "monthlyTests": [],
-      "totalSeconds": 0
-    },
-    "business": {
-      "readIndex": 0,
-      "spellIndex": 0,
-      "learned": [],
-      "learnedDates": {},
-      "mastered": [],
-      "speakScores": {},
-      "checkIns": [],
-      "weeklyTests": [],
-      "monthlyTests": [],
-      "totalSeconds": 0,
-      "unlocked": false
-    }
-  },
-  "999998": {
     "basic": {
       "readIndex": 0,
       "spellIndex": 0,
