@@ -377,7 +377,7 @@
       "checkIns": [
         {
           "date": "2026-07-09",
-          "seconds": 36,
+          "seconds": 47,
           "completed": false
         }
       ],
@@ -389,7 +389,8 @@
       "speakScores": {
         "1": {
           "phrase": 85,
-          "ex1": 94
+          "ex1": 94,
+          "ex2": 82
         }
       },
       "spellIndex": 0,
