@@ -377,7 +377,7 @@
       "checkIns": [
         {
           "date": "2026-07-09",
-          "seconds": 16,
+          "seconds": 28,
           "completed": false
         }
       ],
@@ -386,7 +386,11 @@
       "mastered": [],
       "monthlyTests": [],
       "readIndex": 0,
-      "speakScores": {},
+      "speakScores": {
+        "1": {
+          "phrase": 85
+        }
+      },
       "spellIndex": 0,
       "totalSeconds": 0,
       "weeklyTests": []
