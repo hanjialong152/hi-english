@@ -286,20 +286,22 @@
         },
         {
           "date": "2026-07-09",
-          "seconds": 85,
+          "seconds": 92,
           "completed": false
         }
       ],
       "learned": [],
       "learnedDates": {},
-      "mastered": [],
+      "mastered": [
+        "1"
+      ],
       "monthlyTests": [],
       "readIndex": 0,
       "speakScores": {
         "1": {
           "phrase": 85,
           "ex1": 85,
-          "ex2": 75,
+          "ex2": 85,
           "ex3": 85
         }
       },
