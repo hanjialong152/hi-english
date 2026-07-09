@@ -110,9 +110,9 @@
           "seconds": 153
         },
         {
+          "completed": false,
           "date": "2026-07-10",
-          "seconds": 0,
-          "completed": false
+          "seconds": 0
         }
       ],
       "learned": [
@@ -184,9 +184,9 @@
           "seconds": 98
         },
         {
+          "completed": false,
           "date": "2026-07-10",
-          "seconds": 2,
-          "completed": false
+          "seconds": 3
         }
       ],
       "learned": [
