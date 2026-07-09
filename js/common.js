@@ -664,10 +664,13 @@ const HiEnglish = {
     return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' + hm;
   },
 
-  // Utility: Format date
+  // Utility: Format date (LOCAL timezone — not UTC)
   formatDate(d) {
     var dt = d instanceof Date ? d : new Date(d);
-    return dt.toISOString().slice(0, 10);
+    var y = dt.getFullYear();
+    var m = ('0' + (dt.getMonth() + 1)).slice(-2);
+    var day = ('0' + dt.getDate()).slice(-2);
+    return y + '-' + m + '-' + day;
   },
 
   // Utility: Get today's date string

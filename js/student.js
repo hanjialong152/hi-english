@@ -718,10 +718,10 @@ function renderLessonLearnCard() {
       '<div class="learn-zh">' + lesson.titleCn + '</div>' +
     '</div>';
 
-  // Sentences with audio playback
+  // Sentences with audio playback (mp3优先，TTS兜底)
   var sentencesHTML = lesson.sentences.map(function(s, i) {
     return '<div class="learn-section">' +
-      '<h4>' + (s.speaker === 'A' ? '👤 A' : '👤 B') + ' <button onclick="speakWithTimer(\'' + escapeQuotes(s.en) + '\')" style="float:right;border:none;background:none;font-size:16px;cursor:pointer;">🔊</button></h4>' +
+      '<h4>' + (s.speaker === 'A' ? '👤 A' : '👤 B') + ' <button onclick="playBasicAudio(\'b_' + lesson.id + '_' + i + '\',\'' + escapeQuotes(s.en) + '\')" style="float:right;border:none;background:none;font-size:16px;cursor:pointer;">🔊</button></h4>' +
       '<div style="font-size:15px;margin-bottom:4px;">' + s.en + '</div>' +
       '<div style="font-size:13px;color:var(--text-sub);">' + s.zh + '</div>' +
     '</div>';
