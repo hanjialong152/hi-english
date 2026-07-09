@@ -299,9 +299,9 @@
           "seconds": 23
         },
         {
+          "completed": false,
           "date": "2026-07-09",
-          "seconds": 129,
-          "completed": false
+          "seconds": 129
         }
       ],
       "learned": [
@@ -317,14 +317,14 @@
       "readIndex": 1,
       "speakScores": {
         "1": {
-          "phrase": 85,
           "ex1": 85,
           "ex2": 85,
-          "ex3": 85
+          "ex3": 85,
+          "phrase": 85
         },
         "2": {
-          "phrase": 17,
-          "ex1": 45
+          "ex1": 45,
+          "phrase": 17
         }
       },
       "spellIndex": 0,
