@@ -679,6 +679,32 @@ const HiEnglish = {
     return this.formatDate(new Date());
   },
 
+  // 当月自然天数（year/month 为本地时区，month 0-based）
+  getDaysInMonth(year, month) {
+    return new Date(year, month + 1, 0).getDate();
+  },
+
+  // 周测归属月：上周六~本周五所在月（取该周周五的月份作为归属月）
+  weeklyTestMonthKey(dateStr) {
+    var d = new Date(String(dateStr).replace(/-/g, '/'));
+    if (isNaN(d.getTime())) return '';
+    var dow = d.getDay(); // 0=Sun..6=Sat
+    var fridayOffset = (5 - dow + 7) % 7; // 到本周五的天数
+    d.setDate(d.getDate() + fridayOffset);
+    return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2);
+  },
+
+  // 月测归属月：次月1~5日归上月，否则归当月
+  monthlyTestMonthKey(dateStr) {
+    var d = new Date(String(dateStr).replace(/-/g, '/'));
+    if (isNaN(d.getTime())) return '';
+    if (d.getDate() <= 5) {
+      d.setDate(0); // 回退到上月最后一天
+      return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2);
+    }
+    return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2);
+  },
+
   // Utility: Check if date is this week
   isThisWeek(dateStr) {
     var d = new Date(dateStr);

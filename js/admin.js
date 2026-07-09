@@ -44,7 +44,18 @@ function calcUserScores(empid) {
   var weeklyAvg = weeklyTests.length > 0 ? Math.round(weeklyTests.reduce(function(s, t) { return s + (t.avgScore || 0); }, 0) / weeklyTests.length) : 0;
   var monthlyAvg = monthlyTests.length > 0 ? Math.round(monthlyTests.reduce(function(s, t) { return s + (t.avgScore || 0); }, 0) / monthlyTests.length) : 0;
   var checkinRate = checkIns.length > 0 ? Math.round((completedDays / checkIns.length) * 100) : 0;
-  var score = Math.round(mastered * 0.4 + completedDays * 0.6);
+  // 个人总成绩 = 打卡占比×100×30% + 月度内周测均分×30% + 当月月测×40%（管理员端按 basic 阶段成绩，不合并）
+  var curMonth = HiEnglish.today().slice(0, 7);
+  var curYear = parseInt(curMonth.slice(0, 4), 10);
+  var curMon = parseInt(curMonth.slice(5, 7), 10) - 1;
+  var daysInMonth = HiEnglish.getDaysInMonth(curYear, curMon);
+  var monthCheckinDays = checkIns.filter(function(c){ return c.completed && (c.date || '').slice(0, 7) === curMonth; }).length;
+  var chk = (daysInMonth > 0 ? (monthCheckinDays / daysInMonth) * 100 : 0) * 0.3;
+  var wt = weeklyTests.filter(function(t){ return HiEnglish.weeklyTestMonthKey(t.date) === curMonth; });
+  var wAvg = wt.length > 0 ? wt.reduce(function(s, t){ return s + (t.avgScore || 0); }, 0) / wt.length : 0;
+  var mt = monthlyTests.filter(function(t){ return HiEnglish.monthlyTestMonthKey(t.date) === curMonth; });
+  var mScore = mt.length > 0 ? mt[mt.length - 1].avgScore * 0.4 : 0;
+  var score = Math.round((chk + wAvg * 0.3 + mScore) * 10) / 10;
 
   return {
     mastered: mastered, readIndex: readIndex, completedDays: completedDays,
