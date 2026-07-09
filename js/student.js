@@ -185,16 +185,40 @@ function showBrowserNotification(title, body) {
 }
 
 function _createNotification(title, body) {
+  var options = {
+    body: body,
+    icon: 'icon-192.png',
+    badge: 'icon-192.png',
+    tag: 'hi-english-reminder',
+    renotify: true,
+    requireInteraction: false,
+    vibrate: [200, 100, 200],
+    data: { url: 'student.html' }
+  };
+  // 移动端 Chrome/Android 禁止 new Notification() 构造函数（会抛"Illegal constructor"），
+  // 必须通过 ServiceWorkerRegistration.showNotification() 才能在手机通知栏弹出
+  if ('serviceWorker' in navigator && navigator.serviceWorker) {
+    navigator.serviceWorker.ready.then(function(reg) {
+      return reg.showNotification(title, options);
+    }).catch(function(e) {
+      console.warn('SW通知失败，降级到桌面通知:', e);
+      _fallbackNotification(title, body);
+    });
+  } else {
+    _fallbackNotification(title, body);
+  }
+}
+
+// 桌面浏览器降级方案（不支持ServiceWorker时）
+function _fallbackNotification(title, body) {
   try {
     var notification = new Notification(title, {
       body: body,
-      icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><circle cx="32" cy="32" r="30" fill="%234A90D9"/><text x="32" y="42" text-anchor="middle" fill="white" font-size="28" font-family="sans-serif">Hi</text></svg>',
+      icon: 'icon-192.png',
       tag: 'hi-english-reminder',
       requireInteraction: false
     });
-    // Auto close after 10 seconds
     setTimeout(function() { notification.close(); }, 10000);
-    // Click to focus the app
     notification.onclick = function() {
       window.focus();
       notification.close();
@@ -2460,18 +2484,41 @@ function changeStudentPassword() {
   var confirmPw = document.getElementById('change-pw-confirm').value;
   if (!oldPw) { showToast('请输入当前密码'); return; }
   if (!newPw) { showToast('请输入新密码'); return; }
+  if (newPw.length < 6) { showToast('新密码至少6位'); return; }
   if (newPw !== confirmPw) { showToast('两次输入的新密码不一致'); return; }
 
   var user = HiEnglish.getCurrentUser();
-  var users = HiEnglish.getUsers();
-  if (users[user.empid] && users[user.empid].password !== oldPw) {
-    showToast('当前密码错误');
-    return;
-  }
-  users[user.empid].password = newPw;
-  HiEnglish.saveUsers(users);
-  showToast('密码修改成功！下次登录请使用新密码');
-  closeModal('change-password-modal');
+  if (!user) { showToast('登录状态已失效，请重新登录'); return; }
+
+  // 关键：调用服务端修改密码（服务端是登录的唯一密码源）
+  fetch(HiEnglish.getServerUrl() + '/api/change-password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ empid: user.empid, oldPassword: oldPw, newPassword: newPw })
+  }).then(function(resp) { return resp.json(); }).then(function(data) {
+    if (data.success) {
+      // 同步更新本地缓存密码（供离线降级登录使用）
+      var users = HiEnglish.getUsers();
+      if (users[user.empid]) { users[user.empid].password = newPw; HiEnglish.saveUsers(users); }
+      // 更新"记住密码"里保存的凭据，避免下次自动填充旧密码
+      var saved = localStorage.getItem('hi_english_saved_credentials');
+      if (saved) {
+        try {
+          var c = JSON.parse(saved);
+          if (c.account === user.empid) {
+            c.password = newPw;
+            localStorage.setItem('hi_english_saved_credentials', JSON.stringify(c));
+          }
+        } catch (e) {}
+      }
+      showToast('密码修改成功！下次登录请使用新密码');
+      closeModal('change-password-modal');
+    } else {
+      showToast(data.error || '密码修改失败');
+    }
+  }).catch(function() {
+    showToast('网络错误，请稍后重试');
+  });
 }
 
 // ===== Modal helpers =====
