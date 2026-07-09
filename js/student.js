@@ -206,71 +206,77 @@ function _createNotification(title, body) {
 }
 
 // ===== Message Watcher =====
-// Polls for new messages from admin and shows notification when detected
-var lastNotificationTime = 0;
+// 轮询服务端新消息（跨设备），检测到后弹出浏览器通知栏提醒
+var lastMsgMaxTime = 0;   // 已知的最新消息时间戳
 var messageWatchTimer = null;
 
-function startMessageWatcher() {
+async function startMessageWatcher() {
   if (messageWatchTimer) clearInterval(messageWatchTimer);
-  
-  // Initialize lastNotificationTime to current time (don't notify for old messages)
-  lastNotificationTime = Date.now();
-  
-  // Check every 3 seconds for new notification signal from admin
+
+  var user = HiEnglish.getCurrentUser();
+  if (!user) return;
+
+  // 初始化：记录当前最新消息时间戳，避免为历史消息重复弹通知
+  try {
+    var initMsgs = await HiEnglish.fetchServerMessages(user.empid);
+    lastMsgMaxTime = initMsgs.reduce(function(mx, m) {
+      return Math.max(mx, Number(m.time) || 0);
+    }, 0);
+  } catch (e) {
+    lastMsgMaxTime = Date.now();
+  }
+  updateMessageBadge();
+
+  // 每 15 秒轮询服务端一次，检测管理员新推送的催学提醒
   messageWatchTimer = setInterval(function() {
     checkForNewNotifications();
-  }, 3000);
-  
-  // Also listen for localStorage changes (cross-tab)
-  window.addEventListener('storage', function(e) {
-    if (e.key === 'hi_english_notification') {
+  }, 15000);
+
+  // 从后台切回前台时立即检查一次
+  document.addEventListener('visibilitychange', function() {
+    if (document.visibilityState === 'visible') {
       checkForNewNotifications();
-    }
-    if (e.key === 'hi_english_messages') {
-      // Messages were updated, refresh badge
-      updateMessageBadge();
-      // Check if current user got new messages
-      var user = HiEnglish.getCurrentUser();
-      if (user) {
-        var messages = HiEnglish.getMessages(user.empid);
-        var hasUnread = messages.some(function(m) { return !m.read; });
-        if (hasUnread) {
-          checkForNewNotifications();
-        }
-      }
     }
   });
 }
 
-function checkForNewNotifications() {
+async function checkForNewNotifications() {
   var user = HiEnglish.getCurrentUser();
   if (!user) return;
-  
-  var notifData = localStorage.getItem('hi_english_notification');
-  if (!notifData) return;
-  
+
   try {
-    var notif = JSON.parse(notifData);
-    // Only process if this notification is newer than last seen and targets this user
-    if (notif.time > lastNotificationTime) {
-      // Check if this user is in the target list
-      var isTarget = !notif.targets || notif.targets.length === 0 || notif.targets.indexOf(user.empid) >= 0;
-      if (isTarget) {
-        showBrowserNotification('📢 ' + notif.title, notif.content);
-        lastNotificationTime = notif.time;
-        // Also update the message badge
-        updateMessageBadge();
-        // Show in-app toast
-        showToast('收到新的催学提醒，请查看站内信');
-      }
+    var messages = await HiEnglish.fetchServerMessages(user.empid);
+    // 找出比上次已知时间更新的消息
+    var newMsgs = messages.filter(function(m) {
+      return (Number(m.time) || 0) > lastMsgMaxTime;
+    });
+    if (newMsgs.length > 0) {
+      // 更新最新时间戳
+      lastMsgMaxTime = newMsgs.reduce(function(mx, m) {
+        return Math.max(mx, Number(m.time) || 0);
+      }, lastMsgMaxTime);
+      // 取最新一条弹出通知栏
+      var latest = newMsgs.sort(function(a, b) {
+        return (Number(b.time) || 0) - (Number(a.time) || 0);
+      })[0];
+      showBrowserNotification('📢 ' + (latest.title || '新消息'), latest.content || '');
+      showToast('收到新的' + (latest.title || '消息') + '，请查看站内信');
     }
-  } catch(e) {
-    // Ignore parse errors
+    // 无论是否新消息都刷新徽章
+    updateMessageBadge();
+    // 若当前正在消息页，刷新列表
+    if (typeof currentPage !== 'undefined' && currentPage === 'messages') {
+      _renderMessagesList(messages);
+    }
+  } catch (e) {
+    // 网络异常忽略，下次轮询重试
   }
 }
 
 // ===== Navigation =====
+var currentPage = 'home';
 function sNav(page) {
+  currentPage = page;
   // Always refresh user info when navigating (picks up admin changes)
   refreshUserInfo();
   document.querySelectorAll('#student-app .page').forEach(function(p){ p.classList.remove('active'); });
@@ -2165,31 +2171,30 @@ function renderReport() {
 }
 
 // ===== Messages =====
-function renderMessages() {
+async function renderMessages() {
   var user = HiEnglish.getCurrentUser();
-  var messages = HiEnglish.getMessages(user.empid);
-  // 动态生成系统提示消息时间（基于当天日期）
-  var now = new Date();
-  var todayStr = '今天 ' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
-  var yesterday = new Date(now); yesterday.setDate(yesterday.getDate() - 1);
-  var yestStr = '昨天 ' + String(yesterday.getHours()).padStart(2, '0') + ':' + String(yesterday.getMinutes()).padStart(2, '0');
-  var dayBefore = new Date(now); dayBefore.setDate(dayBefore.getDate() - 2);
-  var dbStr = (dayBefore.getMonth() + 1) + '/' + dayBefore.getDate() + ' ' + String(dayBefore.getHours()).padStart(2, '0') + ':' + String(dayBefore.getMinutes()).padStart(2, '0');
+  if (!user) return;
+  // 先渲染本地缓存（快速展示），再异步拉取服务端最新数据
+  _renderMessagesList(HiEnglish.getMessages(user.empid));
+  // 从服务端拉取真实消息（含真实接收时间戳）
+  var messages = await HiEnglish.fetchServerMessages(user.empid);
+  _renderMessagesList(messages);
+  updateMessageBadge();
+}
 
-  var defaultMsgs = [
-    {id: 'd1', title: '今日打卡提醒', content: '您好，今日学习打卡还未完成，请尽快完成15分钟跟读学习。每天自动提醒，助您坚持学习！', time: todayStr, read: false, type: 'reminder'},
-    {id: 'd2', title: '学习进度提醒', content: '您已掌握' + studyData.basic.mastered.length + '个单词，继续加油！', time: yestStr, read: false, type: 'weekly'},
-    {id: 'd3', title: '系统通知', content: '管理员已添加新的商务英语微课内容，完成基础词汇阶段后可解锁学习。', time: dbStr, read: false, type: 'system'},
-  ];
-  var allMsgs = defaultMsgs.concat(messages);
-  var unreadCount = allMsgs.filter(function(m){return !m.read;}).length;
+function _renderMessagesList(messages) {
+  messages = messages || [];
+  // 按真实时间倒序（最新在前）
+  var allMsgs = messages.slice().sort(function(a, b) {
+    return (Number(b.time) || 0) - (Number(a.time) || 0);
+  });
 
   var msgsHTML = allMsgs.map(function(m) {
-    var typeText = {reminder: '打卡提醒', weekly: '周测提醒', monthly: '月测提醒', system: '系统通知', progress: '进度提醒'};
-    return '<div class="msg-item ' + (m.read ? '' : 'unread') + '">' +
+    var typeText = {reminder: '催学提醒', weekly: '周测提醒', monthly: '月测提醒', system: '系统通知', progress: '进度提醒'};
+    return '<div class="msg-item ' + (m.read ? '' : 'unread') + '" data-msgid="' + (m.id || '') + '">' +
       '<div class="msg-header">' +
         '<span class="msg-type type-' + (m.type || 'system') + '">' + (typeText[m.type] || '系统通知') + '</span>' +
-        '<span class="msg-time">' + (m.time || '') + '</span>' +
+        '<span class="msg-time">' + HiEnglish.formatMsgTime(m.time) + '</span>' +
       '</div>' +
       '<div class="msg-title">' + (m.title || '') + '</div>' +
       '<div class="msg-body">' + (m.content || '') + '</div>' +
@@ -2231,6 +2236,8 @@ function markAllRead() {
   var messages = HiEnglish.getMessages(user.empid);
   messages.forEach(function(m) { m.read = true; });
   HiEnglish.saveMessages(user.empid, messages);
+  // 同步已读状态到服务端
+  HiEnglish.markMessagesReadServer(user.empid, [], true);
   document.querySelectorAll('.msg-item.unread').forEach(function(item) { item.classList.remove('unread'); });
   var badge = document.getElementById('s-msg-badge');
   if (badge) badge.style.display = 'none';
@@ -2239,7 +2246,19 @@ function markAllRead() {
 
 function markMsgRead(btn) {
   var item = btn.closest('.msg-item');
-  if (item) item.classList.remove('unread');
+  if (item) {
+    item.classList.remove('unread');
+    var msgId = item.getAttribute('data-msgid');
+    var user = HiEnglish.getCurrentUser();
+    if (user && msgId) {
+      // 更新本地缓存
+      var messages = HiEnglish.getMessages(user.empid);
+      messages.forEach(function(m) { if (m.id === msgId) m.read = true; });
+      HiEnglish.saveMessages(user.empid, messages);
+      // 同步到服务端
+      HiEnglish.markMessagesReadServer(user.empid, [msgId], false);
+    }
+  }
   updateMessageBadge();
 }
 
@@ -2247,7 +2266,7 @@ function updateMessageBadge() {
   var user = HiEnglish.getCurrentUser();
   if (!user) return;
   var messages = HiEnglish.getMessages(user.empid);
-  var unread = messages.filter(function(m) { return !m.read; }).length + 3;
+  var unread = messages.filter(function(m) { return !m.read; }).length;
   var badge = document.getElementById('s-msg-badge');
   if (badge) {
     if (unread > 0) {
