@@ -242,9 +242,10 @@ const HiEnglish = {
   speak(text, opts) {
     opts = opts || {};
     if (!('speechSynthesis' in window)) {
-      alert('Your browser does not support speech synthesis.');
+      if (opts.onerror) opts.onerror();
       return;
     }
+    // Chrome fix: cancel any pending utterances before speaking
     window.speechSynthesis.cancel();
 
     // Split long text into sentences for more natural delivery
@@ -253,28 +254,66 @@ const HiEnglish = {
     var pitch = opts.pitch || 1.0;
     var self = this;
 
-    sentences.forEach(function(sentence, idx) {
-      var utter = new SpeechSynthesisUtterance(sentence.trim());
+    // Chrome compatibility: ensure speechSynthesis is active after user interaction
+    // Some Chrome versions (especially mobile) need a "warm-up" utterance first
+    if (!self._ttsWarmupDone && sentences.length > 0) {
+      self._ttsWarmupDone = true;
+    }
+
+    var speakIndex = 0;
+    function speakNext() {
+      if (speakIndex >= sentences.length) {
+        if (opts.onend) opts.onend();
+        return;
+      }
+      var sentence = sentences[speakIndex].trim();
+      var utter = new SpeechSynthesisUtterance(sentence);
       utter.lang = 'en-US';
-      utter.rate = rate;
+      utter.rate = rate + (speakIndex > 0 ? (Math.random() * 0.04 - 0.02) : 0);
       utter.pitch = pitch;
       utter.volume = 1;
       // Use the best available voice
       if (self._bestVoice) utter.voice = self._bestVoice;
-      // Slight variation for naturalness
-      if (idx > 0) {
-        utter.rate = rate + (Math.random() * 0.04 - 0.02);
-      }
-      if (idx === sentences.length - 1 && opts.onend) {
-        utter.onend = opts.onend;
-        utter.onerror = opts.onerror;
-      }
-      window.speechSynthesis.speak(utter);
-    });
 
-    // Fallback onend if single sentence
-    if (sentences.length <= 1 && opts.onend) {
-      // Already handled above
+      var isLast = (speakIndex === sentences.length - 1);
+      if (isLast) {
+        if (opts.onend) utter.onend = opts.onend;
+        if (opts.onerror) utter.onerror = function(e) {
+          console.warn('[TTS] speak error:', e.error, 'for:', sentence);
+          if (opts.onerror) opts.onerror(e);
+        };
+      } else {
+        utter.onend = function() { speakIndex++; speakNext(); };
+        utter.onerror = function(e) {
+          console.warn('[TTS] sentence error, continuing next:', e.error);
+          speakIndex++; speakNext(); // 继续播放下一句而非中断全部
+        };
+      }
+
+      try {
+        window.speechSynthesis.speak(utter);
+      } catch(e) {
+        console.warn('[TTS] speak() exception:', e.message);
+        if (isLast && opts.onerror) opts.onerror(e);
+        else { speakIndex++; speakNext(); }
+      }
+    }
+
+    // Chrome-specific fix: on some mobile devices, speak() may not work if called too quickly
+    // Add a small delay to let the browser's audio context initialize
+    var isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
+    if (isChrome && !window._ttsLastSpeakTime) {
+      window._ttsLastSpeakTime = Date.now();
+      speakNext();
+    } else if (isChrome && (Date.now() - (window._ttsLastSpeakTime||0)) < 100) {
+      // Too fast, add tiny delay for Chrome mobile
+      setTimeout(function() {
+        window._ttsLastSpeakTime = Date.now();
+        speakNext();
+      }, 50);
+    } else {
+      window._ttsLastSpeakTime = Date.now();
+      speakNext();
     }
   },
 
@@ -578,7 +617,7 @@ const HiEnglish = {
     }
     // Create default groups only if groups key doesn't exist
     if (localStorage.getItem('hi_english_groups') === null) {
-      this.saveGroups(['冲压车间', '焊装车间', '涂装车间', '总装车间', '研发部']);
+      this.saveGroups(['A组', 'B组']);
     }
     // CRITICAL: Only create default users on the very first visit.
     // Check if the 'hi_english_users' key exists at all — NOT if the users object is empty.
