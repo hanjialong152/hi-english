@@ -152,13 +152,10 @@ def verify_password(password, stored_hash, salt):
     return hashed == stored_hash
 
 
-def push_dingtalk(webhook, text):
-    """服务端直接推送钉钉群消息（server-to-server，无浏览器CORS限制）。
-    注意：钉钉机器人需将安全设置为"自定义关键词"，关键词包含"催学提醒"或"Hi English"。"""
-    if not webhook:
-        return False
+def _dingtalk_post(webhook, payload):
+    """向钉钉 webhook POST 一条消息体，返回是否成功。"""
     try:
-        body = json.dumps({'msgtype': 'text', 'text': {'content': text}}).encode('utf-8')
+        body = json.dumps(payload, ensure_ascii=False).encode('utf-8')
         req = urllib.request.Request(webhook, data=body, method='POST')
         req.add_header('Content-Type', 'application/json')
         with urllib.request.urlopen(req, timeout=10) as resp:
@@ -169,6 +166,54 @@ def push_dingtalk(webhook, text):
     except Exception as e:
         print(f'[DingTalk] 推送异常: {e}', flush=True)
         return False
+
+
+def push_dingtalk_card(webhook, title, content, names, time_str, link_url='https://hi-english.onrender.com/student.html'):
+    """服务端推送美观的钉钉催学卡片（actionCard，带跳转按钮）。
+    注意：钉钉机器人需将安全设置为"自定义关键词"，关键词包含"催学提醒"或"Hi English"。
+    卡片标题与正文均含"催学提醒"，可通过关键词校验。失败时自动降级为纯文本。"""
+    if not webhook:
+        return False
+    n = len(names) if names else 0
+    names_str = '、'.join(names) if names else '全体学员'
+    # actionCard 正文使用 markdown 排版，配合 emoji 与配色提升观感
+    md = (
+        '#### <font color=#FF6A00>📚 催学提醒</font>\n\n'
+        '> 你有一条新的学习任务待完成，请及时打卡 📖\n\n'
+        '**⏰ 提醒时间**\n\n'
+        + time_str + '\n\n'
+        '**👥 提醒对象**（共 ' + str(n) + ' 人）\n\n'
+        + names_str + '\n\n'
+        '**📝 提醒内容**\n\n'
+        + (content or '请尽快完成每日学习打卡～') + '\n\n'
+        '> 💪 坚持每天 15 分钟，英语水平稳步提升！\n\n'
+        '<font color=#999999>— Hi English 学习平台</font>'
+    )
+    payload = {
+        'msgtype': 'actionCard',
+        'actionCard': {
+            'title': '催学提醒 · Hi English',
+            'text': md,
+            'btnOrientation': '0',
+            'singleTitle': '▶ 立即去学习打卡',
+            'singleURL': link_url
+        }
+    }
+    ok = _dingtalk_post(webhook, payload)
+    if not ok:
+        # 降级为纯文本，保证消息可达
+        fallback = ('【Hi English 催学提醒】\n\n时间：' + time_str +
+                    '\n提醒对象(' + str(n) + '人)：' + names_str +
+                    '\n\n' + (content or '') + '\n\n— Hi English 学习平台')
+        ok = _dingtalk_post(webhook, {'msgtype': 'text', 'text': {'content': fallback}})
+    return ok
+
+
+def push_dingtalk(webhook, text):
+    """兼容旧调用：纯文本推送。"""
+    if not webhook:
+        return False
+    return _dingtalk_post(webhook, {'msgtype': 'text', 'text': {'content': text}})
 
 def load_json(filepath):
     """从本地文件读取 JSON"""
@@ -530,10 +575,9 @@ def handle_send_message():
                 u = users.get(eid) if isinstance(users, dict) else None
                 names.append((u.get('name', '') + '(' + eid + ')') if u else eid)
             time_str = time.strftime('%Y-%m-%d %H:%M')
-            dt_text = ('【Hi English 催学提醒】\n\n时间：' + time_str +
-                       '\n提醒对象(' + str(len(names)) + '人)：' + '、'.join(names) +
-                       '\n\n' + content + '\n\n— Hi English 学习平台')
-            threading.Thread(target=push_dingtalk, args=(webhook, dt_text), daemon=True).start()
+            threading.Thread(target=push_dingtalk_card,
+                             args=(webhook, title, content, names, time_str),
+                             daemon=True).start()
 
     return jsonify({'success': True, 'count': count, 'time': server_time})
 
