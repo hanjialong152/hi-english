@@ -290,13 +290,17 @@
           "completed": false
         }
       ],
-      "learned": [],
-      "learnedDates": {},
+      "learned": [
+        1
+      ],
+      "learnedDates": {
+        "1": "2026-07-09"
+      },
       "mastered": [
         "1"
       ],
       "monthlyTests": [],
-      "readIndex": 0,
+      "readIndex": 1,
       "speakScores": {
         "1": {
           "phrase": 85,
