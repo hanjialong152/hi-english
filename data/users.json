@@ -107,8 +107,8 @@
     "salt": "2e0001234d5ca7b4",
     "created_at": 1783476278438,
     "created_by": "admin",
-    "last_login": 0,
-    "login_count": 0,
+    "last_login": 1783565969698,
+    "login_count": 1,
     "must_change_password": false
   },
   "252250": {
