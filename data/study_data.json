@@ -176,7 +176,7 @@
         {
           "completed": false,
           "date": "2026-07-09",
-          "seconds": 91
+          "seconds": 96
         }
       ],
       "learned": [
@@ -192,7 +192,11 @@
       "mastered": [],
       "monthlyTests": [],
       "readIndex": 3,
-      "speakScores": {},
+      "speakScores": {
+        "4": {
+          "s0": 0
+        }
+      },
       "spellIndex": 0,
       "totalSeconds": 0,
       "unlocked": true,
