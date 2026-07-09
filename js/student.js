@@ -133,17 +133,24 @@ function refreshUserInfo(user) {
 // Watchdog: check every 5 seconds if account is still valid
 // If admin deletes or disables the account, force logout immediately
 var watchdogTimer = null;
+var _isManualLogout = false; // 标记是否为主动退出，避免误报"账号被删除"
 function startAccountWatchdog() {
   if (watchdogTimer) clearInterval(watchdogTimer);
+  _isManualLogout = false;
   watchdogTimer = setInterval(function() {
     var user = HiEnglish.getCurrentUser();
-    if (!user) {
-      // Account was deleted or disabled
+    if (!user && !_isManualLogout) {
+      // Account was deleted or disabled (非主动退出情况)
       if (watchdogTimer) { clearInterval(watchdogTimer); watchdogTimer = null; }
       alert('您的账号已被管理员删除或禁用，请联系管理员。');
       window.location.href = 'index.html';
     }
+    // 如果是主动退出（logout已清除session），不做任何处理
   }, 5000);
+}
+
+function stopAccountWatchdog() {
+  if (watchdogTimer) { clearInterval(watchdogTimer); watchdogTimer = null; }
 }
 
 // ===== Browser Notifications =====
@@ -334,7 +341,11 @@ function goMonthlyTest() {
   prepareTest('monthly');
 }
 
-function logout() { HiEnglish.logout(); }
+function logout() {
+  _isManualLogout = true;
+  stopAccountWatchdog();
+  HiEnglish.logout();
+}
 
 // ===== Stage Switcher =====
 function renderStageSwitcher() {
@@ -2157,10 +2168,18 @@ function renderReport() {
 function renderMessages() {
   var user = HiEnglish.getCurrentUser();
   var messages = HiEnglish.getMessages(user.empid);
+  // 动态生成系统提示消息时间（基于当天日期）
+  var now = new Date();
+  var todayStr = '今天 ' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+  var yesterday = new Date(now); yesterday.setDate(yesterday.getDate() - 1);
+  var yestStr = '昨天 ' + String(yesterday.getHours()).padStart(2, '0') + ':' + String(yesterday.getMinutes()).padStart(2, '0');
+  var dayBefore = new Date(now); dayBefore.setDate(dayBefore.getDate() - 2);
+  var dbStr = (dayBefore.getMonth() + 1) + '/' + dayBefore.getDate() + ' ' + String(dayBefore.getHours()).padStart(2, '0') + ':' + String(dayBefore.getMinutes()).padStart(2, '0');
+
   var defaultMsgs = [
-    {id: 'd1', title: '今日打卡提醒', content: '您好，今日学习打卡还未完成，请尽快完成15分钟跟读学习。每天自动提醒，助您坚持学习！', time: '今天 09:00', read: false, type: 'reminder'},
-    {id: 'd2', title: '学习进度提醒', content: '您已掌握' + studyData.basic.mastered.length + '个单词，继续加油！', time: '昨天 10:00', read: false, type: 'weekly'},
-    {id: 'd3', title: '系统通知', content: '管理员已添加新的商务英语微课内容，完成基础词汇阶段后可解锁学习。', time: '前天 14:00', read: false, type: 'system'},
+    {id: 'd1', title: '今日打卡提醒', content: '您好，今日学习打卡还未完成，请尽快完成15分钟跟读学习。每天自动提醒，助您坚持学习！', time: todayStr, read: false, type: 'reminder'},
+    {id: 'd2', title: '学习进度提醒', content: '您已掌握' + studyData.basic.mastered.length + '个单词，继续加油！', time: yestStr, read: false, type: 'weekly'},
+    {id: 'd3', title: '系统通知', content: '管理员已添加新的商务英语微课内容，完成基础词汇阶段后可解锁学习。', time: dbStr, read: false, type: 'system'},
   ];
   var allMsgs = defaultMsgs.concat(messages);
   var unreadCount = allMsgs.filter(function(m){return !m.read;}).length;
