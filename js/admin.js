@@ -196,38 +196,22 @@ function sendStudyReminder() {
   var timeStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0') + ' ' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
   var msgTitle = '催学提醒';
   var msgContent = '您好，您本周学习打卡不足3天，请尽快完成每日跟读学习。坚持每天15分钟，英语水平稳步提升！如有问题请联系培训管理员。';
-  
-  var successCount = 0;
-  inactiveStudents.forEach(function(u) {
-    var messages = HiEnglish.getMessages(u.empid);
-    messages.unshift({
-      id: 'reminder_' + Date.now() + '_' + u.empid,
-      title: msgTitle,
-      content: msgContent,
-      time: timeStr,
-      read: false,
-      type: 'reminder'
-    });
-    HiEnglish.saveMessages(u.empid, messages);
-    successCount++;
+  var targets = inactiveStudents.map(function(s) { return s.empid; });
+
+  // 发送到服务端（服务端盖真实时间戳，学员端跨设备即刻收到 + 通知栏）
+  HiEnglish.sendMessageToServer(targets, msgTitle, msgContent, 'reminder').then(function(ok) {
+    if (ok) {
+      var webhook = localStorage.getItem('hi_english_dingtalk_webhook') || '';
+      if (webhook) {
+        sendDingTalkReminder(webhook, inactiveStudents, timeStr);
+        showToast('催学提醒已发送给 ' + targets.length + ' 名学员（站内信 + 通知栏 + 钉钉群）');
+      } else {
+        showToast('催学提醒已发送给 ' + targets.length + ' 名学员（站内信 + 通知栏）');
+      }
+    } else {
+      showToast('发送失败，请检查网络后重试');
+    }
   });
-  
-  // Also trigger a browser notification flag for student tabs
-  localStorage.setItem('hi_english_notification', JSON.stringify({
-    title: msgTitle,
-    content: msgContent,
-    time: Date.now(),
-    targets: inactiveStudents.map(function(s) { return s.empid; })
-  }));
-  
-  // Try DingTalk webhook if configured
-  var webhook = localStorage.getItem('hi_english_dingtalk_webhook') || '';
-  if (webhook) {
-    sendDingTalkReminder(webhook, inactiveStudents, timeStr);
-    showToast('催学提醒已发送给 ' + successCount + ' 名学员（站内信 + 通知栏 + 钉钉群）');
-  } else {
-    showToast('催学提醒已发送给 ' + successCount + ' 名学员（站内信 + 通知栏）');
-  }
 }
 
 function showDingTalkConfig() {
