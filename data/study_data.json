@@ -103,6 +103,11 @@
           "completed": false,
           "date": "2026-07-08",
           "seconds": 7
+        },
+        {
+          "date": "2026-07-09",
+          "seconds": 0,
+          "completed": false
         }
       ],
       "learned": [
