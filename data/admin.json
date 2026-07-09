@@ -1,11 +1,11 @@
 {
   "admin": {
     "username": "admin",
-    "password_hash": "9761f4ca7a666732e7c01149b5c103c140b03977edcd91723cf36147e5ab4a1b",
-    "salt": "944cf84300f807bb",
+    "password_hash": "8bed33b71cc788bdce78350b318958fbf47acb2595521712b93adf3867adcab7",
+    "salt": "7bf160f87d5ad64d",
     "created_at": 1782399731318,
     "session_token": "2e2b53a9928cf92a93560989c4c1a1a7",
     "last_login": 1783610777871,
-    "last_password_change": 1782515653416
+    "last_password_change": 1783610807000
   }
 }
