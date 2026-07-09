@@ -377,24 +377,27 @@
       "checkIns": [
         {
           "date": "2026-07-09",
-          "seconds": 186,
+          "seconds": 199,
           "completed": false
         }
       ],
       "learned": [
         1,
-        2
+        2,
+        3
       ],
       "learnedDates": {
         "1": "2026-07-09",
-        "2": "2026-07-09"
+        "2": "2026-07-09",
+        "3": "2026-07-09"
       },
       "mastered": [
         "1",
-        "2"
+        "2",
+        "3"
       ],
       "monthlyTests": [],
-      "readIndex": 2,
+      "readIndex": 3,
       "speakScores": {
         "1": {
           "phrase": 85,
@@ -411,7 +414,8 @@
         "3": {
           "phrase": 85,
           "ex1": 85,
-          "ex2": 96
+          "ex2": 96,
+          "ex3": 95
         }
       },
       "spellIndex": 0,
