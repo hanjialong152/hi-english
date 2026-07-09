@@ -190,7 +190,7 @@
         },
         {
           "date": "2026-07-09",
-          "seconds": 4,
+          "seconds": 22,
           "completed": false
         }
       ],
@@ -233,6 +233,9 @@
           "ex1": 85,
           "ex2": 87,
           "ex3": 83,
+          "phrase": 85
+        },
+        "11": {
           "phrase": 85
         }
       },
