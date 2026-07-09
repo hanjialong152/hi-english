@@ -286,7 +286,7 @@
         },
         {
           "date": "2026-07-09",
-          "seconds": 26,
+          "seconds": 32,
           "completed": false
         }
       ],
@@ -297,7 +297,8 @@
       "readIndex": 0,
       "speakScores": {
         "1": {
-          "phrase": 85
+          "phrase": 85,
+          "ex1": 85
         }
       },
       "spellIndex": 0,
