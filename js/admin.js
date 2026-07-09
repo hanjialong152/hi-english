@@ -198,16 +198,10 @@ function sendStudyReminder() {
   var msgContent = '您好，您本周学习打卡不足3天，请尽快完成每日跟读学习。坚持每天15分钟，英语水平稳步提升！如有问题请联系培训管理员。';
   var targets = inactiveStudents.map(function(s) { return s.empid; });
 
-  // 发送到服务端（服务端盖真实时间戳，学员端跨设备即刻收到 + 通知栏）
+  // 发送到服务端（服务端盖真实时间戳，学员端跨设备即刻收到 + 通知栏 + 钉钉由服务端推送）
   HiEnglish.sendMessageToServer(targets, msgTitle, msgContent, 'reminder').then(function(ok) {
     if (ok) {
-      var webhook = localStorage.getItem('hi_english_dingtalk_webhook') || '';
-      if (webhook) {
-        sendDingTalkReminder(webhook, inactiveStudents, timeStr);
-        showToast('催学提醒已发送给 ' + targets.length + ' 名学员（站内信 + 通知栏 + 钉钉群）');
-      } else {
-        showToast('催学提醒已发送给 ' + targets.length + ' 名学员（站内信 + 通知栏）');
-      }
+      showToast('催学提醒已发送给 ' + targets.length + ' 名学员（站内信 + 通知栏，如已配置钉钉将由服务器同步推送到群）');
     } else {
       showToast('发送失败，请检查网络后重试');
     }
@@ -220,7 +214,14 @@ function showDingTalkConfig() {
   if (area.style.display === 'none') {
     area.style.display = 'block';
     var input = document.getElementById('dingtalk-webhook');
-    if (input) input.value = localStorage.getItem('hi_english_dingtalk_webhook') || '';
+    if (input) {
+      // 从服务端加载已保存的Webhook（跨设备一致）
+      fetch(HiEnglish.getServerUrl() + '/api/dingtalk-config').then(function(r) { return r.json(); }).then(function(data) {
+        if (data.success) input.value = data.webhook || '';
+      }).catch(function() {
+        input.value = localStorage.getItem('hi_english_dingtalk_webhook') || '';
+      });
+    }
   } else {
     area.style.display = 'none';
   }
@@ -231,13 +232,21 @@ function saveDingTalkWebhook() {
   if (webhook && webhook.indexOf('oapi.dingtalk.com') < 0 && webhook.indexOf('qyapi.weixin.qq.com') < 0) {
     if (!confirm('该地址看起来不像钉钉/企业微信机器人Webhook，确定保存吗？')) return;
   }
-  if (webhook) {
-    localStorage.setItem('hi_english_dingtalk_webhook', webhook);
-    showToast('钉钉Webhook已保存，后续催学提醒将同时推送到钉钉群');
-  } else {
-    localStorage.removeItem('hi_english_dingtalk_webhook');
-    showToast('钉钉Webhook已清除');
-  }
+  // 关键：Webhook 存到服务端，催学提醒由服务端 server-to-server 推送（避免浏览器CORS拦截）
+  fetch(HiEnglish.getServerUrl() + '/api/dingtalk-config', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ webhook: webhook })
+  }).then(function(r) { return r.json(); }).then(function(data) {
+    if (data.success) {
+      localStorage.setItem('hi_english_dingtalk_webhook', webhook);
+      showToast(webhook ? '钉钉Webhook已保存，催学提醒将由服务器推送到钉钉群' : '钉钉Webhook已清除');
+    } else {
+      showToast('保存失败，请重试');
+    }
+  }).catch(function() {
+    showToast('网络错误，保存失败');
+  });
 }
 
 function sendDingTalkReminder(webhook, students, timeStr) {
@@ -1093,11 +1102,27 @@ function changeAdminPassword() {
   var confirmPw = document.getElementById('admin-change-pw-confirm').value;
   if (!oldPw) { showToast('请输入当前密码'); return; }
   if (!newPw) { showToast('请输入新密码'); return; }
+  if (newPw.length < 6) { showToast('新密码至少6位'); return; }
   if (newPw !== confirmPw) { showToast('两次输入的新密码不一致'); return; }
-  if (oldPw !== HiEnglish.getAdminPassword()) { showToast('当前密码错误'); return; }
-  HiEnglish.setAdminPassword(newPw);
-  showToast('管理员密码修改成功！下次登录请使用新密码');
-  closeModal('admin-change-password-modal');
+
+  var username = sessionStorage.getItem('hi_english_admin_name') || 'admin';
+  // 关键：调用服务端修改管理员密码（服务端是登录的唯一密码源）
+  fetch(HiEnglish.getServerUrl() + '/api/admin-change-password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username: username, oldPassword: oldPw, newPassword: newPw })
+  }).then(function(resp) { return resp.json(); }).then(function(data) {
+    if (data.success) {
+      // 同步本地缓存密码，保证离线降级登录也只认新密码（旧密码彻底失效）
+      HiEnglish.setAdminPassword(newPw);
+      showToast('管理员密码修改成功！下次登录请使用新密码');
+      closeModal('admin-change-password-modal');
+    } else {
+      showToast(data.error || '密码修改失败');
+    }
+  }).catch(function() {
+    showToast('网络错误，请稍后重试');
+  });
 }
 
 // ===== Modal helpers =====
