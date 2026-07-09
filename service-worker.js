@@ -1,12 +1,13 @@
 // ===================================================
-// Hi English - Service Worker v22 (PWA安装支持)
+// Hi English - Service Worker v24 (PWA安装支持)
 // ===================================================
+// v24: 音频缓存版本提升，强制刷新重新生成的发音MP3
 // v22: 移动端通知栏推送（showNotification + notificationclick）
 // v21: 修复分组数据持久化 + 搜索栏禁止浏览器自动填充
 
-var CACHE_VERSION = 'hi-english-v23';
-var CORE_CACHE = 'hi-english-core-v22';
-var AUDIO_CACHE = 'hi-english-audio-v22';
+var CACHE_VERSION = 'hi-english-v25';
+var CORE_CACHE = 'hi-english-core-v24';
+var AUDIO_CACHE = 'hi-english-audio-v24';
 
 var CORE_FILES = [
   './',

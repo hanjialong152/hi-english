@@ -168,6 +168,91 @@ function renderDashboard() {
         '<div style="font-size:11px;color:var(--text-sub);margin-top:6px;">获取方式：钉钉群 → 群设置 → 智能群助手 → 添加机器人 → 自定义 → 复制Webhook地址</div>' +
       '</div>' +
     '</div>';
+
+  // 众测模式全局开关
+  var betaEl = document.getElementById('a-beta-switch');
+  if (betaEl) {
+    betaEl.innerHTML =
+      '<div class="section-title">🧪 众测模式（测试期开关）</div>' +
+      '<div class="card">' +
+        '<p style="font-size:13px;color:var(--text-sub);margin-bottom:12px;">开启后：<b>商务英语对所有学员解锁</b>，且<b>周测、月测不受时间限制</b>（任意时间可测），方便众测阶段全员测试。正式上线时请关闭，恢复正式规则。</p>' +
+        '<div style="display:flex;align-items:center;gap:12px;">' +
+          '<button id="beta-toggle-btn" class="btn btn-outline" onclick="toggleBetaMode()">加载中…</button>' +
+          '<span id="beta-status-text" style="font-size:13px;color:var(--text-sub);"></span>' +
+        '</div>' +
+      '</div>';
+    loadBetaMode();
+  }
+}
+
+// ===== 众测模式全局开关 =====
+var _betaModeState = false;
+function loadBetaMode() {
+  fetch(HiEnglish.getServerUrl() + '/api/beta-config').then(function(r) { return r.json(); }).then(function(data) {
+    _betaModeState = !!(data && data.betaMode);
+    renderBetaToggle();
+  }).catch(function() {
+    var btn = document.getElementById('beta-toggle-btn');
+    if (btn) { btn.textContent = '读取失败，点击重试'; btn.onclick = loadBetaMode; }
+  });
+}
+function renderBetaToggle() {
+  var btn = document.getElementById('beta-toggle-btn');
+  var txt = document.getElementById('beta-status-text');
+  if (!btn) return;
+  btn.onclick = toggleBetaMode;
+  if (_betaModeState) {
+    btn.textContent = '🟢 众测模式：已开启（点击关闭）';
+    btn.className = 'btn btn-danger';
+    if (txt) txt.textContent = '当前所有学员可测商务英语/周测/月测';
+  } else {
+    btn.textContent = '⚪ 众测模式：已关闭（点击开启）';
+    btn.className = 'btn btn-primary';
+    if (txt) txt.textContent = '当前为正式规则（商务需解锁、周测周六日、月测1-5号）';
+  }
+}
+function toggleBetaMode() {
+  var target = !_betaModeState;
+  if (target && !confirm('开启众测模式后，全部学员都能直接测商务英语、周测、月测（不受时间限制）。确认开启？')) return;
+  if (!target && !confirm('关闭众测模式后，将恢复正式规则（商务需解锁、周测限周六日、月测限每月1-5号）。确认关闭？')) return;
+  var btn = document.getElementById('beta-toggle-btn');
+  if (btn) btn.textContent = '处理中…';
+  fetch(HiEnglish.getServerUrl() + '/api/beta-config', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ betaMode: target })
+  }).then(function(r) { return r.json(); }).then(function(data) {
+    if (data && data.success) {
+      _betaModeState = !!data.betaMode;
+      renderBetaToggle();
+      showToast(_betaModeState ? '众测模式已开启' : '众测模式已关闭');
+    } else {
+      showToast('操作失败，请重试');
+      renderBetaToggle();
+    }
+  }).catch(function() {
+    showToast('网络错误，请重试');
+    renderBetaToggle();
+  });
+}
+
+// ===== 按账号解锁商务英语 =====
+function unlockBusiness(empid) {
+  if (!confirm('确认为该学员解锁「商务英语」阶段？解锁后该学员可直接进入商务英语练习。')) return;
+  fetch(HiEnglish.getServerUrl() + '/api/admin/unlock-business', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ empid: empid, unlock: true })
+  }).then(function(r) { return r.json(); }).then(function(data) {
+    if (data && data.success) {
+      showToast('已为 ' + empid + ' 解锁商务英语，该学员下次进入即生效');
+      if (HiEnglish && typeof HiEnglish.syncStudyDataFromServer === 'function') { HiEnglish.syncStudyDataFromServer(); }
+    } else {
+      showToast((data && data.error) || '解锁失败');
+    }
+  }).catch(function() {
+    showToast('网络错误，请重试');
+  });
 }
 
 // ===== Study Reminder =====
@@ -335,6 +420,7 @@ function renderStudentTable() {
       '<td style="white-space:nowrap;">' +
         '<button class="btn btn-outline" style="padding:4px 10px;font-size:12px;margin-right:4px;" onclick="editStudent(\'' + u.empid + '\')">编辑</button>' +
         '<button class="btn btn-outline" style="padding:4px 10px;font-size:12px;margin-right:4px;" onclick="resetPassword(\'' + u.empid + '\')">🔑重置密码</button>' +
+        '<button class="btn btn-outline" style="padding:4px 10px;font-size:12px;margin-right:4px;" onclick="unlockBusiness(\'' + u.empid + '\')">🔓解锁商务</button>' +
         '<button class="btn ' + (u.status === 'active' ? 'btn-danger' : 'btn-success') + '" style="padding:4px 10px;font-size:12px;margin-right:4px;" onclick="toggleStatus(\'' + u.empid + '\')">' + (u.status === 'active' ? '禁用' : '启用') + '</button>' +
         '<button class="btn btn-danger" style="padding:4px 10px;font-size:12px;" onclick="deleteStudent(\'' + u.empid + '\')">删除</button>' +
       '</td>' +

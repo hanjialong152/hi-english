@@ -238,7 +238,7 @@ def init_data_files():
     # 先从 GitHub 拉取数据（覆盖本地初始文件）
     if GITHUB_TOKEN:
         print('[Sync] 从 GitHub data-sync 分支拉取最新数据...', flush=True)
-        for filename in ['users.json', 'study_data.json', 'admin.json', 'groups.json', 'messages.json', 'dingtalk.json']:
+        for filename in ['users.json', 'study_data.json', 'admin.json', 'groups.json', 'messages.json', 'dingtalk.json', 'beta.json']:
             rel_path = f'data/{filename}'
             remote_data = github_api_get(rel_path)
             if remote_data is not None:
@@ -510,6 +510,47 @@ def handle_save_dingtalk_config():
     webhook = (body.get('webhook') or '').strip()
     save_json(os.path.join(DATA_DIR, 'dingtalk.json'), {'webhook': webhook})
     return jsonify({'success': True})
+
+
+# ---- 众测模式全局开关 API ----
+# 开启后：商务英语对所有人解锁 + 周测/月测不受时间限制。正式上线时关闭即恢复正式规则。
+@app.route('/api/beta-config', methods=['GET'])
+def handle_get_beta_config():
+    cfg = load_json(os.path.join(DATA_DIR, 'beta.json'))
+    beta = bool(cfg.get('betaMode', False)) if isinstance(cfg, dict) else False
+    return jsonify({'success': True, 'betaMode': beta})
+
+
+@app.route('/api/beta-config', methods=['POST'])
+def handle_save_beta_config():
+    body = request.json or {}
+    beta = bool(body.get('betaMode', False))
+    save_json(os.path.join(DATA_DIR, 'beta.json'), {'betaMode': beta})
+    return jsonify({'success': True, 'betaMode': beta})
+
+
+# ---- 管理员按账号解锁商务英语 API ----
+@app.route('/api/admin/unlock-business', methods=['POST'])
+def handle_unlock_business():
+    body = request.json or {}
+    empid = (body.get('empid') or '').strip()
+    unlock = body.get('unlock', True)
+    if not empid:
+        return jsonify({'success': False, 'error': '缺少empid'}), 400
+    with data_lock:
+        users = load_json(os.path.join(DATA_DIR, 'users.json'))
+        if empid not in users:
+            return jsonify({'success': False, 'error': '用户不存在'}), 404
+        study_data = load_json(os.path.join(DATA_DIR, 'study_data.json'))
+        sd = study_data.get(empid) or {}
+        if not isinstance(sd.get('business'), dict):
+            sd['business'] = {'readIndex': 0, 'spellIndex': 0, 'learned': [], 'learnedDates': {},
+                              'mastered': [], 'speakScores': {}, 'checkIns': [],
+                              'weeklyTests': [], 'monthlyTests': [], 'totalSeconds': 0, 'unlocked': False}
+        sd['business']['unlocked'] = bool(unlock)
+        study_data[empid] = sd
+        save_json(os.path.join(DATA_DIR, 'study_data.json'), study_data)
+    return jsonify({'success': True, 'empid': empid, 'unlocked': bool(unlock)})
 
 
 # ---- 站内信 / 消息 API ----

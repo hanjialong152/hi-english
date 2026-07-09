@@ -17,6 +17,7 @@ var isAudioActive = false;
 var testSubItems = [];
 var testSubScores = {};
 var bizSpellTarget = ''; // Current business spell practice target word
+var BETA_MODE = false; // 众测模式：开启后商务英语对所有人解锁 + 周测/月测不受时间限制
 
 // ===== Initialize =====
 async function init() {
@@ -79,6 +80,17 @@ async function init() {
   if (studyData.basic.mastered.length >= 850) {
     studyData.business.unlocked = true;
   }
+
+  // 众测模式：从服务端拉取全局开关，开启则解锁商务英语并放开周测/月测时间限制
+  fetch(HiEnglish.getServerUrl() + '/api/beta-config').then(function(r) { return r.json(); }).then(function(data) {
+    if (data && data.betaMode) {
+      BETA_MODE = true;
+      if (studyData && studyData.business && !studyData.business.unlocked) {
+        studyData.business.unlocked = true;
+      }
+      renderStageSwitcher();
+    }
+  }).catch(function() {});
 
   renderStageSwitcher();
   renderHome();
@@ -342,9 +354,9 @@ function goSpell() {
 }
 
 function goWeeklyTest() {
-  // 周测仅每周六、周日可以测试
+  // 周测仅每周六、周日可以测试（众测模式下不受时间限制）
   var dayOfWeek = new Date().getDay(); // 0=Sun, 6=Sat
-  if (dayOfWeek !== 6 && dayOfWeek !== 0) {
+  if (!BETA_MODE && dayOfWeek !== 6 && dayOfWeek !== 0) {
     testWordIndex = 0;
     testWords = [];
     testSubItems = [];
@@ -357,9 +369,9 @@ function goWeeklyTest() {
 }
 
 function goMonthlyTest() {
-  // 月测仅每月1日至5日可以测试
+  // 月测仅每月1日至5日可以测试（众测模式下不受时间限制）
   var dayOfMonth = new Date().getDate();
-  if (dayOfMonth < 1 || dayOfMonth > 5) {
+  if (!BETA_MODE && (dayOfMonth < 1 || dayOfMonth > 5)) {
     testWordIndex = 0;
     testWords = [];
     testSubItems = [];
@@ -503,7 +515,7 @@ function speakWithTimer(text) {
 }
 
 // 基础词汇：优先播放本地真人录制 mp3（兼容性最好），失败自动回退 TTS
-var AUDIO_VER = '?v=20260709';
+var AUDIO_VER = '?v=20260710a';
 function playBasicAudio(type, id, text) {
   isAudioActive = true;
   var url;
