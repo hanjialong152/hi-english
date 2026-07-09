@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Hi English - 学员端</title>
+<title>Hi English - 瀛﹀憳绔?/title>
 <link rel="manifest" href="./manifest.json">
 <link rel="apple-touch-icon" href="./icon-apple.png">
 <meta name="theme-color" content="#4A90D9">
@@ -50,7 +50,7 @@ body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Mi
 .mode-card .mode-sub { font-size:11px; color:var(--text-sub); margin-top:2px; }
 .mode-card .mode-sub.daily { color:var(--danger); font-weight:600; }
 .mode-card.locked { opacity:0.5; }
-.mode-card.locked .mode-icon::after { content:'🔒'; }
+.mode-card.locked .mode-icon::after { content:'馃敀'; }
 
 .stage-switcher { display:flex; margin:0 12px 12px; background:var(--card); border-radius:10px; padding:4px; box-shadow:var(--shadow); }
 .stage-tab { flex:1; text-align:center; padding:10px; border-radius:8px; font-size:13px; font-weight:600; color:var(--text-sub); cursor:pointer; transition:all .2s; position:relative; }
@@ -193,7 +193,7 @@ body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Mi
 .toast { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(0,0,0,0.8); color:#fff; padding:10px 20px; border-radius:8px; font-size:14px; z-index:9999; opacity:0; transition:opacity .3s; pointer-events:none; }
 .toast.show { opacity:1; }
 
-/* 站内信 */
+/* 绔欏唴淇?*/
 .msg-badge { position:absolute; top:-4px; right:-4px; background:var(--danger); color:#fff; font-size:10px; min-width:16px; height:16px; border-radius:8px; display:flex; align-items:center; justify-content:center; padding:0 4px; font-weight:700; }
 .msg-item { background:var(--card); border-radius:var(--radius); padding:14px; margin-bottom:10px; box-shadow:var(--shadow); position:relative; }
 .msg-item.unread::before { content:''; position:absolute; left:0; top:14px; bottom:14px; width:3px; background:var(--primary); border-radius:2px; }
@@ -209,7 +209,7 @@ body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Mi
 .msg-body { font-size:13px; color:var(--text-light); line-height:1.5; }
 .msg-actions { display:flex; gap:8px; margin-top:10px; }
 
-/* 学习清单 */
+/* 瀛︿範娓呭崟 */
 .word-list-item { display:flex; align-items:center; gap:10px; background:var(--card); border-radius:var(--radius); padding:12px 14px; margin-bottom:8px; box-shadow:var(--shadow); }
 .word-list-item .wl-num { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; flex-shrink:0; }
 .word-list-item .wl-num.mastered { background:var(--success-light); color:var(--success); }
@@ -232,7 +232,7 @@ body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Mi
 
 <div id="student-app" class="phone-frame">
 
-  <!-- 首页 -->
+  <!-- 棣栭〉 -->
   <div id="s-page-home" class="page active">
     <div class="top-bar">
       <div class="user-info">
@@ -243,164 +243,164 @@ body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Mi
         </div>
       </div>
       <div style="display:flex;gap:6px;align-items:center;">
-        <button class="top-btn" onclick="showChangePasswordModal()">修改密码</button>
-        <button class="top-btn" onclick="sNav('messages')" style="position:relative;">📬 站内信<span class="msg-badge" id="s-msg-badge" style="display:none;"></span></button>
-        <button class="top-btn" onclick="logout()">退出</button>
+        <button class="top-btn" onclick="showChangePasswordModal()">淇敼瀵嗙爜</button>
+        <button class="top-btn" onclick="sNav('messages')" style="position:relative;">馃摤 绔欏唴淇?span class="msg-badge" id="s-msg-badge" style="display:none;"></span></button>
+        <button class="top-btn" onclick="logout()">閫€鍑?/button>
       </div>
     </div>
 
-    <!-- 阶段切换器 -->
+    <!-- 闃舵鍒囨崲鍣?-->
     <div style="padding:12px 12px 0;">
       <div class="stage-switcher" id="s-stage-switcher"></div>
     </div>
 
-    <!-- 学习进度 -->
+    <!-- 瀛︿範杩涘害 -->
     <div class="card" id="s-progress-card"></div>
 
-    <!-- 今日打卡进度 -->
+    <!-- 浠婃棩鎵撳崱杩涘害 -->
     <div class="checkin-progress" onclick="showCalendar()" id="s-checkin"></div>
 
-    <!-- 学习模式版块 -->
-    <div class="section-title">学习模式</div>
+    <!-- 瀛︿範妯″紡鐗堝潡 -->
+    <div class="section-title">瀛︿範妯″紡</div>
     <div class="mode-grid" id="s-learn-modes"></div>
 
-    <!-- 测试模式版块 -->
-    <div class="section-title">测试模式</div>
+    <!-- 娴嬭瘯妯″紡鐗堝潡 -->
+    <div class="section-title">娴嬭瘯妯″紡</div>
     <div class="mode-grid" id="s-test-modes"></div>
   </div>
 
-  <!-- 跟读学习页 -->
+  <!-- 璺熻瀛︿範椤?-->
   <div id="s-page-learn" class="page">
     <div class="back-bar">
-      <button class="back-btn" onclick="backHome()">‹</button>
-      <span class="back-title" id="s-learn-title">跟读学习 · 每日必学</span>
+      <button class="back-btn" onclick="backHome()">鈥?/button>
+      <span class="back-title" id="s-learn-title">璺熻瀛︿範 路 姣忔棩蹇呭</span>
     </div>
     <div id="s-learn-content"></div>
   </div>
 
-  <!-- 拼写练习页 -->
+  <!-- 鎷煎啓缁冧範椤?-->
   <div id="s-page-spell" class="page">
     <div class="back-bar">
-      <button class="back-btn" onclick="backHome()">‹</button>
-      <span class="back-title">拼写练习 · 选学</span>
+      <button class="back-btn" onclick="backHome()">鈥?/button>
+      <span class="back-title">鎷煎啓缁冧範 路 閫夊</span>
     </div>
     <div id="s-spell-content"></div>
   </div>
 
-  <!-- 周测页 -->
+  <!-- 鍛ㄦ祴椤?-->
   <div id="s-page-weekly" class="page">
     <div class="back-bar">
-      <button class="back-btn" onclick="backHome()">‹</button>
-      <span class="back-title">周测模式</span>
+      <button class="back-btn" onclick="backHome()">鈥?/button>
+      <span class="back-title">鍛ㄦ祴妯″紡</span>
     </div>
     <div id="s-weekly-content"></div>
   </div>
 
-  <!-- 月测页 -->
+  <!-- 鏈堟祴椤?-->
   <div id="s-page-monthly" class="page">
     <div class="back-bar">
-      <button class="back-btn" onclick="backHome()">‹</button>
-      <span class="back-title">月测模式</span>
+      <button class="back-btn" onclick="backHome()">鈥?/button>
+      <span class="back-title">鏈堟祴妯″紡</span>
     </div>
     <div id="s-monthly-content"></div>
   </div>
 
-  <!-- 报告页 -->
+  <!-- 鎶ュ憡椤?-->
   <div id="s-page-report" class="page">
     <div class="top-bar">
-      <div style="font-size:16px;font-weight:600;">📊 学习报告</div>
-      <button class="top-btn" onclick="backHome()">返回</button>
+      <div style="font-size:16px;font-weight:600;">馃搳 瀛︿範鎶ュ憡</div>
+      <button class="top-btn" onclick="backHome()">杩斿洖</button>
     </div>
     <div id="s-report-content"></div>
   </div>
 
-  <!-- 学习清单页 -->
+  <!-- 瀛︿範娓呭崟椤?-->
   <div id="s-page-wordlist" class="page">
     <div class="top-bar">
-      <div style="font-size:16px;font-weight:600;">📋 学习清单</div>
-      <button class="top-btn" onclick="backHome()">返回</button>
+      <div style="font-size:16px;font-weight:600;">馃搵 瀛︿範娓呭崟</div>
+      <button class="top-btn" onclick="backHome()">杩斿洖</button>
     </div>
     <div id="s-wordlist-content"></div>
   </div>
 
-  <!-- 站内信页 -->
+  <!-- 绔欏唴淇￠〉 -->
   <div id="s-page-messages" class="page">
     <div class="top-bar">
       <div style="display:flex;align-items:center;gap:8px;">
-        <button class="top-btn" onclick="sNav('home')">‹ 返回</button>
-        <span style="font-size:16px;font-weight:600;">📬 站内信</span>
+        <button class="top-btn" onclick="sNav('home')">鈥?杩斿洖</button>
+        <span style="font-size:16px;font-weight:600;">馃摤 绔欏唴淇?/span>
       </div>
-      <button class="top-btn" onclick="markAllRead()">全部已读</button>
+      <button class="top-btn" onclick="markAllRead()">鍏ㄩ儴宸茶</button>
     </div>
     <div id="s-messages-content"></div>
   </div>
 
-  <!-- 底部导航 -->
+  <!-- 搴曢儴瀵艰埅 -->
   <div class="bottom-nav">
-    <div class="nav-item active" onclick="sNav('home')"><div class="nav-icon">🏠</div><div class="nav-label">首页</div></div>
-    <div class="nav-item" onclick="sNav('wordlist')"><div class="nav-icon">📋</div><div class="nav-label">学习清单</div></div>
-    <div class="nav-item" onclick="sNav('report')"><div class="nav-icon">📊</div><div class="nav-label">报告</div></div>
+    <div class="nav-item active" onclick="sNav('home')"><div class="nav-icon">馃彔</div><div class="nav-label">棣栭〉</div></div>
+    <div class="nav-item" onclick="sNav('wordlist')"><div class="nav-icon">馃搵</div><div class="nav-label">瀛︿範娓呭崟</div></div>
+    <div class="nav-item" onclick="sNav('report')"><div class="nav-icon">馃搳</div><div class="nav-label">鎶ュ憡</div></div>
   </div>
 </div>
 
-<!-- 打卡日历弹窗 -->
+<!-- 鎵撳崱鏃ュ巻寮圭獥 -->
 <div id="calendar-modal" class="calendar-modal">
   <div class="calendar-box">
-    <h3 id="cal-title">📅 打卡日历</h3>
+    <h3 id="cal-title">馃搮 鎵撳崱鏃ュ巻</h3>
     <div class="calendar-grid" id="calendar-grid"></div>
     <div class="calendar-makeup-tip">
-      ⚠️ 仅可补当周打卡，不允许跨周或跨月补卡。点击当周红色未完成日期开始补卡学习，完成15分钟后补卡成功。
+      鈿狅笍 浠呭彲琛ュ綋鍛ㄦ墦鍗★紝涓嶅厑璁歌法鍛ㄦ垨璺ㄦ湀琛ュ崱銆傜偣鍑诲綋鍛ㄧ孩鑹叉湭瀹屾垚鏃ユ湡寮€濮嬭ˉ鍗″涔狅紝瀹屾垚15鍒嗛挓鍚庤ˉ鍗℃垚鍔熴€?
     </div>
     <div class="calendar-legend">
-      <span><span class="legend-dot" style="background:var(--success-light);"></span>绿色 = 已完成</span>
-      <span><span class="legend-dot" style="background:var(--danger-light);"></span>红色 = 未完成</span>
+      <span><span class="legend-dot" style="background:var(--success-light);"></span>缁胯壊 = 宸插畬鎴?/span>
+      <span><span class="legend-dot" style="background:var(--danger-light);"></span>绾㈣壊 = 鏈畬鎴?/span>
     </div>
     <div style="margin-top:12px;display:flex;gap:8px;">
-      <button class="btn btn-outline" style="flex:1;" onclick="closeCalendar()">关闭</button>
-      <button class="btn btn-primary" style="flex:1;" onclick="goLearnFromCalendar()">去打卡</button>
+      <button class="btn btn-outline" style="flex:1;" onclick="closeCalendar()">鍏抽棴</button>
+      <button class="btn btn-primary" style="flex:1;" onclick="goLearnFromCalendar()">鍘绘墦鍗?/button>
     </div>
   </div>
 </div>
 
-<!-- 学员修改密码弹窗 -->
+<!-- 瀛﹀憳淇敼瀵嗙爜寮圭獥 -->
 <div id="change-password-modal" class="modal-mask">
   <div class="modal-box">
-    <h3>🔐 修改个人密码</h3>
+    <h3>馃攼 淇敼涓汉瀵嗙爜</h3>
     <div class="form-group">
-      <label>当前密码</label>
-      <input type="password" id="change-pw-old" placeholder="请输入当前密码" autocomplete="new-password">
+      <label>褰撳墠瀵嗙爜</label>
+      <input type="password" id="change-pw-old" placeholder="璇疯緭鍏ュ綋鍓嶅瘑鐮? autocomplete="new-password">
     </div>
     <div class="form-group">
-      <label>新密码</label>
-      <input type="password" id="change-pw-new" placeholder="请输入新密码（格式不限）" autocomplete="new-password">
+      <label>鏂板瘑鐮?/label>
+      <input type="password" id="change-pw-new" placeholder="璇疯緭鍏ユ柊瀵嗙爜锛堟牸寮忎笉闄愶級" autocomplete="new-password">
     </div>
     <div class="form-group">
-      <label>确认新密码</label>
-      <input type="password" id="change-pw-confirm" placeholder="请再次输入新密码" autocomplete="new-password">
+      <label>纭鏂板瘑鐮?/label>
+      <input type="password" id="change-pw-confirm" placeholder="璇峰啀娆¤緭鍏ユ柊瀵嗙爜" autocomplete="new-password">
     </div>
-    <div style="font-size:12px;color:var(--text-sub);margin-bottom:8px;">密码格式不限制，修改后下次登录需使用新密码</div>
+    <div style="font-size:12px;color:var(--text-sub);margin-bottom:8px;">瀵嗙爜鏍煎紡涓嶉檺鍒讹紝淇敼鍚庝笅娆＄櫥褰曢渶浣跨敤鏂板瘑鐮?/div>
     <div class="modal-actions">
-      <button class="btn btn-outline" onclick="closeModal('change-password-modal')">取消</button>
-      <button class="btn btn-primary" onclick="changeStudentPassword()">确认修改</button>
+      <button class="btn btn-outline" onclick="closeModal('change-password-modal')">鍙栨秷</button>
+      <button class="btn btn-primary" onclick="changeStudentPassword()">纭淇敼</button>
     </div>
   </div>
 </div>
 
-<!-- 分数弹窗 -->
+<!-- 鍒嗘暟寮圭獥 -->
 <div id="score-modal-mask" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:10000;justify-content:center;align-items:center;">
   <div style="background:#fff;border-radius:16px;padding:32px 28px;width:300px;text-align:center;animation:popIn .3s ease;">
     <div id="score-modal-icon" style="font-size:48px;margin-bottom:8px;"></div>
     <div id="score-modal-score" style="font-size:42px;font-weight:800;margin-bottom:4px;"></div>
     <div id="score-modal-msg" style="font-size:18px;font-weight:600;margin-bottom:8px;"></div>
     <div id="score-modal-detail" style="font-size:13px;color:#888;margin-bottom:20px;"></div>
-    <button onclick="closeScoreModal()" style="width:100%;padding:12px;border:none;border-radius:8px;background:var(--primary);color:#fff;font-size:16px;font-weight:600;cursor:pointer;">确定</button>
+    <button onclick="closeScoreModal()" style="width:100%;padding:12px;border:none;border-radius:8px;background:var(--primary);color:#fff;font-size:16px;font-weight:600;cursor:pointer;">纭畾</button>
   </div>
 </div>
 <style>@keyframes popIn{from{transform:scale(0.7);opacity:0}to{transform:scale(1);opacity:1}}</style>
 
 <div class="toast" id="toast"></div>
 
-<script src="js/common.js?v=20260707d"></script>
-<script src="js/student.js?v=20260707d"></script>
+<script src="js/common.js?v=20260709a"></script>
+<script src="js/student.js?v=20260709a"></script>
 </body>
 </html>
