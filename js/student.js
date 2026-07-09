@@ -546,10 +546,15 @@ var AUDIO_VER = '?v=20260710a';
 function playBasicAudio(type, id, text) {
   isAudioActive = true;
   var url;
+  // 商务英语句子调用时 type='b_1_0'（已含文件名），id 位置实为文本内容
+  var isBiz = type.indexOf('b_') === 0;
   if (type === 'w') url = 'audio/w_' + id + '.mp3' + AUDIO_VER;
   else if (type === 'p') url = 'audio/p_' + id + '.mp3' + AUDIO_VER;
+  else if (isBiz) url = 'audio/' + type + '.mp3' + AUDIO_VER;
   else url = 'audio/e_' + id + '_' + type.slice(1) + '.mp3' + AUDIO_VER; // type = 'e1'/'e2'/'e3'
-  HiEnglish.playAudioOrSpeak(url, text, {
+  // 商务音频调用只传了2个参数，id 位置实为文本，作为 TTS 兜底
+  var fallbackText = text || (isBiz ? id : null);
+  HiEnglish.playAudioOrSpeak(url, fallbackText, {
     onend: function() { setTimeout(function() { isAudioActive = false; }, 500); },
     onerror: function() { isAudioActive = false; }
   });
