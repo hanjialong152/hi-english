@@ -740,7 +740,8 @@
       "readIndex": 0,
       "speakScores": {
         "1": {
-          "phrase": 27
+          "phrase": 27,
+          "ex1": 94
         }
       },
       "spellIndex": 0,
