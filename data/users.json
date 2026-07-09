@@ -203,15 +203,11 @@
   "059707": {
     "empid": "059707",
     "name": "Amy",
-    "group": "",
+    "group": "B组",
     "status": "active",
     "password_hash": "29020abe91ee5a439cfbee9aaa0434f532d59e6acd4d1557dbb766d3e3318ab2",
     "salt": "08c21c1f9961fd3d",
-    "created_at": 1783478929106,
-    "created_by": "admin",
-    "last_login": 0,
-    "login_count": 0,
-    "must_change_password": false
+    "created_at": 1783478929106
   },
   "189146": {
     "empid": "189146",
