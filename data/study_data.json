@@ -376,9 +376,9 @@
     "basic": {
       "checkIns": [
         {
+          "completed": false,
           "date": "2026-07-09",
-          "seconds": 297,
-          "completed": false
+          "seconds": 298
         }
       ],
       "learned": [
@@ -406,34 +406,34 @@
       "readIndex": 5,
       "speakScores": {
         "1": {
-          "phrase": 85,
           "ex1": 94,
           "ex2": 82,
-          "ex3": 90
+          "ex3": 90,
+          "phrase": 85
         },
         "2": {
-          "phrase": 85,
           "ex1": 87,
           "ex2": 93,
-          "ex3": 82
+          "ex3": 82,
+          "phrase": 85
         },
         "3": {
-          "phrase": 85,
           "ex1": 85,
           "ex2": 96,
-          "ex3": 95
+          "ex3": 95,
+          "phrase": 85
         },
         "4": {
-          "phrase": 85,
           "ex1": 85,
           "ex2": 85,
-          "ex3": 84
+          "ex3": 84,
+          "phrase": 85
         },
         "5": {
-          "phrase": 85,
           "ex1": 93,
           "ex2": 85,
-          "ex3": 88
+          "ex3": 88,
+          "phrase": 85
         }
       },
       "spellIndex": 0,
