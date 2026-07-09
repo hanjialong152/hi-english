@@ -669,17 +669,21 @@ def handle_change_password():
 def handle_reset_password():
     body = request.json or {}
     empid = (body.get('empid') or '').strip()
+    # 管理员可指定新密码；未指定则重置为默认密码
+    new_password = (body.get('newPassword') or '').strip() or DEFAULT_PASSWORD
     with data_lock:
         users = load_json(os.path.join(DATA_DIR, 'users.json'))
         user = users.get(empid)
         if not user:
             return jsonify({'success': False, 'error': '用户不存在'}), 404
-        hashed, salt = hash_password(DEFAULT_PASSWORD)
+        hashed, salt = hash_password(new_password)
         user['password_hash'] = hashed
         user['salt'] = salt
-        user['must_change_password'] = True
+        # 同时清掉明文密码字段，避免旧明文残留导致旧密码仍可登录
+        user.pop('password', None)
+        user['must_change_password'] = (new_password == DEFAULT_PASSWORD)
         save_json(os.path.join(DATA_DIR, 'users.json'), users)
-    return jsonify({'success': True, 'message': f'已重置密码为 {DEFAULT_PASSWORD}'})
+    return jsonify({'success': True, 'message': f'已重置密码为 {new_password}'})
 
 
 # ---- 管理员 API ----
