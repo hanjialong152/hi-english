@@ -502,6 +502,20 @@ function speakWithTimer(text) {
   });
 }
 
+// 基础词汇：优先播放本地真人录制 mp3（兼容性最好），失败自动回退 TTS
+var AUDIO_VER = '?v=20260709';
+function playBasicAudio(type, id, text) {
+  isAudioActive = true;
+  var url;
+  if (type === 'w') url = 'audio/w_' + id + '.mp3' + AUDIO_VER;
+  else if (type === 'p') url = 'audio/p_' + id + '.mp3' + AUDIO_VER;
+  else url = 'audio/e_' + id + '_' + type.slice(1) + '.mp3' + AUDIO_VER; // type = 'e1'/'e2'/'e3'
+  HiEnglish.playAudioOrSpeak(url, text, {
+    onend: function() { setTimeout(function() { isAudioActive = false; }, 500); },
+    onerror: function() { isAudioActive = false; }
+  });
+}
+
 // ===== Learn Page (Read) =====
 function showLearnPage() {
   document.querySelectorAll('#student-app .page').forEach(function(p){ p.classList.remove('active'); });
@@ -567,7 +581,7 @@ function renderWordLearnCard() {
       '<div class="progress-bar"><div class="fill" style="width:' + progressPercent + '%;"></div></div>' +
       '<div style="display:flex;align-items:center;justify-content:center;gap:12px;">' +
         '<div class="learn-word">' + word.word + '</div>' +
-        '<button onclick="speakWithTimer(\'' + escapeQuotes(word.word) + '\')" style="border:none;background:none;font-size:24px;cursor:pointer;">🔊</button>' +
+        '<button onclick="playBasicAudio(\'w\',\'' + word.id + '\',\'' + escapeQuotes(word.word) + '\')" style="border:none;background:none;font-size:24px;cursor:pointer;">🔊</button>' +
       '</div>' +
       '<div class="learn-ipa">' + (word.ipa || '') + '  ' + (word.pos || '') + '</div>' +
       '<div class="learn-zh">' + (word.cn || '') + '</div>' +
@@ -576,7 +590,7 @@ function renderWordLearnCard() {
   // Phrases - no parenthetical content, with speaker
   var phraseHTML =
     '<div class="learn-section">' +
-      '<h4>📌 常见词组 <button onclick="speakWithTimer(\'' + escapeQuotes(word.phrase_en) + '\')" style="float:right;border:none;background:none;font-size:16px;cursor:pointer;">🔊</button></h4>' +
+      '<h4>📌 常见词组 <button onclick="playBasicAudio(\'p\',\'' + word.id + '\',\'' + escapeQuotes(word.phrase_en) + '\')" style="float:right;border:none;background:none;font-size:16px;cursor:pointer;">🔊</button></h4>' +
       '<div style="font-size:15px;">' +
         '<div style="margin-bottom:4px;">' + word.phrase_en + '</div>' +
         '<div style="font-size:13px;color:var(--text-sub);">' + word.phrase_cn + '</div>' +
@@ -590,21 +604,21 @@ function renderWordLearnCard() {
       '<div style="margin-bottom:12px;">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;">' +
           '<span style="font-size:14px;">' + word.s1_en + '</span>' +
-          '<button onclick="speakWithTimer(\'' + escapeQuotes(word.s1_en) + '\')" style="border:none;background:none;font-size:16px;cursor:pointer;">🔊</button>' +
+          '<button onclick="playBasicAudio(\'e1\',\'' + word.id + '\',\'' + escapeQuotes(word.s1_en) + '\')" style="border:none;background:none;font-size:16px;cursor:pointer;">🔊</button>' +
         '</div>' +
         '<div style="font-size:13px;color:var(--text-sub);">' + word.s1_cn + '</div>' +
       '</div>' +
       '<div style="margin-bottom:12px;">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;">' +
           '<span style="font-size:14px;">' + word.s2_en + '</span>' +
-          '<button onclick="speakWithTimer(\'' + escapeQuotes(word.s2_en) + '\')" style="border:none;background:none;font-size:16px;cursor:pointer;">🔊</button>' +
+          '<button onclick="playBasicAudio(\'e2\',\'' + word.id + '\',\'' + escapeQuotes(word.s2_en) + '\')" style="border:none;background:none;font-size:16px;cursor:pointer;">🔊</button>' +
         '</div>' +
         '<div style="font-size:13px;color:var(--text-sub);">' + word.s2_cn + '</div>' +
       '</div>' +
       '<div>' +
         '<div style="display:flex;justify-content:space-between;align-items:center;">' +
           '<span style="font-size:14px;">' + word.s3_en + '</span>' +
-          '<button onclick="speakWithTimer(\'' + escapeQuotes(word.s3_en) + '\')" style="border:none;background:none;font-size:16px;cursor:pointer;">🔊</button>' +
+          '<button onclick="playBasicAudio(\'e3\',\'' + word.id + '\',\'' + escapeQuotes(word.s3_en) + '\')" style="border:none;background:none;font-size:16px;cursor:pointer;">🔊</button>' +
         '</div>' +
         '<div style="font-size:13px;color:var(--text-sub);">' + word.s3_cn + '</div>' +
       '</div>' +
