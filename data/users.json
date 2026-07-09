@@ -227,5 +227,18 @@
     "password_hash": "0ff7add3c1a03a6202df0b81113eee66dea4124068e7bdad4f087c48b64857df",
     "salt": "12a440070b48a5b2",
     "created_at": 1783476965555
+  },
+  "999998": {
+    "empid": "999998",
+    "name": "重置测试",
+    "group": "A组",
+    "status": "active",
+    "password_hash": "c85d771a0f2dae45e463409844c8f2c84a3b0bc4a41d26be629bf9d4081f258e",
+    "salt": "d562a67ee551180a",
+    "created_at": 1783612849206,
+    "created_by": "admin",
+    "last_login": 1783612852422,
+    "login_count": 2,
+    "must_change_password": false
   }
 }
