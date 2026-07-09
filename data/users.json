@@ -226,18 +226,5 @@
     "password_hash": "0ff7add3c1a03a6202df0b81113eee66dea4124068e7bdad4f087c48b64857df",
     "salt": "12a440070b48a5b2",
     "created_at": 1783476965555
-  },
-  "999999": {
-    "empid": "999999",
-    "name": "临时测试",
-    "group": "A组",
-    "status": "active",
-    "password_hash": "98338322ac9e786270f9ada110b8efded2a4a1d4044dff76117bccf0132da613",
-    "salt": "40d97f630afd36ab",
-    "created_at": 1783610256541,
-    "created_by": "admin",
-    "last_login": 1783610260295,
-    "login_count": 2,
-    "must_change_password": false
   }
 }
