@@ -374,29 +374,35 @@
   },
   "233593": {
     "basic": {
-      "readIndex": 0,
-      "spellIndex": 0,
+      "checkIns": [
+        {
+          "date": "2026-07-09",
+          "seconds": 1,
+          "completed": false
+        }
+      ],
       "learned": [],
       "learnedDates": {},
       "mastered": [],
-      "speakScores": {},
-      "checkIns": [],
-      "weeklyTests": [],
       "monthlyTests": [],
-      "totalSeconds": 0
+      "readIndex": 0,
+      "speakScores": {},
+      "spellIndex": 0,
+      "totalSeconds": 0,
+      "weeklyTests": []
     },
     "business": {
-      "readIndex": 0,
-      "spellIndex": 0,
+      "checkIns": [],
       "learned": [],
       "learnedDates": {},
       "mastered": [],
-      "speakScores": {},
-      "checkIns": [],
-      "weeklyTests": [],
       "monthlyTests": [],
+      "readIndex": 0,
+      "speakScores": {},
+      "spellIndex": 0,
       "totalSeconds": 0,
-      "unlocked": false
+      "unlocked": false,
+      "weeklyTests": []
     }
   },
   "252250": {
