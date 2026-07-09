@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Hi English - 绠＄悊鍛樼</title>
+<title>Hi English - 管理员端</title>
 <link rel="manifest" href="./manifest.json">
 <link rel="apple-touch-icon" href="./icon-apple.png">
 <meta name="theme-color" content="#4A90D9">
@@ -132,40 +132,40 @@ body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Mi
 <div id="admin-app" class="admin-frame">
   <div class="admin-top">
     <div style="display:flex;align-items:center;gap:12px;">
-      <a href="index.html" style="background:rgba(255,255,255,0.2);border:none;color:#fff;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:13px;text-decoration:none;">鈫?杩斿洖</a>
-      <span style="font-size:18px;font-weight:700;">Hi English 绠＄悊鍚庡彴</span>
+      <a href="index.html" style="background:rgba(255,255,255,0.2);border:none;color:#fff;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:13px;text-decoration:none;">← 返回</a>
+      <span style="font-size:18px;font-weight:700;">Hi English 管理后台</span>
     </div>
     <div style="display:flex;align-items:center;gap:8px;">
-      <span style="font-size:13px;opacity:0.8;">绠＄悊鍛?路 admin</span>
-      <button onclick="showAdminChangePasswordModal()" style="background:rgba(255,255,255,0.2);border:none;color:#fff;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:13px;">淇敼瀵嗙爜</button>
+      <span style="font-size:13px;opacity:0.8;">管理员 · admin</span>
+      <button onclick="showAdminChangePasswordModal()" style="background:rgba(255,255,255,0.2);border:none;color:#fff;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:13px;">修改密码</button>
     </div>
   </div>
 
   <div class="admin-body">
     <div class="admin-nav">
-      <div class="admin-nav-item active" onclick="aNav('dashboard',this)">鎬昏</div>
-      <div class="admin-nav-item" onclick="aNav('students',this)">瀛﹀憳绠＄悊</div>
-      <div class="admin-nav-item" onclick="aNav('groups',this)">鍒嗙粍绠＄悊</div>
-      <div class="admin-nav-item" onclick="aNav('export',this)">鏁版嵁瀵煎嚭</div>
-      <div class="admin-nav-item" onclick="aNav('content',this)">鍐呭绠＄悊</div>
+      <div class="admin-nav-item active" onclick="aNav('dashboard',this)">总览</div>
+      <div class="admin-nav-item" onclick="aNav('students',this)">学员管理</div>
+      <div class="admin-nav-item" onclick="aNav('groups',this)">分组管理</div>
+      <div class="admin-nav-item" onclick="aNav('export',this)">数据导出</div>
+      <div class="admin-nav-item" onclick="aNav('content',this)">内容管理</div>
     </div>
     <div class="admin-content">
 
-      <!-- 鎬昏椤?-->
+      <!-- 总览页 -->
       <div id="a-page-dashboard" class="admin-page active">
         <div id="a-dashboard-stats"></div>
         <div id="a-dashboard-rankings"></div>
         <div id="a-dashboard-reminders"></div>
       </div>
 
-      <!-- 瀛﹀憳绠＄悊椤?-->
+      <!-- 学员管理页 -->
       <div id="a-page-students" class="admin-page">
         <div id="a-students-toolbar"></div>
         <div style="overflow-x:auto;">
           <table class="data-table" id="student-table">
             <thead>
               <tr>
-                <th>璐﹀彿</th><th>濮撳悕</th><th>缁勫埆</th><th>瀛︿範杩涘害</th><th>宸叉帉鎻?/th><th>鎵撳崱澶╂暟</th><th>骞冲潎鍒?/th><th>鐘舵€?/th><th>鎿嶄綔</th>
+                <th>账号</th><th>姓名</th><th>组别</th><th>学习进度</th><th>已掌握</th><th>打卡天数</th><th>平均分</th><th>状态</th><th>操作</th>
               </tr>
             </thead>
             <tbody id="student-tbody"></tbody>
@@ -173,66 +173,66 @@ body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Mi
         </div>
       </div>
 
-      <!-- 鍒嗙粍绠＄悊椤?-->
+      <!-- 分组管理页 -->
       <div id="a-page-groups" class="admin-page">
         <div class="card">
-          <h4 style="margin-bottom:12px;">鐜版湁缁勫埆</h4>
+          <h4 style="margin-bottom:12px;">现有组别</h4>
           <div id="group-list"></div>
           <div style="margin-top:16px;display:flex;gap:8px;">
-            <input type="text" id="new-group-input" placeholder="杈撳叆鏂扮粍鍒悕绉? style="flex:1;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:14px;">
-            <button class="btn btn-primary" onclick="addGroup()">+ 娣诲姞缁勫埆</button>
+            <input type="text" id="new-group-input" placeholder="输入新组别名称" style="flex:1;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:14px;">
+            <button class="btn btn-primary" onclick="addGroup()">+ 添加组别</button>
           </div>
-          <p style="font-size:12px;color:var(--text-sub);margin-top:8px;">鐐瑰嚮 鉁?鍙慨鏀圭粍鍒悕绉帮紝淇敼鍚庢墍鏈夊睘浜庤缁勭殑瀛﹀憳鑷姩鏇存柊</p>
+          <p style="font-size:12px;color:var(--text-sub);margin-top:8px;">点击 ✎ 可修改组别名称，修改后所有属于该组的学员自动更新</p>
         </div>
-        <div class="section-title">鍒嗙粍瀛﹀憳缁熻</div>
+        <div class="section-title">分组学员统计</div>
         <div style="display:flex;justify-content:flex-end;margin-bottom:8px;">
-          <button class="btn btn-outline" onclick="exportGroupStats()">馃摜 瀵煎嚭鍒嗙粍缁熻</button>
+          <button class="btn btn-outline" onclick="exportGroupStats()">📥 导出分组统计</button>
         </div>
         <div id="a-group-stats" style="overflow-x:auto;"></div>
       </div>
 
-      <!-- 鏁版嵁瀵煎嚭椤?-->
+      <!-- 数据导出页 -->
       <div id="a-page-export" class="admin-page">
         <div class="export-card" onclick="exportAllReport()">
-          <h4>馃搳 鍏ㄥ憳瀛︿範鎶ュ憡</h4>
-          <p>璐﹀彿銆佸鍚嶃€佺粍鍒€佸涔犻樁娈靛畬鎴愭儏鍐点€佹湀搴︽墦鍗″畬鎴愮巼銆佸懆娴嬫垚缁┿€佹湀娴嬫垚缁┿€佺疮璁℃€绘垚缁?/p>
+          <h4>📊 全员学习报告</h4>
+          <p>账号、姓名、组别、学习阶段完成情况、月度打卡完成率、周测成绩、月测成绩、累计总成绩</p>
         </div>
         <div class="export-card" onclick="exportTeamReport()">
-          <h4>馃彚 鍥㈤槦瀛︿範鎶ュ憡</h4>
-          <p>姣忎釜鍥㈤槦鐨勫涔犻樁娈靛畬鎴愭儏鍐点€佹湀搴﹀洟闃熸棩鎵撳崱骞冲潎瀹屾垚鐜囥€佸洟闃熷懆娴?鏈堟祴骞冲潎鍒嗐€佺疮璁℃€绘垚缁╁钩鍧囧垎</p>
+          <h4>🏢 团队学习报告</h4>
+          <p>每个团队的学习阶段完成情况、月度团队日打卡平均完成率、团队周测/月测平均分、累计总成绩平均分</p>
         </div>
         <div class="export-card" onclick="showDetailedReportModal()">
-          <h4>馃搵 璇︾粏鎶ヨ〃</h4>
-          <p>鎸夎捣姝㈡棩鏈?鏃?鍛?鏈堢瓫閫夛紝鍙垎鍒鍑烘瘡浣嶅鍛樻棩銆佸懆銆佹湀鎵撳崱鎯呭喌</p>
+          <h4>📋 详细报表</h4>
+          <p>按起止日期/日/周/月筛选，可分别导出每位学员日、周、月打卡情况</p>
         </div>
       </div>
 
-      <!-- 鍐呭绠＄悊椤?-->
+      <!-- 内容管理页 -->
       <div id="a-page-content" class="admin-page">
-        <div class="section-title">鍩虹璇嶆眹缁冧範闃舵</div>
+        <div class="section-title">基础词汇练习阶段</div>
         <div class="card">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-            <span id="word-count-text">褰撳墠鍏?850 涓崟璇?/span>
+            <span id="word-count-text">当前共 850 个单词</span>
             <div style="display:flex;gap:8px;">
-              <button class="btn btn-primary" onclick="showAddWordModal()">+ 娣诲姞鍗曡瘝</button>
-              <button class="btn btn-outline" onclick="showBatchImportWordModal()">馃摜 鎵归噺瀵煎叆</button>
+              <button class="btn btn-primary" onclick="showAddWordModal()">+ 添加单词</button>
+              <button class="btn btn-outline" onclick="showBatchImportWordModal()">📥 批量导入</button>
             </div>
           </div>
-          <p style="font-size:12px;color:var(--text-sub);">娣诲姞鍗曡瘝鍚庯紝绯荤粺鑷姩鐢熸垚闊虫爣銆佽瘝涔夈€佺炕璇戙€佽瘝缁勫強渚嬪彞锛屽苟鏀寔鑷姩鍙戦煶鏈楄</p>
+          <p style="font-size:12px;color:var(--text-sub);">添加单词后，系统自动生成音标、词义、翻译、词组及例句，并支持自动发音朗读</p>
         </div>
 
-        <div class="section-title">鍟嗗姟鑻辫缁冧範闃舵</div>
+        <div class="section-title">商务英语练习阶段</div>
         <div class="card">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-            <span>褰撳墠鍏?116 闂ㄥ井璇?/span>
+            <span>当前共 116 门微课</span>
           </div>
-          <p style="font-size:12px;color:var(--text-sub);">娣诲姞鏉ユ簮鍚庯紝绯荤粺鑷姩璇嗗埆骞舵坊鍔犺嫳鏂囧璇濆強缈昏瘧锛屽舰鎴愬涔犲唴瀹?/p>
+          <p style="font-size:12px;color:var(--text-sub);">添加来源后，系统自动识别并添加英文对话及翻译，形成学习内容</p>
           <div style="margin-top:12px;">
             <div style="display:flex;gap:8px;align-items:center;">
-              <input type="text" id="new-video-url" placeholder="杈撳叆B绔欒棰慤RL锛岃嚜鍔ㄦ彁鍙栧井璇惧唴瀹? style="flex:1;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:13px;">
-              <button class="btn btn-primary" style="padding:8px 14px;font-size:13px;" onclick="addVideoSource()">娣诲姞鏉ユ簮</button>
+              <input type="text" id="new-video-url" placeholder="输入B站视频URL，自动提取微课内容" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:13px;">
+              <button class="btn btn-primary" style="padding:8px 14px;font-size:13px;" onclick="addVideoSource()">添加来源</button>
             </div>
-            <p style="font-size:11px;color:var(--text-sub);margin-top:4px;">鏂板瑙嗛URL鍚庣郴缁熷皢鑷姩鎻愬彇鏂囨湰鍜岃闊筹紝缁忕鐞嗗憳瀹℃牳鍚庡彂甯?/p>
+            <p style="font-size:11px;color:var(--text-sub);margin-top:4px;">新增视频URL后系统将自动提取文本和读音，经管理员审核后发布</p>
           </div>
         </div>
       </div>
@@ -240,224 +240,224 @@ body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Mi
   </div><!-- admin-body -->
 </div>
 
-<!-- 娣诲姞瀛﹀憳寮圭獥 -->
+<!-- 添加学员弹窗 -->
 <div id="add-student-modal" class="modal-mask">
   <div class="modal-box">
-    <h3>娣诲姞瀛﹀憳</h3>
+    <h3>添加学员</h3>
     <div class="form-group">
-      <label>璐﹀彿</label>
-      <input type="text" id="add-empid" placeholder="璇疯緭鍏ヨ处鍙? value="">
+      <label>账号</label>
+      <input type="text" id="add-empid" placeholder="请输入账号" value="">
     </div>
     <div class="form-group">
-      <label>濮撳悕</label>
-      <input type="text" id="add-name" placeholder="璇疯緭鍏ュ鍚? value="">
+      <label>姓名</label>
+      <input type="text" id="add-name" placeholder="请输入姓名" value="">
     </div>
     <div class="form-group">
-      <label>鍒嗙粍</label>
+      <label>分组</label>
       <select id="add-group"></select>
     </div>
     <div class="form-group">
-      <label>鍒濆瀵嗙爜</label>
+      <label>初始密码</label>
       <input type="text" id="add-password" value="123@456.com">
     </div>
     <div class="modal-actions">
-      <button class="btn btn-outline" onclick="closeModal('add-student-modal')">鍙栨秷</button>
-      <button class="btn btn-primary" onclick="addStudent()">纭娣诲姞</button>
+      <button class="btn btn-outline" onclick="closeModal('add-student-modal')">取消</button>
+      <button class="btn btn-primary" onclick="addStudent()">确认添加</button>
     </div>
   </div>
 </div>
 
-<!-- 缂栬緫瀛﹀憳寮圭獥 -->
+<!-- 编辑学员弹窗 -->
 <div id="edit-student-modal" class="modal-mask">
   <div class="modal-box">
-    <h3>缂栬緫瀛﹀憳淇℃伅</h3>
+    <h3>编辑学员信息</h3>
     <div class="form-group">
-      <label>璐﹀彿</label>
+      <label>账号</label>
       <input type="text" id="edit-empid" style="background:#f5f5f5;">
     </div>
     <div class="form-group">
-      <label>濮撳悕</label>
+      <label>姓名</label>
       <input type="text" id="edit-name">
     </div>
     <div class="form-group">
-      <label>鍒嗙粍</label>
+      <label>分组</label>
       <select id="edit-group"></select>
     </div>
     <div class="modal-actions">
-      <button class="btn btn-outline" onclick="closeModal('edit-student-modal')">鍙栨秷</button>
-      <button class="btn btn-primary" onclick="saveStudent()">淇濆瓨</button>
+      <button class="btn btn-outline" onclick="closeModal('edit-student-modal')">取消</button>
+      <button class="btn btn-primary" onclick="saveStudent()">保存</button>
     </div>
   </div>
 </div>
 
-<!-- 閲嶇疆瀵嗙爜寮圭獥 -->
+<!-- 重置密码弹窗 -->
 <div id="reset-password-modal" class="modal-mask">
   <div class="modal-box">
-    <h3>馃攽 閲嶇疆瀛﹀憳瀵嗙爜</h3>
+    <h3>🔑 重置学员密码</h3>
     <div style="padding:12px;background:var(--warning-light);border-radius:8px;margin-bottom:16px;font-size:13px;color:var(--warning);">
-      鈿狅笍 閲嶇疆瀵嗙爜鍚庯紝瀛﹀憳灏嗘棤娉曚娇鐢ㄥ師瀵嗙爜鐧诲綍锛岄渶浣跨敤鏂板瘑鐮侀娆＄櫥褰?
+      ⚠️ 重置密码后，学员将无法使用原密码登录，需使用新密码首次登录
     </div>
     <div class="form-group">
-      <label>瀛﹀憳璐﹀彿</label>
+      <label>学员账号</label>
       <input type="text" id="reset-pw-empid" readonly style="background:#f5f5f5;">
     </div>
     <div class="form-group">
-      <label>瀛﹀憳濮撳悕</label>
+      <label>学员姓名</label>
       <input type="text" id="reset-pw-name" readonly style="background:#f5f5f5;">
     </div>
     <div class="form-group">
-      <label>鏂板瘑鐮?/label>
+      <label>新密码</label>
       <div style="display:flex;gap:8px;">
         <input type="text" id="reset-pw-value" value="123@456.com" style="flex:1;">
-        <button class="btn btn-outline" style="padding:10px;font-size:13px;" onclick="document.getElementById('reset-pw-value').value='123@456.com';showToast('宸叉仮澶嶉粯璁ゅ瘑鐮?)">鎭㈠榛樿</button>
+        <button class="btn btn-outline" style="padding:10px;font-size:13px;" onclick="document.getElementById('reset-pw-value').value='123@456.com';showToast('已恢复默认密码')">恢复默认</button>
       </div>
-      <div style="font-size:12px;color:var(--text-sub);margin-top:4px;">榛樿瀵嗙爜锛?23@456.com锛岀鐞嗗憳鍙嚜瀹氫箟</div>
+      <div style="font-size:12px;color:var(--text-sub);margin-top:4px;">默认密码：123@456.com，管理员可自定义</div>
     </div>
     <div class="modal-actions">
-      <button class="btn btn-outline" onclick="closeModal('reset-password-modal')">鍙栨秷</button>
-      <button class="btn btn-primary" onclick="confirmResetPassword()">纭閲嶇疆</button>
+      <button class="btn btn-outline" onclick="closeModal('reset-password-modal')">取消</button>
+      <button class="btn btn-primary" onclick="confirmResetPassword()">确认重置</button>
     </div>
   </div>
 </div>
 
-<!-- 绠＄悊鍛樹慨鏀瑰瘑鐮佸脊绐?-->
+<!-- 管理员修改密码弹窗 -->
 <div id="admin-change-password-modal" class="modal-mask">
   <div class="modal-box">
-    <h3>馃攼 淇敼绠＄悊鍛樺瘑鐮?/h3>
+    <h3>🔐 修改管理员密码</h3>
     <div class="form-group">
-      <label>褰撳墠瀵嗙爜</label>
-      <input type="password" id="admin-change-pw-old" placeholder="璇疯緭鍏ュ綋鍓嶅瘑鐮? autocomplete="new-password">
+      <label>当前密码</label>
+      <input type="password" id="admin-change-pw-old" placeholder="请输入当前密码" autocomplete="new-password">
     </div>
     <div class="form-group">
-      <label>鏂板瘑鐮?/label>
-      <input type="password" id="admin-change-pw-new" placeholder="璇疯緭鍏ユ柊瀵嗙爜" autocomplete="new-password">
+      <label>新密码</label>
+      <input type="password" id="admin-change-pw-new" placeholder="请输入新密码" autocomplete="new-password">
     </div>
     <div class="form-group">
-      <label>纭鏂板瘑鐮?/label>
-      <input type="password" id="admin-change-pw-confirm" placeholder="璇峰啀娆¤緭鍏ユ柊瀵嗙爜" autocomplete="new-password">
+      <label>确认新密码</label>
+      <input type="password" id="admin-change-pw-confirm" placeholder="请再次输入新密码" autocomplete="new-password">
     </div>
     <div class="modal-actions">
-      <button class="btn btn-outline" onclick="closeModal('admin-change-password-modal')">鍙栨秷</button>
-      <button class="btn btn-primary" onclick="changeAdminPassword()">纭淇敼</button>
+      <button class="btn btn-outline" onclick="closeModal('admin-change-password-modal')">取消</button>
+      <button class="btn btn-primary" onclick="changeAdminPassword()">确认修改</button>
     </div>
   </div>
 </div>
 
-<!-- 淇敼鍒嗙粍鍚嶇О寮圭獥 -->
+<!-- 修改分组名称弹窗 -->
 <div id="edit-group-modal" class="modal-mask">
   <div class="modal-box">
-    <h3>鉁?淇敼缁勫埆鍚嶇О</h3>
+    <h3>✎ 修改组别名称</h3>
     <div class="form-group">
-      <label>褰撳墠鍚嶇О</label>
+      <label>当前名称</label>
       <input type="text" id="edit-group-old-name" readonly style="background:#f5f5f5;">
     </div>
     <div class="form-group">
-      <label>鏂板悕绉?/label>
-      <input type="text" id="edit-group-new-name" placeholder="璇疯緭鍏ユ柊鐨勭粍鍒悕绉?>
+      <label>新名称</label>
+      <input type="text" id="edit-group-new-name" placeholder="请输入新的组别名称">
     </div>
     <div style="padding:12px;background:var(--primary-light);border-radius:8px;margin-bottom:8px;font-size:13px;color:var(--primary);">
-      鈩癸笍 淇敼鍚庯紝鎵€鏈夊睘浜庤缁勭殑瀛﹀憳灏嗚嚜鍔ㄦ洿鏂扮粍鍒悕绉?
+      ℹ️ 修改后，所有属于该组的学员将自动更新组别名称
     </div>
     <div class="modal-actions">
-      <button class="btn btn-outline" onclick="closeModal('edit-group-modal')">鍙栨秷</button>
-      <button class="btn btn-primary" onclick="saveGroupName()">纭淇敼</button>
+      <button class="btn btn-outline" onclick="closeModal('edit-group-modal')">取消</button>
+      <button class="btn btn-primary" onclick="saveGroupName()">确认修改</button>
     </div>
   </div>
 </div>
 
-<!-- 璇︾粏鎶ヨ〃寮圭獥 -->
+<!-- 详细报表弹窗 -->
 <div id="detail-report-modal" class="modal-mask">
   <div class="modal-box" style="max-width:420px;">
-    <h3>馃搵 璇︾粏鎶ヨ〃绛涢€?/h3>
+    <h3>📋 详细报表筛选</h3>
     <div class="form-group">
-      <label>璧峰鏃ユ湡</label>
+      <label>起始日期</label>
       <input type="date" id="report-start" value="2026-07-01">
     </div>
     <div class="form-group">
-      <label>缁撴潫鏃ユ湡</label>
+      <label>结束日期</label>
       <input type="date" id="report-end" value="2026-07-03">
     </div>
     <div class="form-group">
-      <label>绛涢€夌淮搴?/label>
+      <label>筛选维度</label>
       <select id="report-dim">
-        <option>鎸夋棩</option>
-        <option>鎸夊懆</option>
-        <option>鎸夋湀</option>
+        <option>按日</option>
+        <option>按周</option>
+        <option>按月</option>
       </select>
     </div>
     <div class="form-group">
-      <label>缁勫埆锛堝彲閫夛級</label>
+      <label>组别（可选）</label>
       <select id="report-group"></select>
     </div>
     <div style="margin-top:8px;padding:10px;background:var(--primary-light);border-radius:8px;font-size:12px;color:var(--primary);">
-      鎶ヨ〃鍐呭锛氳处鍙枫€佸鍚嶃€佺瓫閫夋棩鏈熷搴旂殑姣忔棩鎵撳崱鎯呭喌锛堝凡鎵撳崱/鏈墦鍗℃爣璁帮級
+      报表内容：账号、姓名、筛选日期对应的每日打卡情况（已打卡/未打卡标记）
     </div>
     <div class="modal-actions">
-      <button class="btn btn-outline" onclick="closeModal('detail-report-modal')">鍙栨秷</button>
-      <button class="btn btn-primary" onclick="exportDetailReport()">瀵煎嚭Excel</button>
+      <button class="btn btn-outline" onclick="closeModal('detail-report-modal')">取消</button>
+      <button class="btn btn-primary" onclick="exportDetailReport()">导出Excel</button>
     </div>
   </div>
 </div>
 
-<!-- 鎵归噺瀵煎叆瀛﹀憳寮圭獥 -->
+<!-- 批量导入学员弹窗 -->
 <div id="batch-import-modal" class="modal-mask">
   <div class="modal-box" style="max-width:420px;">
-    <h3>馃摜 鎵归噺瀵煎叆瀛﹀憳</h3>
+    <h3>📥 批量导入学员</h3>
     <div style="padding:10px;background:var(--primary-light);border-radius:8px;margin-bottom:12px;font-size:12px;color:var(--primary);">
-      璇蜂笂浼燛xcel鏂囦欢锛屾牸寮忥細绗竴鍒楄处鍙枫€佺浜屽垪濮撳悕銆佺涓夊垪鍒嗙粍<br>
-      鏀寔鏍煎紡锛?xlsx銆?xls銆?csv<br>
-      鍒嗙粍闇€宸插瓨鍦紝濡備笉瀛樺湪灏嗚嚜鍔ㄥ垱寤?
+      请上传Excel文件，格式：第一列账号、第二列姓名、第三列分组<br>
+      支持格式：.xlsx、.xls、.csv<br>
+      分组需已存在，如不存在将自动创建
     </div>
     <div class="form-group">
-      <label>閫夋嫨Excel鏂囦欢</label>
+      <label>选择Excel文件</label>
       <input type="file" id="batch-import-file" accept=".xlsx,.xls,.csv" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:14px;" onchange="onBatchImportFileChange(this)">
     </div>
     <div id="batch-import-preview" style="display:none;margin-top:8px;">
-      <div style="font-size:13px;color:var(--text-sub);margin-bottom:4px;">棰勮锛堝墠5琛岋級锛?/div>
+      <div style="font-size:13px;color:var(--text-sub);margin-bottom:4px;">预览（前5行）：</div>
       <div id="batch-import-preview-content" style="background:var(--bg);border-radius:8px;padding:8px;font-size:12px;max-height:120px;overflow-y:auto;"></div>
     </div>
     <div style="margin-top:8px;">
-      <button class="btn btn-outline" style="font-size:12px;padding:6px 12px;" onclick="downloadImportTemplate()">馃摜 涓嬭浇瀵煎叆妯℃澘</button>
+      <button class="btn btn-outline" style="font-size:12px;padding:6px 12px;" onclick="downloadImportTemplate()">📥 下载导入模板</button>
     </div>
     <div class="modal-actions">
-      <button class="btn btn-outline" onclick="closeModal('batch-import-modal')">鍙栨秷</button>
-      <button class="btn btn-primary" onclick="batchImportStudents()">纭瀵煎叆</button>
+      <button class="btn btn-outline" onclick="closeModal('batch-import-modal')">取消</button>
+      <button class="btn btn-primary" onclick="batchImportStudents()">确认导入</button>
     </div>
   </div>
 </div>
 
-<!-- 娣诲姞鍗曡瘝寮圭獥 -->
+<!-- 添加单词弹窗 -->
 <div id="add-word-modal" class="modal-mask">
   <div class="modal-box">
-    <h3>娣诲姞鍗曡瘝</h3>
+    <h3>添加单词</h3>
     <div class="form-group">
-      <label>鑻辨枃鍗曡瘝</label>
-      <input type="text" id="add-word-input" placeholder="杈撳叆鑻辨枃鍗曡瘝">
+      <label>英文单词</label>
+      <input type="text" id="add-word-input" placeholder="输入英文单词">
     </div>
     <div style="padding:10px;background:var(--primary-light);border-radius:8px;margin-bottom:12px;font-size:12px;color:var(--primary);">
-      绯荤粺灏嗚嚜鍔ㄧ敓鎴愶細闊虫爣銆佽瘝鎬с€佷腑鏂囪瘝涔夈€佸父瑙佽瘝缁勶紙鑻辨枃+涓枃锛夈€?鏉′緥鍙ワ紙鑻辨枃+涓枃锛夛紝骞舵敮鎸佽嚜鍔ㄥ彂闊?
+      系统将自动生成：音标、词性、中文词义、常见词组（英文+中文）、3条例句（英文+中文），并支持自动发音
     </div>
     <div class="modal-actions">
-      <button class="btn btn-outline" onclick="closeModal('add-word-modal')">鍙栨秷</button>
-      <button class="btn btn-primary" onclick="addWord()">纭娣诲姞</button>
+      <button class="btn btn-outline" onclick="closeModal('add-word-modal')">取消</button>
+      <button class="btn btn-primary" onclick="addWord()">确认添加</button>
     </div>
   </div>
 </div>
 
-<!-- 鎵归噺瀵煎叆鍗曡瘝寮圭獥 -->
+<!-- 批量导入单词弹窗 -->
 <div id="batch-import-word-modal" class="modal-mask">
   <div class="modal-box" style="max-width:420px;">
-    <h3>馃摜 鎵归噺瀵煎叆鍗曡瘝</h3>
+    <h3>📥 批量导入单词</h3>
     <div style="padding:10px;background:var(--primary-light);border-radius:8px;margin-bottom:12px;font-size:12px;color:var(--primary);">
-      姣忚涓€涓崟璇嶏紝绯荤粺鑷姩鐢熸垚闊虫爣銆佽瘝涔夈€佽瘝缁勫強渚嬪彞
+      每行一个单词，系统自动生成音标、词义、词组及例句
     </div>
     <div class="form-group">
-      <label>绮樿创鍗曡瘝鍒楄〃</label>
+      <label>粘贴单词列表</label>
       <textarea id="batch-import-word-text" rows="10" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:13px;" placeholder="manufacture&#10;assembly&#10;welding"></textarea>
     </div>
     <div class="modal-actions">
-      <button class="btn btn-outline" onclick="closeModal('batch-import-word-modal')">鍙栨秷</button>
-      <button class="btn btn-primary" onclick="batchImportWords()">纭瀵煎叆</button>
+      <button class="btn btn-outline" onclick="closeModal('batch-import-word-modal')">取消</button>
+      <button class="btn btn-primary" onclick="batchImportWords()">确认导入</button>
     </div>
   </div>
 </div>
@@ -465,7 +465,7 @@ body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Mi
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script src="js/common.js?v=20260709a"></script>
-<script src="js/admin.js?v=20260709a"></script>
+<script src="js/common.js?v=20260709b"></script>
+<script src="js/admin.js?v=20260709b"></script>
 </body>
 </html>
