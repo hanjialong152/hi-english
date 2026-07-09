@@ -708,7 +708,7 @@
         {
           "completed": false,
           "date": "2026-07-09",
-          "seconds": 227
+          "seconds": 238
         }
       ],
       "learned": [
@@ -721,7 +721,8 @@
       },
       "mastered": [
         "2",
-        "1"
+        "1",
+        "3"
       ],
       "monthlyTests": [],
       "readIndex": 2,
@@ -741,7 +742,8 @@
         "3": {
           "phrase": 85,
           "ex1": 85,
-          "ex2": 83
+          "ex2": 83,
+          "ex3": 92
         }
       },
       "spellIndex": 0,
