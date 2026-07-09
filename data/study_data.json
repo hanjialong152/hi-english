@@ -711,11 +711,15 @@
           "seconds": 86
         }
       ],
-      "learned": [],
-      "learnedDates": {},
+      "learned": [
+        1
+      ],
+      "learnedDates": {
+        "1": "2026-07-09"
+      },
       "mastered": [],
       "monthlyTests": [],
-      "readIndex": 0,
+      "readIndex": 1,
       "speakScores": {
         "1": {
           "ex1": 94,
