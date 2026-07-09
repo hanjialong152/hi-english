@@ -194,15 +194,11 @@
   "339911": {
     "empid": "339911",
     "name": "春阳",
-    "group": "",
+    "group": "B组",
     "status": "active",
     "password_hash": "dfd38da901580b175e451d484ce071c2a6da3fdec8d4093085c25bdddaaeaa43",
     "salt": "3acb62eb8b422efb",
-    "created_at": 1783478849433,
-    "created_by": "admin",
-    "last_login": 1783478882706,
-    "login_count": 1,
-    "must_change_password": false
+    "created_at": 1783478849433
   },
   "059707": {
     "empid": "059707",
