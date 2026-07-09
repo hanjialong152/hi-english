@@ -728,9 +728,9 @@
     "basic": {
       "checkIns": [
         {
+          "completed": false,
           "date": "2026-07-09",
-          "seconds": 13,
-          "completed": false
+          "seconds": 19
         }
       ],
       "learned": [],
