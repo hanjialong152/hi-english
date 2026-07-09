@@ -212,19 +212,22 @@ const HiEnglish = {
       var voices = window.speechSynthesis.getVoices();
       if (!voices || voices.length === 0) return;
       self._ttsVoices = voices;
-      // Preference order: neural/premium voices first, then standard en-US
+      // 关键兼容性：优先选择"本地离线"英语语音（localService=true）。
+      // "Google US English" 等云端语音依赖 Google 服务器，在国内电脑版 Chrome 常被网络拦截导致无声，
+      // 因此把本地语音排在最前，云端语音作为最后兜底。
+      var isLocalEn = function(v) { return v.localService && v.lang && v.lang.indexOf('en') === 0; };
       var preferences = [
-        // Chrome/Edge premium voices
+        // Windows 本地自然语音（离线）
+        function(v) { return isLocalEn(v) && v.name && (v.name.indexOf('Natural') >= 0 || v.name.indexOf('Neural') >= 0); },
+        // Windows 本地 Microsoft 语音（Zira/Mark/David，离线）
+        function(v) { return isLocalEn(v) && v.name && (v.name.indexOf('Zira') >= 0 || v.name.indexOf('Mark') >= 0 || v.name.indexOf('David') >= 0 || v.name.indexOf('Microsoft') >= 0); },
+        // macOS 本地语音（离线）
+        function(v) { return isLocalEn(v) && v.name && (v.name.indexOf('Samantha') >= 0 || v.name.indexOf('Daniel') >= 0 || v.name.indexOf('Alex') >= 0); },
+        // 任意本地 en-US / en 语音
+        function(v) { return v.localService && v.lang === 'en-US'; },
+        function(v) { return isLocalEn(v); },
+        // 兜底：云端语音（可能需要联网）
         function(v) { return v.name && v.name.indexOf('Google US English') >= 0; },
-        // Windows natural voices
-        function(v) { return v.name && (v.name.indexOf('Natural') >= 0 || v.name.indexOf('Neural') >= 0); },
-        // Microsoft voices (Zira/Mark are more natural than David)
-        function(v) { return v.name && v.name.indexOf('Zira') >= 0; },
-        function(v) { return v.name && v.name.indexOf('Mark') >= 0; },
-        // macOS voices
-        function(v) { return v.name && v.name.indexOf('Samantha') >= 0; },
-        function(v) { return v.name && v.name.indexOf('Daniel') >= 0; },
-        // Any en-US voice
         function(v) { return v.lang === 'en-US'; },
         function(v) { return v.lang && v.lang.indexOf('en') === 0; },
         function(v) { return true; }
@@ -247,6 +250,8 @@ const HiEnglish = {
     }
     // Chrome fix: cancel any pending utterances before speaking
     window.speechSynthesis.cancel();
+    // Chrome 桌面版常见 bug：合成引擎会卡在 paused 状态导致无声，先 resume 唤醒
+    try { window.speechSynthesis.resume(); } catch (e) {}
 
     // Split long text into sentences for more natural delivery
     var sentences = text.match(/[^.!?]+[.!?]*/g) || [text];
@@ -292,6 +297,26 @@ const HiEnglish = {
 
       try {
         window.speechSynthesis.speak(utter);
+        // 看门狗：若首句在 350ms 内既未开始朗读也无待播队列，判定为静默失败，
+        // 用"默认语音"（不指定 voice）重试一次，规避云端语音不可用的问题
+        if (speakIndex === 0 && !self._ttsRetried) {
+          setTimeout(function() {
+            if (!window.speechSynthesis.speaking && !window.speechSynthesis.pending) {
+              self._ttsRetried = true;
+              self._bestVoice = null; // 放弃当前语音，改用浏览器默认语音
+              try {
+                var u2 = new SpeechSynthesisUtterance(sentences.join(' ').trim());
+                u2.lang = 'en-US'; u2.rate = rate; u2.pitch = pitch; u2.volume = 1;
+                if (opts.onend) u2.onend = opts.onend;
+                if (opts.onerror) u2.onerror = opts.onerror;
+                window.speechSynthesis.resume();
+                window.speechSynthesis.speak(u2);
+              } catch (err) { if (opts.onerror) opts.onerror(err); }
+            } else {
+              self._ttsRetried = false;
+            }
+          }, 350);
+        }
       } catch(e) {
         console.warn('[TTS] speak() exception:', e.message);
         if (isLast && opts.onerror) opts.onerror(e);
@@ -324,6 +349,33 @@ const HiEnglish = {
 
   stopSpeak() {
     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    if (this._curAudio) { try { this._curAudio.pause(); } catch (e) {} this._curAudio = null; }
+  },
+
+  // 播放本地录制的 mp3 音频（跨设备/浏览器兼容性最好，且可被 Service Worker 离线缓存）。
+  // 若音频不存在或播放失败，则回退到 TTS 朗读 fallbackText。
+  playAudioOrSpeak(url, fallbackText, opts) {
+    opts = opts || {};
+    var self = this;
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    if (this._curAudio) { try { this._curAudio.pause(); } catch (e) {} }
+    var audio = new Audio(url);
+    this._curAudio = audio;
+    var fellBack = false;
+    var doFallback = function() {
+      if (fellBack) return; fellBack = true;
+      self._curAudio = null;
+      if (fallbackText) { self.speak(fallbackText, opts); }
+      else if (opts.onerror) opts.onerror();
+    };
+    audio.onended = function() { self._curAudio = null; if (opts.onend) opts.onend(); };
+    audio.onerror = doFallback;
+    var p = audio.play();
+    if (p && typeof p.catch === 'function') { p.catch(doFallback); }
+    // 兜底：若 800ms 内既没开始播放也没报错（某些浏览器静默失败），转 TTS
+    setTimeout(function() {
+      if (!fellBack && audio.paused && audio.currentTime === 0) { doFallback(); }
+    }, 800);
   },
 
   // ===== Speech Recognition (Microphone) =====
