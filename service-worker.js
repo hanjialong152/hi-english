@@ -1,11 +1,12 @@
 // ===================================================
-// Hi English - Service Worker v21 (PWA安装支持)
+// Hi English - Service Worker v22 (PWA安装支持)
 // ===================================================
+// v22: 移动端通知栏推送（showNotification + notificationclick）
 // v21: 修复分组数据持久化 + 搜索栏禁止浏览器自动填充
 
-var CACHE_VERSION = 'hi-english-v21';
-var CORE_CACHE = 'hi-english-core-v21';
-var AUDIO_CACHE = 'hi-english-audio-v21';
+var CACHE_VERSION = 'hi-english-v22';
+var CORE_CACHE = 'hi-english-core-v22';
+var AUDIO_CACHE = 'hi-english-audio-v22';
 
 var CORE_FILES = [
   './',
@@ -115,4 +116,23 @@ self.addEventListener('message', function(event) {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
+});
+
+// 点击通知栏消息时，聚焦已打开的学员端页面或新开一个
+self.addEventListener('notificationclick', function(event) {
+  event.notification.close();
+  var targetUrl = (event.notification.data && event.notification.data.url) || 'student.html';
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(clientList) {
+      for (var i = 0; i < clientList.length; i++) {
+        var c = clientList[i];
+        if (c.url.indexOf('student.html') !== -1 && 'focus' in c) {
+          return c.focus();
+        }
+      }
+      if (self.clients.openWindow) {
+        return self.clients.openWindow('./' + targetUrl);
+      }
+    })
+  );
 });
