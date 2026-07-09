@@ -151,6 +151,25 @@ def verify_password(password, stored_hash, salt):
     hashed, _ = hash_password(password, salt)
     return hashed == stored_hash
 
+
+def push_dingtalk(webhook, text):
+    """服务端直接推送钉钉群消息（server-to-server，无浏览器CORS限制）。
+    注意：钉钉机器人需将安全设置为"自定义关键词"，关键词包含"催学提醒"或"Hi English"。"""
+    if not webhook:
+        return False
+    try:
+        body = json.dumps({'msgtype': 'text', 'text': {'content': text}}).encode('utf-8')
+        req = urllib.request.Request(webhook, data=body, method='POST')
+        req.add_header('Content-Type', 'application/json')
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            result = json.loads(resp.read().decode('utf-8'))
+            ok = result.get('errcode') == 0
+            print(f'[DingTalk] 推送{"成功" if ok else "失败: " + str(result)}', flush=True)
+            return ok
+    except Exception as e:
+        print(f'[DingTalk] 推送异常: {e}', flush=True)
+        return False
+
 def load_json(filepath):
     """从本地文件读取 JSON"""
     try:
@@ -174,7 +193,7 @@ def init_data_files():
     # 先从 GitHub 拉取数据（覆盖本地初始文件）
     if GITHUB_TOKEN:
         print('[Sync] 从 GitHub data-sync 分支拉取最新数据...', flush=True)
-        for filename in ['users.json', 'study_data.json', 'admin.json', 'groups.json', 'messages.json']:
+        for filename in ['users.json', 'study_data.json', 'admin.json', 'groups.json', 'messages.json', 'dingtalk.json']:
             rel_path = f'data/{filename}'
             remote_data = github_api_get(rel_path)
             if remote_data is not None:
@@ -432,6 +451,22 @@ def handle_save_groups():
     return jsonify({'success': True})
 
 
+# ---- 钉钉 Webhook 配置 API ----
+@app.route('/api/dingtalk-config', methods=['GET'])
+def handle_get_dingtalk_config():
+    cfg = load_json(os.path.join(DATA_DIR, 'dingtalk.json'))
+    webhook = cfg.get('webhook', '') if isinstance(cfg, dict) else ''
+    return jsonify({'success': True, 'webhook': webhook})
+
+
+@app.route('/api/dingtalk-config', methods=['POST'])
+def handle_save_dingtalk_config():
+    body = request.json or {}
+    webhook = (body.get('webhook') or '').strip()
+    save_json(os.path.join(DATA_DIR, 'dingtalk.json'), {'webhook': webhook})
+    return jsonify({'success': True})
+
+
 # ---- 站内信 / 消息 API ----
 @app.route('/api/messages', methods=['GET'])
 def handle_get_messages():
@@ -480,6 +515,26 @@ def handle_send_message():
             all_msgs[empid] = lst
             count += 1
         save_json(os.path.join(DATA_DIR, 'messages.json'), all_msgs)
+
+    # 若配置了钉钉Webhook，由服务端推送到钉钉群（避免浏览器CORS限制）
+    if count > 0:
+        cfg = load_json(os.path.join(DATA_DIR, 'dingtalk.json'))
+        webhook = cfg.get('webhook', '') if isinstance(cfg, dict) else ''
+        if webhook:
+            users = load_json(os.path.join(DATA_DIR, 'users.json'))
+            names = []
+            for empid in targets:
+                eid = str(empid).strip()
+                if not eid:
+                    continue
+                u = users.get(eid) if isinstance(users, dict) else None
+                names.append((u.get('name', '') + '(' + eid + ')') if u else eid)
+            time_str = time.strftime('%Y-%m-%d %H:%M')
+            dt_text = ('【Hi English 催学提醒】\n\n时间：' + time_str +
+                       '\n提醒对象(' + str(len(names)) + '人)：' + '、'.join(names) +
+                       '\n\n' + content + '\n\n— Hi English 学习平台')
+            threading.Thread(target=push_dingtalk, args=(webhook, dt_text), daemon=True).start()
+
     return jsonify({'success': True, 'count': count, 'time': server_time})
 
 
