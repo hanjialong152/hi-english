@@ -377,7 +377,7 @@
       "checkIns": [
         {
           "date": "2026-07-09",
-          "seconds": 132,
+          "seconds": 146,
           "completed": false
         }
       ],
@@ -388,7 +388,8 @@
         "1": "2026-07-09"
       },
       "mastered": [
-        "1"
+        "1",
+        "2"
       ],
       "monthlyTests": [],
       "readIndex": 1,
@@ -403,7 +404,7 @@
           "phrase": 85,
           "ex1": 87,
           "ex2": 93,
-          "ex3": 79
+          "ex3": 82
         }
       },
       "spellIndex": 0,
