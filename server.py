@@ -204,11 +204,11 @@ def init_data_files():
     # 创建默认学生用户（仅首次）
     if not os.path.exists(users_path):
         default_users = {}
-        default_groups = ['冲压车间', '焊装车间', '涂装车间', '总装车间', '研发部']
+        default_groups = ['A组', 'B组']
         default_students = [
-            ('100001', '张三', '冲压车间'),
-            ('100002', '李四', '焊装车间'),
-            ('100003', '王五', '研发部'),
+            ('100001', '张三', 'A组'),
+            ('100002', '李四', 'B组'),
+            ('100003', '王五', 'A组'),
         ]
         for empid, name, group in default_students:
             hashed, salt = hash_password(DEFAULT_PASSWORD)
@@ -408,10 +408,20 @@ def handle_get_groups():
     groups_path = os.path.join(DATA_DIR, 'groups.json')
     if os.path.exists(groups_path):
         groups = load_json(groups_path)
-    else:
-        groups = ['冲压车间', '焊装车间', '涂装车间', '总装车间', '研发部']
-        save_json(groups_path, groups)
-    return jsonify({'success': True, 'groups': groups})
+        # 空数组也是有效数据（表示管理员清空了所有分组）
+        if isinstance(groups, list):
+            return jsonify({'success': True, 'groups': groups})
+    # 文件不存在时：尝试从 GitHub 拉取（避免用硬编码默认值覆盖远程数据）
+    if GITHUB_TOKEN:
+        remote = github_api_get('data/groups.json')
+        if remote is not None and isinstance(remote, list):
+            with open(groups_path, 'w', encoding='utf-8') as f:
+                json.dump(remote, f, ensure_ascii=False, indent=2)
+            print(f'[Groups] 从GitHub恢复分组: {remote}', flush=True)
+            return jsonify({'success': True, 'groups': remote})
+    # 最终 fallback：仅返回默认值，不保存（防止覆盖GitHub上的正确数据）
+    print('[Groups] 警告: groups.json 不存在且无法从GitHub恢复，返回默认分组但不持久化', flush=True)
+    return jsonify({'success': True, 'groups': ['A组', 'B组']})
 
 
 @app.route('/api/groups', methods=['POST'])
