@@ -604,13 +604,22 @@ function resetPassword(empid) {
 function confirmResetPassword() {
   var empid = document.getElementById('reset-pw-empid').value;
   var newPwd = document.getElementById('reset-pw-value').value;
-  var users = HiEnglish.getUsers();
-  if (users[empid]) {
-    users[empid].password = newPwd;
-    HiEnglish.saveUsers(users);
-    showToast('密码已重置为：' + newPwd);
-    closeModal('reset-password-modal');
-  }
+  if (!newPwd || newPwd.length < 6) { showToast('密码至少6位'); return; }
+  // 走服务端重置密码，确保学员下次登录只能用新密码（跨终端生效）
+  fetch(HiEnglish.getServerUrl() + '/api/reset-password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ empid: empid, newPassword: newPwd })
+  }).then(function(resp) { return resp.json(); }).then(function(data) {
+    if (data.success) {
+      var users = HiEnglish.getUsers();
+      if (users[empid]) { users[empid].password = newPwd; HiEnglish.saveUsers(users); }
+      showToast('密码已重置为：' + newPwd);
+      closeModal('reset-password-modal');
+    } else {
+      showToast(data.error || '重置失败');
+    }
+  }).catch(function() { showToast('网络错误，请稍后重试'); });
 }
 
 function toggleStatus(empid) {
