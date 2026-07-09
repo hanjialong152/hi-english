@@ -13,12 +13,12 @@
     "name": "韩小走",
     "group": "B组",
     "status": "active",
-    "password_hash": "ff6b2045edbbc865df864ad9a0da1fc0cc7f26d6f3d245b8c04295228ac75b92",
-    "salt": "5deaa9a7a974ab8d",
+    "password_hash": "f2c10d858064905a603f154a127f03d6366cc20b7e04c15a131fb463014c12e9",
+    "salt": "a3220c0c5ef9ff55",
     "created_at": 1782400169193,
     "last_login": 1783612988151,
     "login_count": 59,
-    "must_change_password": false
+    "must_change_password": true
   },
   "345316": {
     "empid": "345316",
