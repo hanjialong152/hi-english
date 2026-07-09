@@ -33,9 +33,10 @@ function aNav(page, el) {
 // ===== Helper: calculate scores for a user =====
 function calcUserScores(empid) {
   var allStudyData = JSON.parse(localStorage.getItem('hi_english_study') || '{}');
-  var sd = allStudyData[empid] || {basic: {mastered: [], checkIns: [], weeklyTests: [], monthlyTests: []}};
+  var sd = allStudyData[empid] || {basic: {mastered: [], weeklyTests: [], monthlyTests: []}, checkIns: []};
   var mastered = sd.basic && sd.basic.mastered ? sd.basic.mastered.length : 0;
-  var checkIns = sd.basic && sd.basic.checkIns ? sd.basic.checkIns : [];
+  // 使用统一打卡数据（与学员端一致）
+  var checkIns = sd.checkIns || [];
   var completedDays = checkIns.filter(function(c) { return c.completed; }).length;
   var readIndex = sd.basic && sd.basic.readIndex ? sd.basic.readIndex : 0;
   var weeklyTests = sd.basic && sd.basic.weeklyTests ? sd.basic.weeklyTests : [];
@@ -70,7 +71,7 @@ function renderDashboard() {
     var s = calcUserScores(u.empid);
     var allStudyData = JSON.parse(localStorage.getItem('hi_english_study') || '{}');
     var sd = allStudyData[u.empid];
-    if (sd && sd.basic && sd.basic.checkIns && sd.basic.checkIns.length > 0) activeThisWeek++;
+    if (sd && sd.checkIns && sd.checkIns.length > 0) activeThisWeek++;
 
     totalScore += s.score;
     totalProgress += s.readIndex;
@@ -1061,8 +1062,9 @@ function exportDetailReport() {
   }
 
   var rows = userArr.map(function(u) {
-    var sd = allStudyData[u.empid] || {basic: {checkIns: []}};
-    var checkIns = sd.basic && sd.basic.checkIns ? sd.basic.checkIns : [];
+    var sd = allStudyData[u.empid] || {checkIns: []};
+    // 使用统一打卡数据
+    var checkIns = sd.checkIns || [];
     var row = [u.empid, u.name, u.group];
     columns.forEach(function(col) {
       var checked = false;

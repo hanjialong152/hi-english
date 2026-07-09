@@ -550,8 +550,9 @@ const HiEnglish = {
     var all = JSON.parse(localStorage.getItem('hi_english_study') || '{}');
     if (!all[empid]) {
       all[empid] = {
-        basic: { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: {}, checkIns: [], weeklyTests: [], monthlyTests: [], totalSeconds: 0 },
-        business: { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: {}, checkIns: [], weeklyTests: [], monthlyTests: [], totalSeconds: 0, unlocked: false }
+        checkIns: [],
+        basic: { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: [], weeklyTests: [], monthlyTests: [], totalSeconds: 0 },
+        business: { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: [], weeklyTests: [], monthlyTests: [], totalSeconds: 0, unlocked: false }
       };
       localStorage.setItem('hi_english_study', JSON.stringify(all));
     }
@@ -761,8 +762,9 @@ const HiEnglish = {
       var allStudy = JSON.parse(localStorage.getItem('hi_english_study') || '{}');
       if (!allStudy['100003']) {
         allStudy['100003'] = {
-          basic: { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: {}, checkIns: [], weeklyTests: [], monthlyTests: [], totalSeconds: 0 },
-          business: { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: {}, checkIns: [], weeklyTests: [], monthlyTests: [], totalSeconds: 0, unlocked: true }
+          checkIns: [],
+          basic: { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: [], weeklyTests: [], monthlyTests: [], totalSeconds: 0 },
+          business: { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: [], weeklyTests: [], monthlyTests: [], totalSeconds: 0, unlocked: true }
         };
       } else if (!allStudy['100003'].business) {
         allStudy['100003'].business = { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: {}, checkIns: [], weeklyTests: [], monthlyTests: [], totalSeconds: 0, unlocked: true };

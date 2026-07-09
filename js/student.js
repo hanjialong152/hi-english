@@ -72,6 +72,24 @@ async function init() {
   // Migrate: ensure learnedDates exists (backward compat)
   if (!studyData.basic.learnedDates) studyData.basic.learnedDates = {};
   if (!studyData.business.learnedDates) studyData.business.learnedDates = {};
+  // ===== 统一打卡数据：将 basic/business 的独立 checkIns 合并到顶层 studyData.checkIns =====
+  // 根因：两个阶段各自维护独立checkIns数组，导致切换阶段后打卡进度不一致（如基础17% vs 商务10%）
+  // 修复：使用统一的顶层 checkIns，两个阶段共享同一打卡进度
+  if (!studyData.checkIns || !Array.isArray(studyData.checkIns)) {
+    var mergedCheckIns = {};
+    // 按 date 去重合并，取各阶段的最大 seconds 和 completed 状态
+    [studyData.basic.checkIns || [], studyData.business.checkIns || []].forEach(function(arr) {
+      arr.forEach(function(c) {
+        if (!c || !c.date) return;
+        var existing = mergedCheckIns[c.date];
+        if (!existing) { mergedCheckIns[c.date] = {date: c.date, seconds: c.seconds || 0, completed: !!c.completed}; }
+        else { existing.seconds = Math.max(existing.seconds, c.seconds || 0); if (c.completed) existing.completed = true; }
+      });
+    });
+    studyData.checkIns = Object.values(mergedCheckIns);
+    console.log('[Migrate] 打卡数据已统一合并，共', studyData.checkIns.length, '条记录');
+    saveStudyData();
+  }
   // Unlock business for 100003
   if (user.empid === '100003') {
     studyData.business.unlocked = true;
@@ -121,8 +139,16 @@ async function init() {
         HiEnglish.fetchServerStudyData(user.empid).then(function(serverData) {
           if (serverData) {
             studyData = serverData;
-            if (!studyData.basic) studyData.basic = { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: {}, checkIns: [], weeklyTests: [], monthlyTests: [], totalSeconds: 0 };
-            if (!studyData.business) studyData.business = { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: {}, checkIns: [], weeklyTests: [], monthlyTests: [], totalSeconds: 0, unlocked: false };
+            if (!studyData.basic) studyData.basic = { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: [], weeklyTests: [], monthlyTests: [], totalSeconds: 0 };
+            if (!studyData.business) studyData.business = { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: [], weeklyTests: [], monthlyTests: [], totalSeconds: 0, unlocked: false };
+            // 统一打卡数据迁移（与 init() 中一致）
+            if (!studyData.checkIns || !Array.isArray(studyData.checkIns)) {
+              var _mergedCI = {};
+              [studyData.basic.checkIns || [], studyData.business.checkIns || []].forEach(function(arr) {
+                arr.forEach(function(c) { if (c && c.date) { var e = _mergedCI[c.date]; if (!e) { _mergedCI[c.date] = {date:c.date, seconds:c.seconds||0, completed:!!c.completed}; } else { e.seconds=Math.max(e.seconds,c.seconds||0); if(c.completed)e.completed=true; } } });
+              });
+              studyData.checkIns = Object.values(_mergedCI);
+            }
             renderHome();
             renderStageSwitcher();
             console.log('[Sync] 从后台切回，已同步服务端最新数据');
@@ -432,15 +458,15 @@ function renderHome() {
     '<div class="stat-grid" style="margin-top:12px;">' +
       '<div class="stat-card"><div class="stat-val">' + stageData.readIndex + '</div><div class="stat-key">已学</div></div>' +
       '<div class="stat-card"><div class="stat-val">' + masteredCount + '</div><div class="stat-key">已掌握</div></div>' +
-      '<div class="stat-card"><div class="stat-val">' + stageData.checkIns.filter(function(c){return c.completed;}).length + '</div><div class="stat-key">学习天数</div></div>' +
+      '<div class="stat-card"><div class="stat-val">' + (studyData.checkIns || []).filter(function(c){return c.completed;}).length + '</div><div class="stat-key">学习天数</div></div>' +
     '</div>';
 
   // Check-in progress
   renderCheckIn();
 
-  // Learning modes
+  // Learning modes — 使用统一打卡数据
   var today = HiEnglish.today();
-  var todayCheckIn = stageData.checkIns.find(function(c){return c.date === today;});
+  var todayCheckIn = (studyData.checkIns || []).find(function(c){return c.date === today;});
   var needsCheckIn = !todayCheckIn || !todayCheckIn.completed;
 
   document.getElementById('s-learn-modes').innerHTML =
@@ -469,14 +495,15 @@ function renderHome() {
     '</div>';
 }
 
-// ===== Check-in Progress =====
+// ===== Check-in Progress (统一打卡：basic和商务共享同一进度) =====
 function renderCheckIn() {
-  var stageData = studyData[currentStage];
+  // 使用顶层统一的 checkIns，不再按阶段分离
+  var allCheckIns = studyData.checkIns || [];
   var today = HiEnglish.today();
-  var todayCheckIn = stageData.checkIns.find(function(c){return c.date === today;});
+  var todayCheckIn = allCheckIns.find(function(c){return c.date === today;});
   if (!todayCheckIn) {
     todayCheckIn = {date: today, seconds: 0, completed: false};
-    stageData.checkIns.push(todayCheckIn);
+    allCheckIns.push(todayCheckIn);
   }
   var progress = Math.min(100, Math.floor((todayCheckIn.seconds / 900) * 100));
   var remaining = Math.max(0, 900 - todayCheckIn.seconds);
@@ -555,9 +582,9 @@ function renderWordLearnCard() {
   var scores = stageData.speakScores[word.id] || {};
   var masteredCount = stageData.mastered.length;
 
-  // Check-in progress bar
+  // Check-in progress bar — 使用统一打卡数据
   var today = HiEnglish.today();
-  var todayCheckIn = stageData.checkIns.find(function(c){return c.date === today;});
+  var todayCheckIn = (studyData.checkIns || []).find(function(c){return c.date === today;});
   var checkSecs = todayCheckIn ? todayCheckIn.seconds : 0;
   var checkProgress = Math.min(100, Math.floor((checkSecs / 900) * 100));
   var circumference = 188.5;
@@ -683,9 +710,9 @@ function renderLessonLearnCard() {
   var stageData = studyData.business;
   var makeupTip = makeupDate ? '<div class="alert-box alert-info" style="margin:8px 12px;">📌 正在为 ' + makeupDate + ' 补卡，完成15分钟学习后补卡成功</div>' : '';
 
-  // Check-in progress bar
+  // Check-in progress bar — 使用统一打卡数据
   var today = HiEnglish.today();
-  var todayCheckIn = stageData.checkIns.find(function(c){return c.date === today;});
+  var todayCheckIn = (studyData.checkIns || []).find(function(c){return c.date === today;});
   var checkSecs = todayCheckIn ? todayCheckIn.seconds : 0;
   var checkProgress = Math.min(100, Math.floor((checkSecs / 900) * 100));
   var circumference = 188.5;
@@ -2130,19 +2157,43 @@ function onWlSearch(val) {
   renderWordList();
 }
 
-// ===== Report Page =====
-function renderReport() {
+// ===== Report Page (先同步服务端最新数据，确保与管理员端一致) =====
+async function renderReport() {
   // Refresh user info to pick up any admin changes
   refreshUserInfo();
 
+  var user = HiEnglish.getCurrentUser();
+  // 关键修复：进入报告页前，先从服务端拉取最新学习数据和用户列表
+  // 根因：清除缓存后 localStorage 为空，renderReport 纯读本地导致显示初始错误数据；
+  //        即使未清缓存，本地数据也可能滞后于管理员端（管理员刚修改了数据）
+  if (user) {
+    var serverData = await HiEnglish.fetchServerStudyData(user.empid);
+    if (serverData) {
+      studyData = serverData;
+      // 统一打卡迁移
+      if (!studyData.checkIns || !Array.isArray(studyData.checkIns)) {
+        var _mCI = {};
+        [studyData.basic.checkIns||[], studyData.business.checkIns||[]].forEach(function(arr){
+          arr.forEach(function(c){if(c&&c.date){var e=_mCI[c.date];if(!e){_mCI[c.date]={date:c.date,seconds:c.seconds||0,completed:!!c.completed};}else{e.seconds=Math.max(e.seconds,c.seconds||0);if(c.completed)e.completed=true;}}});
+        });
+        studyData.checkIns = Object.values(_mCI);
+      }
+      console.log('[Report] 已从服务端同步最新学习数据');
+    }
+    // 同步用户列表（确保排行榜数据准确）
+    await HiEnglish.syncUsersFromServer();
+  }
+
   var stageData = studyData[currentStage];
-  var totalDays = stageData.checkIns.length;
-  var completedDays = stageData.checkIns.filter(function(c){return c.completed;}).length;
+  // 使用统一打卡数据（不再按阶段分离）
+  var allCheckIns = studyData.checkIns || [];
+  var totalDays = allCheckIns.length;
+  var completedDays = allCheckIns.filter(function(c){return c.completed;}).length;
   var masteredCount = stageData.mastered.length;
   var learnedCount = stageData.learned.length;
   var totalItems = currentStage === 'basic' ? words.length : lessons.length;
   var progressPercent = totalItems > 0 ? Math.floor((learnedCount / totalItems) * 100) : 0;
-  var totalSeconds = stageData.checkIns.reduce(function(s, c){return s + (c.seconds || 0);}, 0);
+  var totalSeconds = allCheckIns.reduce(function(s, c){return s + (c.seconds || 0);}, 0);
   var totalMinutes = Math.floor(totalSeconds / 60);
 
   // Calculate score
@@ -2173,9 +2224,10 @@ function renderReport() {
   var allStudyData = JSON.parse(localStorage.getItem('hi_english_study') || '{}');
 
   var personalScores = Object.keys(users).map(function(empid) {
-    var sd = allStudyData[empid] || {basic: {mastered: [], checkIns: []}};
+    var sd = allStudyData[empid] || {basic: {mastered: []}, checkIns: []};
     var mastered = sd.basic && sd.basic.mastered ? sd.basic.mastered.length : 0;
-    var checkInDays = sd.basic && sd.basic.checkIns ? sd.basic.checkIns.filter(function(c){return c.completed;}).length : 0;
+    // 使用统一打卡数据
+    var checkInDays = (sd.checkIns || []).filter(function(c){return c.completed;}).length;
     var score = Math.round(mastered * 0.4 + checkInDays * 0.6);
     return {empid: empid, name: users[empid].name, group: users[empid].group, score: score, mastered: mastered, checkInDays: checkInDays};
   }).sort(function(a, b) { return b.score - a.score; });
@@ -2375,7 +2427,7 @@ function showCalendar() {
     var prevMonth = month === 0 ? 11 : month - 1;
     var prevYear = month === 0 ? year - 1 : year;
     var prevDateStr = prevYear + '-' + String(prevMonth + 1).padStart(2, '0') + '-' + String(prevDay).padStart(2, '0');
-    var prevCheckIn = stageData.checkIns.find(function(c) { return c.date === prevDateStr; });
+    var prevCheckIn = (studyData.checkIns || []).find(function(c) { return c.date === prevDateStr; });
     var prevInWeek = isInThisWeekStr(prevDateStr);
     var prevIsPast = prevDateStr < todayStr;
 
@@ -2396,7 +2448,7 @@ function showCalendar() {
   for (var d = 1; d <= daysInMonth; d++) {
     var classes = 'cal-day';
     var dateStr = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
-    var checkIn = stageData.checkIns.find(function(c) { return c.date === dateStr; });
+    var checkIn = (studyData.checkIns || []).find(function(c) { return c.date === dateStr; });
     var isInThisWeek = isInThisWeekStr(dateStr);
 
     if (d > todayDate) {
@@ -2454,12 +2506,13 @@ function startStudyTimer() {
   stopStudyTimer();
   studyTimer = setInterval(function() {
     if (!isAudioActive) return; // Only count when audio playing or mic recording
-    var stageData = studyData[currentStage];
+    // 统一打卡：写入顶层 checkIns，不再区分阶段
+    var allCheckIns = studyData.checkIns || (studyData.checkIns = []);
     var targetDate = makeupDate || HiEnglish.today();
-    var checkIn = stageData.checkIns.find(function(c) { return c.date === targetDate; });
+    var checkIn = allCheckIns.find(function(c) { return c.date === targetDate; });
     if (!checkIn) {
       checkIn = {date: targetDate, seconds: 0, completed: false};
-      stageData.checkIns.push(checkIn);
+      allCheckIns.push(checkIn);
     }
     if (checkIn.completed) return;
     checkIn.seconds += 1;
