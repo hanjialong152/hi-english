@@ -2201,22 +2201,13 @@ async function renderReport() {
   var totalSeconds = allCheckIns.reduce(function(s, c){return s + (c.seconds || 0);}, 0);
   var totalMinutes = Math.floor(totalSeconds / 60);
 
-  // 计算总成绩（公式：打卡占比×100×30% + 月度内周测均分×30% + 当月月测×40%）
+  // 计算总成绩（合并 basic+business 两阶段周测/月测，共用 common.js 统一函数）
   var curMonth = HiEnglish.today().slice(0, 7); // 当前自然月 "YYYY-MM"
-  var curYear = parseInt(curMonth.slice(0, 4), 10);
-  var curMon = parseInt(curMonth.slice(5, 7), 10) - 1;
-  var daysInMonth = HiEnglish.getDaysInMonth(curYear, curMon);
-  // 打卡项：当月完成打卡天数 / 当月自然天数 × 100 × 0.3
-  var monthCheckinDays = allCheckIns.filter(function(c){ return c.completed && (c.date || '').slice(0, 7) === curMonth; }).length;
-  var checkinScore = Math.round((daysInMonth > 0 ? (monthCheckinDays / daysInMonth) * 100 : 0) * 0.3 * 10) / 10;
-  // 周测项：月度内（上周六~本周五归属月）周测均分 × 0.3
-  var monthWeekly = stageData.weeklyTests.filter(function(t){ return HiEnglish.weeklyTestMonthKey(t.date) === curMonth; });
-  var weeklyAvg = monthWeekly.length > 0 ? monthWeekly.reduce(function(s, t){ return s + (t.avgScore || 0); }, 0) / monthWeekly.length : 0;
-  var weeklyScore = Math.round(weeklyAvg * 0.3 * 10) / 10;
-  // 月测项：当月月测成绩（次月1~5日归上月）× 0.4（当月多次则取最近一次）
-  var monthMonthly = stageData.monthlyTests.filter(function(t){ return HiEnglish.monthlyTestMonthKey(t.date) === curMonth; });
-  var monthlyScore = monthMonthly.length > 0 ? Math.round(monthMonthly[monthMonthly.length - 1].avgScore * 0.4 * 10) / 10 : 0;
-  var totalScore = Math.round((checkinScore + weeklyScore + monthlyScore) * 10) / 10;
+  var _sc = HiEnglish.calcMonthlyScore(studyData, curMonth); // studyData 为当前用户完整数据（含两阶段+顶层checkIns）
+  var checkinScore = _sc.checkinScore;
+  var weeklyScore = _sc.weeklyScore;
+  var monthlyScore = _sc.monthlyScore;
+  var totalScore = _sc.total;
 
   var scoreHTML =
     '<div class="card" style="text-align:center;">' +
@@ -2240,18 +2231,12 @@ async function renderReport() {
   var allStudyData = JSON.parse(localStorage.getItem('hi_english_study') || '{}');
 
   var personalScores = Object.keys(users).map(function(empid) {
-    var sd = allStudyData[empid] || {basic: {mastered: [], weeklyTests: [], monthlyTests: []}, business: {mastered: [], weeklyTests: [], monthlyTests: []}, checkIns: []};
-    var stage = sd[currentStage] || {mastered: [], weeklyTests: [], monthlyTests: []};
+    var sd = allStudyData[empid] || {};
+    var stage = sd[currentStage] || {mastered: []};
     var mastered = stage.mastered ? stage.mastered.length : 0;
-    var allCI = sd.checkIns || [];
-    var monthCheckinDays = allCI.filter(function(c){ return c.completed && (c.date || '').slice(0, 7) === curMonth; }).length;
-    var chk = (daysInMonth > 0 ? (monthCheckinDays / daysInMonth) * 100 : 0) * 0.3;
-    var wt = (stage.weeklyTests || []).filter(function(t){ return HiEnglish.weeklyTestMonthKey(t.date) === curMonth; });
-    var wAvg = wt.length > 0 ? wt.reduce(function(s, t){ return s + (t.avgScore || 0); }, 0) / wt.length : 0;
-    var mt = (stage.monthlyTests || []).filter(function(t){ return HiEnglish.monthlyTestMonthKey(t.date) === curMonth; });
-    var mScore = mt.length > 0 ? mt[mt.length - 1].avgScore * 0.4 : 0;
-    var score = Math.round((chk + wAvg * 0.3 + mScore) * 10) / 10;
-    return {empid: empid, name: users[empid].name, group: users[empid].group, score: score, mastered: mastered, checkInDays: monthCheckinDays};
+    // 合并两阶段口径，共用 common.js 统一函数
+    var sc = HiEnglish.calcMonthlyScore(sd, curMonth);
+    return {empid: empid, name: users[empid].name, group: users[empid].group, score: sc.total, mastered: mastered, checkInDays: sc.monthCheckinDays};
   }).sort(function(a, b) { return b.score - a.score; });
 
   var personalRankHTML = personalScores.slice(0, 10).map(function(item, i) {
