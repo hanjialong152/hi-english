@@ -174,7 +174,7 @@ def init_data_files():
     # 先从 GitHub 拉取数据（覆盖本地初始文件）
     if GITHUB_TOKEN:
         print('[Sync] 从 GitHub data-sync 分支拉取最新数据...', flush=True)
-        for filename in ['users.json', 'study_data.json', 'admin.json', 'groups.json']:
+        for filename in ['users.json', 'study_data.json', 'admin.json', 'groups.json', 'messages.json']:
             rel_path = f'data/{filename}'
             remote_data = github_api_get(rel_path)
             if remote_data is not None:
@@ -429,6 +429,79 @@ def handle_save_groups():
     body = request.json or {}
     groups = body.get('groups', [])
     save_json(os.path.join(DATA_DIR, 'groups.json'), groups)
+    return jsonify({'success': True})
+
+
+# ---- 站内信 / 消息 API ----
+@app.route('/api/messages', methods=['GET'])
+def handle_get_messages():
+    """获取指定学员的所有站内信（按时间倒序，最新在前）"""
+    empid = (request.args.get('empid') or '').strip()
+    all_msgs = load_json(os.path.join(DATA_DIR, 'messages.json'))
+    msgs = all_msgs.get(empid, []) if isinstance(all_msgs, dict) else []
+    # 按时间倒序排列（真实接收时间，最新在最前）
+    msgs = sorted(msgs, key=lambda m: m.get('time', 0), reverse=True)
+    return jsonify({'success': True, 'messages': msgs})
+
+
+@app.route('/api/messages', methods=['POST'])
+def handle_send_message():
+    """管理员向一个或多个学员发送站内信（服务端盖真实时间戳）"""
+    body = request.json or {}
+    targets = body.get('targets', [])  # empid 列表
+    if isinstance(targets, str):
+        targets = [targets]
+    title = (body.get('title') or '').strip()
+    content = (body.get('content') or '').strip()
+    msg_type = body.get('type', 'reminder')
+    if not targets or not title:
+        return jsonify({'success': False, 'error': '缺少参数'}), 400
+    # 服务端真实时间戳（毫秒）
+    server_time = int(time.time() * 1000)
+    with data_lock:
+        all_msgs = load_json(os.path.join(DATA_DIR, 'messages.json'))
+        if not isinstance(all_msgs, dict):
+            all_msgs = {}
+        count = 0
+        for empid in targets:
+            empid = str(empid).strip()
+            if not empid:
+                continue
+            msg = {
+                'id': 'msg_' + str(server_time) + '_' + empid,
+                'title': title,
+                'content': content,
+                'time': server_time,      # 真实接收时间（服务端盖章）
+                'read': False,
+                'type': msg_type
+            }
+            lst = all_msgs.get(empid, [])
+            lst.append(msg)
+            all_msgs[empid] = lst
+            count += 1
+        save_json(os.path.join(DATA_DIR, 'messages.json'), all_msgs)
+    return jsonify({'success': True, 'count': count, 'time': server_time})
+
+
+@app.route('/api/messages/read', methods=['POST'])
+def handle_mark_messages_read():
+    """标记学员消息为已读：msgIds为指定id列表，或all=True标记全部已读"""
+    body = request.json or {}
+    empid = (body.get('empid') or '').strip()
+    msg_ids = body.get('msgIds', [])
+    mark_all = body.get('all', False)
+    if not empid:
+        return jsonify({'success': False, 'error': '缺少empid'}), 400
+    with data_lock:
+        all_msgs = load_json(os.path.join(DATA_DIR, 'messages.json'))
+        if not isinstance(all_msgs, dict):
+            all_msgs = {}
+        lst = all_msgs.get(empid, [])
+        for m in lst:
+            if mark_all or m.get('id') in msg_ids:
+                m['read'] = True
+        all_msgs[empid] = lst
+        save_json(os.path.join(DATA_DIR, 'messages.json'), all_msgs)
     return jsonify({'success': True})
 
 
