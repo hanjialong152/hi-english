@@ -2228,7 +2228,15 @@ async function renderReport() {
   // Rankings
   var users = HiEnglish.getUsers();
   var user = HiEnglish.getCurrentUser();
-  var allStudyData = JSON.parse(localStorage.getItem('hi_english_study') || '{}');
+  // 关键修复：排行榜需要全体学员数据，从服务端拉取（与管理员端同一数据源）。
+  // 根因：过去只读 localStorage，手机端/清缓存后本地只有自己一条 → 其他人全0、与管理端不一致。
+  // 服务端不可达时降级用本地数据，绝不用空对象覆盖导致全0。
+  var allStudyData = await HiEnglish.fetchAllStudyData();
+  if (!allStudyData || Object.keys(allStudyData).length === 0) {
+    allStudyData = JSON.parse(localStorage.getItem('hi_english_study') || '{}');
+  }
+  // 自己的数据用当前最新的 studyData（含本次会话未推送的改动）
+  if (user && studyData) allStudyData[user.empid] = studyData;
 
   var personalScores = Object.keys(users).map(function(empid) {
     var sd = allStudyData[empid] || {};

@@ -72,6 +72,25 @@ const HiEnglish = {
     }
   },
 
+  // ===== Fetch ALL students' study data (for student leaderboard) =====
+  // 根因修复：学员端排行榜需要全体学习数据。过去仅从 localStorage 读取，
+  // 手机端/清缓存后本地只有自己一条 → 排行榜其他人全为0、与管理员端不一致。
+  // 返回 null 表示服务端不可达（调用方应降级用本地数据，切勿用空对象覆盖）。
+  async fetchAllStudyData() {
+    try {
+      var resp = await fetch(this.getServerUrl() + '/api/all-study-data');
+      var data = await resp.json();
+      if (data.success && data.studyData && Object.keys(data.studyData).length > 0) {
+        console.log('[Sync] 拉取全体学习数据成功，共', Object.keys(data.studyData).length, '人');
+        return data.studyData;
+      }
+      return null;
+    } catch(e) {
+      console.log('[Sync] 拉取全体学习数据失败:', e.message);
+      return null;
+    }
+  },
+
   // ===== Push study data to server (debounced) =====
   _syncTimer: null,
   _lastPushedData: null,

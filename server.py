@@ -670,6 +670,16 @@ def handle_get_study_data():
     return jsonify({'success': True, 'studyData': data})
 
 
+@app.route('/api/all-study-data', methods=['GET'])
+def handle_all_study_data():
+    """学员端排行榜专用：返回全体学员学习数据。
+    根因：学员端排行榜需要全体学习数据，但过去只从 localStorage 读取，
+    手机端/清缓存后本地只有自己一条，导致其他人分数全为0、与管理员端不一致。
+    排行榜本就公开展示各人姓名/小组/得分，故此接口无需鉴权。"""
+    study_data = load_json(os.path.join(DATA_DIR, 'study_data.json'))
+    return jsonify({'success': True, 'studyData': study_data})
+
+
 @app.route('/api/study-data', methods=['POST'])
 def handle_save_study_data():
     body = request.json or {}
