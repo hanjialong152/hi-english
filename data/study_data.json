@@ -708,7 +708,7 @@
         {
           "completed": false,
           "date": "2026-07-09",
-          "seconds": 318
+          "seconds": 320
         }
       ],
       "learned": [
@@ -749,10 +749,10 @@
           "phrase": 85
         },
         "4": {
-          "phrase": 85,
           "ex1": 85,
           "ex2": 93,
-          "ex3": 86
+          "ex3": 86,
+          "phrase": 85
         }
       },
       "spellIndex": 0,
