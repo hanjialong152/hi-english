@@ -176,14 +176,18 @@
         {
           "completed": false,
           "date": "2026-07-09",
-          "seconds": 13
+          "seconds": 50
         }
       ],
-      "learned": [],
-      "learnedDates": {},
+      "learned": [
+        1
+      ],
+      "learnedDates": {
+        "1": "2026-07-09"
+      },
       "mastered": [],
       "monthlyTests": [],
-      "readIndex": 0,
+      "readIndex": 1,
       "speakScores": {},
       "spellIndex": 0,
       "totalSeconds": 0,
