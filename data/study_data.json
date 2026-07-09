@@ -377,7 +377,7 @@
       "checkIns": [
         {
           "date": "2026-07-09",
-          "seconds": 264,
+          "seconds": 277,
           "completed": false
         }
       ],
@@ -427,7 +427,8 @@
           "ex3": 84
         },
         "5": {
-          "phrase": 85
+          "phrase": 85,
+          "ex1": 93
         }
       },
       "spellIndex": 0,
