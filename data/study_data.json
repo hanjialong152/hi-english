@@ -723,5 +723,42 @@
       "totalSeconds": 0,
       "unlocked": false
     }
+  },
+  "189146": {
+    "basic": {
+      "checkIns": [
+        {
+          "date": "2026-07-09",
+          "seconds": 13,
+          "completed": false
+        }
+      ],
+      "learned": [],
+      "learnedDates": {},
+      "mastered": [],
+      "monthlyTests": [],
+      "readIndex": 0,
+      "speakScores": {
+        "1": {
+          "phrase": 37
+        }
+      },
+      "spellIndex": 0,
+      "totalSeconds": 0,
+      "weeklyTests": []
+    },
+    "business": {
+      "checkIns": [],
+      "learned": [],
+      "learnedDates": {},
+      "mastered": [],
+      "monthlyTests": [],
+      "readIndex": 0,
+      "speakScores": {},
+      "spellIndex": 0,
+      "totalSeconds": 0,
+      "unlocked": false,
+      "weeklyTests": []
+    }
   }
 }
