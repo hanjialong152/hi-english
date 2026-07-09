@@ -529,7 +529,7 @@ const HiEnglish = {
     }).catch(function(e) { console.log('[Sync] 分组同步失败:', e.message); });
   },
 
-  // Messages
+  // Messages (本地缓存，兼容旧代码)
   getMessages(empid) {
     var all = JSON.parse(localStorage.getItem('hi_english_messages') || '{}');
     return all[empid] || [];
@@ -539,6 +539,77 @@ const HiEnglish = {
     var all = JSON.parse(localStorage.getItem('hi_english_messages') || '{}');
     all[empid] = messages;
     localStorage.setItem('hi_english_messages', JSON.stringify(all));
+  },
+
+  // 从服务端拉取指定学员的站内信（真实接收时间，跨终端同步）
+  async fetchServerMessages(empid) {
+    try {
+      var resp = await fetch(this.getServerUrl() + '/api/messages?empid=' + encodeURIComponent(empid));
+      var data = await resp.json();
+      if (data && data.success && Array.isArray(data.messages)) {
+        // 同步到本地缓存
+        this.saveMessages(empid, data.messages);
+        return data.messages;
+      }
+    } catch (e) {
+      console.log('[Msg] 拉取服务端消息失败:', e.message);
+    }
+    // 失败时回退本地缓存
+    return this.getMessages(empid);
+  },
+
+  // 管理员发送站内信到服务端（服务端盖真实时间戳，跨终端即刻送达）
+  async sendMessageToServer(targets, title, content, type) {
+    try {
+      var resp = await fetch(this.getServerUrl() + '/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          targets: targets,
+          title: title,
+          content: content,
+          type: type || 'reminder'
+        })
+      });
+      var data = await resp.json();
+      return data && data.success;
+    } catch (e) {
+      console.log('[Msg] 发送消息失败:', e.message);
+      return false;
+    }
+  },
+
+  // 标记消息已读（同步到服务端）
+  markMessagesReadServer(empid, msgIds, all) {
+    try {
+      fetch(this.getServerUrl() + '/api/messages/read', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ empid: empid, msgIds: msgIds || [], all: !!all })
+      }).catch(function(e) { console.log('[Msg] 标记已读失败:', e.message); });
+    } catch (e) {}
+  },
+
+  // 格式化消息时间戳为友好显示（今天/昨天/日期 HH:MM）
+  formatMsgTime(ts) {
+    if (!ts) return '';
+    // 兼容旧的字符串时间（如"今天 09:00"）
+    if (typeof ts === 'string' && !/^\d+$/.test(ts)) return ts;
+    var d = new Date(Number(ts));
+    if (isNaN(d.getTime())) return '';
+    var now = new Date();
+    var pad = function(n) { return String(n).padStart(2, '0'); };
+    var hm = pad(d.getHours()) + ':' + pad(d.getMinutes());
+    var sameDay = function(a, b) {
+      return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+    };
+    if (sameDay(d, now)) return '今天 ' + hm;
+    var yest = new Date(now); yest.setDate(now.getDate() - 1);
+    if (sameDay(d, yest)) return '昨天 ' + hm;
+    if (d.getFullYear() === now.getFullYear()) {
+      return (d.getMonth() + 1) + '月' + d.getDate() + '日 ' + hm;
+    }
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' + hm;
   },
 
   // Utility: Format date
