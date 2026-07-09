@@ -286,7 +286,7 @@
         },
         {
           "date": "2026-07-09",
-          "seconds": 115,
+          "seconds": 118,
           "completed": false
         }
       ],
@@ -309,7 +309,7 @@
           "ex3": 85
         },
         "2": {
-          "phrase": 21
+          "phrase": 17
         }
       },
       "spellIndex": 0,
