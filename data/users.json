@@ -16,8 +16,8 @@
     "password_hash": "f394bcfb3ae8bdb9815ed3c187da5b908a1152e8f7fc8edf449a211ccad3d993",
     "salt": "928f03f19da3df6e",
     "created_at": 1782400169193,
-    "last_login": 1783607888292,
-    "login_count": 40
+    "last_login": 1783608069272,
+    "login_count": 41
   },
   "345316": {
     "empid": "345316",
@@ -212,20 +212,16 @@
   "189146": {
     "empid": "189146",
     "name": "Sunshine",
-    "group": "",
+    "group": "A组",
     "status": "active",
     "password_hash": "2b9308d7151e80d0caead9153f8f1cab9babcd477cfeeb2c9a968741ea129c6d",
     "salt": "165c80b2f8b17fca",
-    "created_at": 1783596678512,
-    "created_by": "admin",
-    "last_login": 1783601538609,
-    "login_count": 5,
-    "must_change_password": false
+    "created_at": 1783596678512
   },
   "228174": {
     "empid": "228174",
     "name": "莹莹",
-    "group": "",
+    "group": "B组",
     "status": "active",
     "password_hash": "0ff7add3c1a03a6202df0b81113eee66dea4124068e7bdad4f087c48b64857df",
     "salt": "12a440070b48a5b2",
