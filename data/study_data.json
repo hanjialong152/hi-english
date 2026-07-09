@@ -301,7 +301,7 @@
         {
           "completed": false,
           "date": "2026-07-09",
-          "seconds": 129
+          "seconds": 131
         }
       ],
       "learned": [
@@ -538,33 +538,6 @@
       "unlocked": false
     }
   },
-  "0228174": {
-    "basic": {
-      "readIndex": 0,
-      "spellIndex": 0,
-      "learned": [],
-      "learnedDates": {},
-      "mastered": [],
-      "speakScores": {},
-      "checkIns": [],
-      "weeklyTests": [],
-      "monthlyTests": [],
-      "totalSeconds": 0
-    },
-    "business": {
-      "readIndex": 0,
-      "spellIndex": 0,
-      "learned": [],
-      "learnedDates": {},
-      "mastered": [],
-      "speakScores": {},
-      "checkIns": [],
-      "weeklyTests": [],
-      "monthlyTests": [],
-      "totalSeconds": 0,
-      "unlocked": false
-    }
-  },
   "238240": {
     "basic": {
       "readIndex": 0,
@@ -762,6 +735,33 @@
       "totalSeconds": 0,
       "unlocked": false,
       "weeklyTests": []
+    }
+  },
+  "228174": {
+    "basic": {
+      "readIndex": 0,
+      "spellIndex": 0,
+      "learned": [],
+      "learnedDates": {},
+      "mastered": [],
+      "speakScores": {},
+      "checkIns": [],
+      "weeklyTests": [],
+      "monthlyTests": [],
+      "totalSeconds": 0
+    },
+    "business": {
+      "readIndex": 0,
+      "spellIndex": 0,
+      "learned": [],
+      "learnedDates": {},
+      "mastered": [],
+      "speakScores": {},
+      "checkIns": [],
+      "weeklyTests": [],
+      "monthlyTests": [],
+      "totalSeconds": 0,
+      "unlocked": false
     }
   }
 }
