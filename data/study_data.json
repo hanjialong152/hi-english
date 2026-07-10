@@ -399,7 +399,7 @@
         "3": {
           "phrase": 85,
           "ex1": 91,
-          "ex2": 69
+          "ex2": 71
         }
       },
       "spellIndex": 0,
@@ -432,7 +432,7 @@
       },
       {
         "date": "2026-07-10",
-        "seconds": 141,
+        "seconds": 148,
         "completed": false
       }
     ]
