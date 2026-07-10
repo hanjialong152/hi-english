@@ -903,14 +903,14 @@
     },
     "checkIns": [
       {
+        "completed": false,
         "date": "2026-07-09",
-        "seconds": 429,
-        "completed": false
+        "seconds": 429
       },
       {
+        "completed": false,
         "date": "2026-07-10",
-        "seconds": 17,
-        "completed": false
+        "seconds": 28
       }
     ]
   },
