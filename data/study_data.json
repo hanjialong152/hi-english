@@ -90,40 +90,40 @@
     "basic": {
       "checkIns": [
         {
-          "completed": false,
           "date": "2026-07-06",
-          "seconds": 6
+          "seconds": 6,
+          "completed": false
         },
         {
-          "completed": false,
           "date": "2026-07-07",
-          "seconds": 355
+          "seconds": 355,
+          "completed": false
         },
         {
-          "completed": false,
           "date": "2026-07-08",
-          "seconds": 7
+          "seconds": 7,
+          "completed": false
         },
         {
-          "completed": false,
           "date": "2026-07-09",
-          "seconds": 153
+          "seconds": 153,
+          "completed": false
         },
         {
-          "completed": false,
           "date": "2026-07-10",
-          "seconds": 12
+          "seconds": 12,
+          "completed": false
         }
       ],
       "learned": [
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8"
       ],
       "learnedDates": {
         "1": "2026-07-09",
@@ -142,39 +142,39 @@
       "readIndex": 8,
       "speakScores": {
         "1": {
-          "ex1": 89,
-          "ex2": 83,
-          "ex3": 85,
-          "phrase": 85
+          "ex1": 89.0,
+          "ex2": 83.0,
+          "ex3": 85.0,
+          "phrase": 85.0
         },
         "2": {
-          "ex1": 85,
-          "ex2": 84,
-          "ex3": 53,
-          "phrase": 29
+          "ex1": 85.0,
+          "ex2": 84.0,
+          "ex3": 53.0,
+          "phrase": 29.0
         },
         "3": {
-          "ex3": 30,
-          "phrase": 28
+          "ex3": 30.0,
+          "phrase": 28.0
         },
         "4": {
-          "ex1": 83,
-          "ex2": 61,
-          "ex3": 60,
-          "phrase": 85
+          "ex1": 83.0,
+          "ex2": 61.0,
+          "ex3": 60.0,
+          "phrase": 85.0
         },
         "5": {
-          "ex1": 85,
-          "ex2": 16,
-          "ex3": 18,
-          "phrase": 35
+          "ex1": 85.0,
+          "ex2": 16.0,
+          "ex3": 18.0,
+          "phrase": 35.0
         },
         "6": {
-          "phrase": 15
+          "phrase": 15.0
         },
         "7": {
-          "ex2": 35,
-          "phrase": 0
+          "ex2": 35.0,
+          "phrase": 0.0
         }
       },
       "spellIndex": 1,
@@ -184,20 +184,20 @@
     "business": {
       "checkIns": [
         {
-          "completed": false,
           "date": "2026-07-09",
-          "seconds": 98
+          "seconds": 98,
+          "completed": false
         },
         {
-          "completed": false,
           "date": "2026-07-10",
-          "seconds": 51
+          "seconds": 51,
+          "completed": false
         }
       ],
       "learned": [
-        1,
-        2,
-        3
+        "1",
+        "2",
+        "3"
       ],
       "learnedDates": {
         "1": "2026-07-09",
@@ -209,12 +209,12 @@
       "readIndex": 3,
       "speakScores": {
         "4": {
-          "s0": 85,
-          "s1": 85,
-          "s2": 35,
-          "s3": 85,
-          "s4": 85,
-          "s5": 82
+          "s0": 85.0,
+          "s1": 85.0,
+          "s2": 35.0,
+          "s3": 85.0,
+          "s4": 85.0,
+          "s5": 82.0
         }
       },
       "spellIndex": 0,
@@ -224,34 +224,34 @@
     },
     "checkIns": [
       {
-        "completed": false,
         "date": "2026-07-06",
-        "seconds": 6
+        "seconds": 6,
+        "completed": false
       },
       {
-        "completed": false,
         "date": "2026-07-07",
-        "seconds": 355
+        "seconds": 355,
+        "completed": false
       },
       {
-        "completed": false,
         "date": "2026-07-08",
-        "seconds": 7
+        "seconds": 7,
+        "completed": false
       },
       {
-        "completed": false,
         "date": "2026-07-09",
-        "seconds": 153
+        "seconds": 153,
+        "completed": false
       },
       {
-        "completed": false,
         "date": "2026-07-10",
-        "seconds": 298
+        "seconds": 298,
+        "completed": false
       },
       {
-        "completed": false,
         "date": "2026-07-11",
-        "seconds": 0
+        "seconds": 0,
+        "completed": false
       }
     ]
   },
