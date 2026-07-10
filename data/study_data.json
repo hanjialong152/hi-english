@@ -408,7 +408,8 @@
         },
         "4": {
           "phrase": 85,
-          "ex1": 85
+          "ex1": 85,
+          "ex3": 85
         }
       },
       "spellIndex": 0,
@@ -446,7 +447,7 @@
       {
         "completed": false,
         "date": "2026-07-10",
-        "seconds": 215
+        "seconds": 222
       }
     ]
   },
