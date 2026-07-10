@@ -378,7 +378,8 @@
         "2": "2026-07-10"
       },
       "mastered": [
-        "1"
+        "1",
+        "2"
       ],
       "monthlyTests": [],
       "readIndex": 2,
@@ -393,7 +394,7 @@
           "ex1": 85,
           "phrase": 85,
           "ex2": 85,
-          "ex3": 76
+          "ex3": 85
         }
       },
       "spellIndex": 0,
@@ -426,7 +427,7 @@
       },
       {
         "date": "2026-07-10",
-        "seconds": 80,
+        "seconds": 87,
         "completed": false
       }
     ]
