@@ -190,8 +190,8 @@ def _merge_stage(existing, incoming):
     out['learnedDates'] = ld
     # checkIns：按 date 合并，seconds 取最大、completed 取或
     ci = {}
-    for arr in (existing.get('checkIns') or [], incoming.get('checkIns') or []):
-        if not arr or not arr.get('date'):
+    for arr in (existing.get('checkIns') or []) + (incoming.get('checkIns') or []):
+        if not isinstance(arr, dict) or not arr.get('date'):
             continue
         d = arr['date']
         cur = ci.get(d, {'date': d, 'seconds': 0, 'completed': False})
@@ -213,7 +213,7 @@ def _merge_stage(existing, incoming):
     for key in ('weeklyTests', 'monthlyTests'):
         seen = set()
         merged = []
-        for arr in (existing.get(key) or [], incoming.get(key) or []):
+        for arr in (existing.get(key) or []) + (incoming.get(key) or []):
             h = json.dumps(arr, sort_keys=True, ensure_ascii=False)
             if h not in seen:
                 seen.add(h)
@@ -236,8 +236,8 @@ def merge_study_data(existing, incoming):
         out[stage] = _merge_stage(existing.get(stage), incoming.get(stage))
     # 顶层 checkIns：同样按 date 合并
     ci = {}
-    for arr in (existing.get('checkIns') or [], incoming.get('checkIns') or []):
-        if not arr or not arr.get('date'):
+    for arr in (existing.get('checkIns') or []) + (incoming.get('checkIns') or []):
+        if not isinstance(arr, dict) or not arr.get('date'):
             continue
         d = arr['date']
         cur = ci.get(d, {'date': d, 'seconds': 0, 'completed': False})
