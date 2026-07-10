@@ -370,16 +370,18 @@
         }
       ],
       "learned": [
-        1
+        1,
+        2
       ],
       "learnedDates": {
-        "1": "2026-07-09"
+        "1": "2026-07-10",
+        "2": "2026-07-10"
       },
       "mastered": [
         "1"
       ],
       "monthlyTests": [],
-      "readIndex": 1,
+      "readIndex": 2,
       "speakScores": {
         "1": {
           "ex1": 85,
