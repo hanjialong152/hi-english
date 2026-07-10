@@ -1245,7 +1245,7 @@
         },
         {
           "speaker": "B",
-          "en": "I agree. We work really hard. Let's celebrate over drinks after work",
+          "en": "I agree. We work really hard. Let's celebrate over drinks after work.",
           "zh": "我同意，我们工作真的很辛苦。下班后一起去喝一杯庆祝一下吧。"
         }
       ]
@@ -1666,16 +1666,11 @@
         },
         {
           "speaker": "A",
-          "en": "I would love to work from home.",
-          "zh": "我很乐意在家工作。"
+          "en": "I would love to work from home. The traffic to work is terrible.",
+          "zh": "我很乐意在家工作。上班的交通很糟糕。"
         },
         {
           "speaker": "B",
-          "en": "The traffic to work is terrible.",
-          "zh": "上班的交通很糟糕。"
-        },
-        {
-          "speaker": "A",
           "en": "Maybe you should ask your boss about working a flexible schedule too.",
           "zh": "也许你也应该问问你的老板是否可以灵活安排工作时间。"
         }
@@ -1693,8 +1688,8 @@
       "sentences": [
         {
           "speaker": "A",
-          "en": "Veronica when is your baby due next month? Are you going on maternity leave? Of course",
-          "zh": "维罗妮卡，你的宝宝下个月什么时候出生？你要休产假吗？当然。"
+          "en": "Veronica, when is your baby due next month? Are you going on maternity leave?",
+          "zh": "维罗妮卡，你的宝宝下个月什么时候出生？你要休产假吗？"
         },
         {
           "speaker": "B",
@@ -2223,8 +2218,8 @@
         },
         {
           "speaker": "B",
-          "en": "Sounds good. How about Tuesday at 11 a.m. That works for me. Shall we meet in my office?",
-          "zh": "听起来不错。周二上午11点怎么样，这对我来说很合适。我们在我的办公室见面好吗？"
+          "en": "Sounds good. Tuesday at 11 a.m. works for me. Shall we meet in my office?",
+          "zh": "听起来不错。周二上午11点对我来说很合适。我们在我的办公室见面好吗？"
         },
         {
           "speaker": "A",
@@ -2233,8 +2228,8 @@
         },
         {
           "speaker": "B",
-          "en": "Even better. Let's meet at the restaurant across the street. We can negotiate our business contract then",
-          "zh": "更好。我们在街对面的餐厅见面吧。我们可以协商我们的商业合同，。"
+          "en": "Even better. Let's meet at the restaurant across the street. We can negotiate our business contract then.",
+          "zh": "更好。我们在街对面的餐厅见面吧。我们可以在那时协商商业合同。"
         }
       ]
     },
@@ -2639,13 +2634,13 @@
       "sentences": [
         {
           "speaker": "A",
-          "en": "Kathy should be here soon. Okay, I'm not in a hurry. Is this your first trip to Seattle? Yes",
-          "zh": "凯西应该很快就到。好的，我不急。这是你第一次来西雅图吗？是的。"
+          "en": "Kathy should be here soon. Is this your first trip to Seattle?",
+          "zh": "凯西应该很快就到。这是你第一次来西雅图吗？"
         },
         {
           "speaker": "B",
-          "en": "How do you like Seattle? It's a lovely city. I just don't like the rain",
-          "zh": "你觉得西雅图怎么样？是个美丽的城市。我只是不喜欢下雨。"
+          "en": "It's a lovely city. I just don't like the rain.",
+          "zh": "这是个美丽的城市。我只是不喜欢下雨。"
         }
       ]
     },
@@ -2661,8 +2656,8 @@
       "sentences": [
         {
           "speaker": "A",
-          "en": "We're 15 minutes early for the meeting. Should we wait for everyone to arrive? Yeah, let's find a seat",
-          "zh": "我们开会早到了15分钟。要等大家都到吗？嗯，找个位子坐吧。"
+          "en": "We're 15 minutes early for the meeting. Should we wait for everyone to arrive?",
+          "zh": "我们开会早到了15分钟。要等大家都到吗？"
         },
         {
           "speaker": "B",
@@ -2671,13 +2666,13 @@
         },
         {
           "speaker": "A",
-          "en": "Me too. It's been raining all week. It's been raining all week. Yes. Have you been out of town?",
-          "zh": "我也是。下了一整周的雨了。下了一整周的雨了。是的。你出城了吗？"
+          "en": "Me too. It's been raining all week. Have you been out of town?",
+          "zh": "我也是。下了一整周的雨了。你出城了吗？"
         },
         {
           "speaker": "B",
-          "en": "Yes, I just got back from Hawaii last night. I bet you miss the weather there. I do",
-          "zh": "是的，我昨晚刚从夏威夷回来。我猜你一定想念那边的天气。确实。"
+          "en": "Yes, I just got back from Hawaii last night. I do miss the weather there.",
+          "zh": "是的，我昨晚刚从夏威夷回来。我确实想念那边的天气。"
         }
       ]
     },
@@ -2735,13 +2730,13 @@
       "sentences": [
         {
           "speaker": "A",
-          "en": "We've all enjoyed working with you. Thank you. It's been a lot of fun",
-          "zh": "我们都很喜欢和你一起工作。谢谢。这段时间很开心。"
+          "en": "We've all enjoyed working with you. It's been a lot of fun.",
+          "zh": "我们都很喜欢和你一起工作。这段时间很开心。"
         },
         {
           "speaker": "B",
-          "en": "We would like you to join our team. Are you offering me a job? Yes, we would like you to join our company",
-          "zh": "我们希望你能加入我们的团队。你是在给我提供工作吗？是的，我们希望你加入我们公司。"
+          "en": "Are you offering me a job? We'd love to have you join our company.",
+          "zh": "你是在给我提供工作吗？我们很希望你能加入我们公司。"
         },
         {
           "speaker": "A",
@@ -3939,13 +3934,13 @@
         },
         {
           "speaker": "A",
-          "en": "That's interesting. What's interesting? I saw you washing your car this morning. You did?",
-          "zh": "有意思，什么有意思？我看到你今天早上洗车了，真的吗？"
+          "en": "That's interesting. I saw you washing your car this morning.",
+          "zh": "有意思。我看到你今天早上洗车了。"
         },
         {
           "speaker": "B",
-          "en": "I'm sorry. I lied. I just hate morning traffic. You always try to get out of helping me",
-          "zh": "对不起，我撒谎了。我只是讨厌早晨的交通。你总是试图摆脱对我的帮助。"
+          "en": "I'm sorry. I lied. I just hate morning traffic.",
+          "zh": "对不起，我撒谎了。我只是讨厌早晨的交通。"
         }
       ]
     },
@@ -4491,8 +4486,8 @@
         },
         {
           "speaker": "B",
-          "en": "What do you mean? This place is awful. I've seen worse hotels. Stop complaining. There's a bug in my bed",
-          "zh": "你什么意思？这地方太糟糕了。我见过更差的酒店。别抱怨了。我床上有虫子。"
+          "en": "This place is awful. There's a bug in my bed.",
+          "zh": "这地方太糟糕了。我床上有虫子。"
         },
         {
           "speaker": "A",
@@ -4850,18 +4845,18 @@
         },
         {
           "speaker": "B",
-          "en": "This is a very old building. I don't have time to wait. I'm going to take the stairs",
+          "en": "This is a very old building. I don't have time to wait. I'm going to take the stairs.",
           "zh": "这是一栋很旧的建筑。我没时间等了。我走楼梯。"
         },
         {
           "speaker": "A",
-          "en": "We're on the 18th floor. I don't care. I'm going to be late for work. I'll come with you",
-          "zh": "我们在18楼啊。我不管。我上班要迟到了。我跟你一起走。"
+          "en": "We're on the 18th floor. But I'll come with you.",
+          "zh": "我们在18楼啊。不过我跟你一起走。"
         },
         {
           "speaker": "B",
-          "en": "Okay, but you're wearing high heels. I'll wait for the elevator. Good luck",
-          "zh": "好吧，但你穿着高跟鞋呢。我等电梯吧。祝你好运。"
+          "en": "Okay, but you're wearing high heels. Good luck.",
+          "zh": "好吧，但你穿着高跟鞋呢。祝你好运。"
         }
       ]
     },
@@ -4919,8 +4914,8 @@
       "sentences": [
         {
           "speaker": "A",
-          "en": "Think I want the blue car instead. I thought we agreed to buy the red one. I",
-          "zh": "我想还是买蓝色的车吧。我以为我们说好了买红色的。我。"
+          "en": "I think I want the blue car instead.",
+          "zh": "我想还是买蓝色的车吧。"
         },
         {
           "speaker": "B",
@@ -4939,8 +4934,8 @@
         },
         {
           "speaker": "A",
-          "en": "Okay, let's buy the blue one. Are you sure? What is wrong with the red one?",
-          "zh": "好吧，买蓝色的。你确定吗？红色的有什么不好？"
+          "en": "Okay, let's buy the blue one.",
+          "zh": "好吧，那买蓝色的吧。"
         }
       ]
     },
@@ -5823,8 +5818,8 @@
         },
         {
           "speaker": "A",
-          "en": "Great. I don't want to go out to pick it up me too. It's raining",
-          "zh": "太好了。我不想出去取。我也是。外面在下雨。"
+          "en": "Great. I don't want to go out to pick it up. It's raining.",
+          "zh": "太好了。我不想出去取。外面在下雨。"
         }
       ]
     },
@@ -5845,8 +5840,8 @@
         },
         {
           "speaker": "B",
-          "en": "That's a great idea. There are lots of choices around our neighborhood. What are the choices?",
-          "zh": "好主意。我们附近有很多选择。有什么可选的？"
+          "en": "That's a great idea. There are lots of choices around our neighborhood.",
+          "zh": "好主意。我们附近有很多选择。"
         },
         {
           "speaker": "A",
@@ -5860,8 +5855,8 @@
         },
         {
           "speaker": "A",
-          "en": "What sounds good to you? I can eat anything. I'm very hungry now",
-          "zh": "你想吃什么？我什么都能吃。我现在很饿。"
+          "en": "What sounds good to you? I'm very hungry now.",
+          "zh": "你想吃什么？我现在很饿。"
         },
         {
           "speaker": "B",

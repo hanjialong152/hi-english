@@ -90,11 +90,6 @@ async function init() {
     console.log('[Migrate] 打卡数据已统一合并，共', studyData.checkIns.length, '条记录');
     saveStudyData();
   }
-  // Unlock business for 100003
-  if (user.empid === '100003') {
-    studyData.business.unlocked = true;
-    saveStudyData();
-  }
   if (studyData.basic.mastered.length >= 850) {
     studyData.business.unlocked = true;
   }
@@ -542,7 +537,7 @@ function speakWithTimer(text) {
 }
 
 // 基础词汇：优先播放本地真人录制 mp3（兼容性最好），失败自动回退 TTS
-var AUDIO_VER = '?v=20260710a';
+var AUDIO_VER = '?v=20260711a';
 function playBasicAudio(type, id, text) {
   isAudioActive = true;
   var url;
