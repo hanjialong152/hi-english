@@ -390,7 +390,7 @@
           "phrase": 85
         },
         "2": {
-          "ex1": 38,
+          "ex1": 64,
           "phrase": 85
         }
       },
@@ -424,7 +424,7 @@
       },
       {
         "date": "2026-07-10",
-        "seconds": 33,
+        "seconds": 40,
         "completed": false
       }
     ]
