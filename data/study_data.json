@@ -173,8 +173,8 @@
           "phrase": 15
         },
         "7": {
-          "phrase": 0,
-          "ex2": 35
+          "ex2": 35,
+          "phrase": 0
         }
       },
       "spellIndex": 1,
@@ -243,7 +243,7 @@
       {
         "completed": false,
         "date": "2026-07-10",
-        "seconds": 227
+        "seconds": 230
       }
     ]
   },
