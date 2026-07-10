@@ -167,7 +167,7 @@
           "ex1": 85,
           "ex2": 16,
           "ex3": 18,
-          "phrase": 28
+          "phrase": 35
         },
         "6": {
           "phrase": 15
@@ -243,7 +243,7 @@
       {
         "completed": false,
         "date": "2026-07-10",
-        "seconds": 215
+        "seconds": 219
       }
     ]
   },
