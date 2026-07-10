@@ -643,7 +643,11 @@
       "mastered": [],
       "monthlyTests": [],
       "readIndex": 0,
-      "speakScores": {},
+      "speakScores": {
+        "1": {
+          "phrase": 13
+        }
+      },
       "spellIndex": 0,
       "totalSeconds": 0,
       "weeklyTests": []
@@ -664,7 +668,7 @@
     "checkIns": [
       {
         "date": "2026-07-10",
-        "seconds": 0,
+        "seconds": 7,
         "completed": false
       }
     ]
