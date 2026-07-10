@@ -396,15 +396,15 @@
         },
         "2": {
           "ex1": 85,
-          "phrase": 85,
           "ex2": 85,
-          "ex3": 85
+          "ex3": 85,
+          "phrase": 85
         },
         "3": {
-          "phrase": 85,
           "ex1": 91,
           "ex2": 85,
-          "ex3": 58
+          "ex3": 58,
+          "phrase": 85
         }
       },
       "spellIndex": 0,
@@ -430,19 +430,19 @@
     },
     "checkIns": [
       {
+        "completed": false,
         "date": "2026-07-08",
-        "seconds": 23,
-        "completed": false
+        "seconds": 23
       },
       {
+        "completed": false,
         "date": "2026-07-09",
-        "seconds": 160,
-        "completed": false
+        "seconds": 160
       },
       {
+        "completed": false,
         "date": "2026-07-10",
-        "seconds": 195,
-        "completed": false
+        "seconds": 198
       }
     ]
   },
