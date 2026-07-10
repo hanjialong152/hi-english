@@ -406,9 +406,26 @@
       "speakScores": {},
       "spellIndex": 0,
       "totalSeconds": 0,
-      "unlocked": false,
+      "unlocked": true,
       "weeklyTests": []
-    }
+    },
+    "checkIns": [
+      {
+        "date": "2026-07-08",
+        "seconds": 23,
+        "completed": false
+      },
+      {
+        "date": "2026-07-09",
+        "seconds": 160,
+        "completed": false
+      },
+      {
+        "date": "2026-07-10",
+        "seconds": 0,
+        "completed": false
+      }
+    ]
   },
   "190763": {
     "basic": {
