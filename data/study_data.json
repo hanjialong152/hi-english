@@ -249,9 +249,9 @@
         "seconds": 298
       },
       {
+        "completed": false,
         "date": "2026-07-11",
-        "seconds": 0,
-        "completed": false
+        "seconds": 0
       }
     ]
   },
