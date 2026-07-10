@@ -397,7 +397,8 @@
           "ex3": 85
         },
         "3": {
-          "phrase": 85
+          "phrase": 85,
+          "ex1": 91
         }
       },
       "spellIndex": 0,
