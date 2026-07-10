@@ -407,9 +407,9 @@
           "phrase": 85
         },
         "4": {
-          "phrase": 85,
           "ex1": 85,
-          "ex3": 85
+          "ex3": 85,
+          "phrase": 85
         }
       },
       "spellIndex": 0,
