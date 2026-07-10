@@ -52,19 +52,95 @@ const HiEnglish = {
   },
 
   // ===== Fetch study data from server =====
+  // ===== 合并两个学习记录（与 server.py merge_study_data 语义一致）=====
+  // 双向并集 / 取最大值，本地真相优先：谁持有更新的进度都不会被覆盖。
+  mergeStudyData(a, b) {
+    if (!a) return b ? JSON.parse(JSON.stringify(b)) : {};
+    if (!b) return JSON.parse(JSON.stringify(a));
+    function strset(arr){ return new Set((arr||[]).map(function(x){return String(x);})); }
+    function mergeStage(e, i) {
+      if (!e) return i ? JSON.parse(JSON.stringify(i)) : {};
+      if (!i) return JSON.parse(JSON.stringify(e));
+      var o = JSON.parse(JSON.stringify(e));
+      ['learned','mastered'].forEach(function(k){
+        o[k] = Array.from(strset(e[k]).union(strset(i[k]))).sort();
+      });
+      ['readIndex','spellIndex','totalSeconds'].forEach(function(k){
+        o[k] = Math.max(parseInt(e[k]||0,10), parseInt(i[k]||0,10));
+      });
+      var ld = Object.assign({}, e.learnedDates||{});
+      Object.keys(i.learnedDates||{}).forEach(function(k){
+        if (!(k in ld) || String(i.learnedDates[k]||'') > String(ld[k]||'')) ld[k] = i.learnedDates[k];
+      });
+      o.learnedDates = ld;
+      var ci = {};
+      [e.checkIns||[], i.checkIns||[]].forEach(function(arr){
+        (arr||[]).forEach(function(c){
+          if (!c || !c.date) return;
+          var cur = ci[c.date] || {date:c.date, seconds:0, completed:false};
+          cur.seconds = Math.max(parseInt(cur.seconds||0,10), parseInt(c.seconds||0,10));
+          if (c.completed) cur.completed = true;
+          ci[c.date] = cur;
+        });
+      });
+      o.checkIns = Object.keys(ci).map(function(k){return ci[k];});
+      var ss = JSON.parse(JSON.stringify(e.speakScores||{}));
+      Object.keys(i.speakScores||{}).forEach(function(w){
+        if (!ss[w]) ss[w] = JSON.parse(JSON.stringify(i.speakScores[w]));
+        else Object.keys(i.speakScores[w]||{}).forEach(function(ex){
+          ss[w][ex] = Math.max(parseFloat(ss[w][ex]||0), parseFloat(i.speakScores[w][ex]||0));
+        });
+      });
+      o.speakScores = ss;
+      ['weeklyTests','monthlyTests'].forEach(function(k){
+        var seen = {}, m = [];
+        [e[k]||[], i[k]||[]].forEach(function(arr){ (arr||[]).forEach(function(it){
+          var h = JSON.stringify(it); if (!seen[h]) { seen[h]=1; m.push(it); }
+        });});
+        o[k] = m;
+      });
+      if ('unlocked' in (e||{}) || 'unlocked' in (i||{})) {
+        o.unlocked = !!(e.unlocked) || !!(i.unlocked);
+      }
+      return o;
+    }
+    var out = JSON.parse(JSON.stringify(a));
+    ['basic','business'].forEach(function(s){ out[s] = mergeStage(a[s], b[s]); });
+    var ci = {};
+    [a.checkIns||[], b.checkIns||[]].forEach(function(arr){ (arr||[]).forEach(function(c){
+      if (!c || !c.date) return;
+      var cur = ci[c.date] || {date:c.date, seconds:0, completed:false};
+      cur.seconds = Math.max(parseInt(cur.seconds||0,10), parseInt(c.seconds||0,10));
+      if (c.completed) cur.completed = true;
+      ci[c.date] = cur;
+    });});
+    out.checkIns = Object.keys(ci).map(function(k){return ci[k];});
+    return out;
+  },
+
   async fetchServerStudyData(empid) {
     try {
       var resp = await fetch(this.getServerUrl() + '/api/study-data?empid=' + encodeURIComponent(empid));
       var data = await resp.json();
       if (data.success && data.studyData) {
-        // 将服务端数据写入 localStorage
+        // 与本地合并（本地真相优先），避免服务端旧快照覆盖客户端最新进度
         var all = JSON.parse(localStorage.getItem('hi_english_study') || '{}');
-        all[empid] = data.studyData;
+        var local = all[empid] || {};
+        var merged = this.mergeStudyData(local, data.studyData);
+        all[empid] = merged;
         localStorage.setItem('hi_english_study', JSON.stringify(all));
-        console.log('[Sync] 从服务端拉取学习数据成功');
-        return data.studyData;
+        // 把合并后的真相回推服务端，确保服务端也拿到客户端持有的最新进度（自愈恢复）
+        this.pushServerStudyData(empid, merged);
+        console.log('[Sync] 从服务端拉取并与本地合并学习数据成功');
+        return merged;
       }
       console.log('[Sync] 服务端无学习数据');
+      // 服务端无记录但本地有进度：把本地真相推上去，避免部署清空后本地进度丢不上来
+      var all = JSON.parse(localStorage.getItem('hi_english_study') || '{}');
+      if (all[empid]) {
+        this.pushServerStudyData(empid, all[empid]);
+        return all[empid];
+      }
       return null;
     } catch(e) {
       console.log('[Sync] 拉取学习数据失败:', e.message);
@@ -820,10 +896,7 @@ const HiEnglish = {
     if (!localStorage.getItem('hi_english_admin_pwd')) {
       localStorage.setItem('hi_english_admin_pwd', '1234.com');
     }
-    // Default DingTalk webhook for study reminders
-    if (!localStorage.getItem('hi_english_dingtalk_webhook')) {
-      localStorage.setItem('hi_english_dingtalk_webhook', 'https://oapi.dingtalk.com/robot/send?access_token=f8fa3d85742c4e037aa80717728d7acc335683e88e4b23c77169f749175bd1e6');
-    }
+    // DingTalk webhook is managed server-side (data/dingtalk.json); no frontend hardcoded token.
     // Create default groups only if groups key doesn't exist
     if (localStorage.getItem('hi_english_groups') === null) {
       this.saveGroups(['A组', 'B组']);
@@ -833,28 +906,10 @@ const HiEnglish = {
     // When admin deletes all users, the key still exists as '{}' so we won't re-create.
     if (localStorage.getItem('hi_english_users') === null) {
       var users = {};
-      users['100001'] = { empid: '100001', name: '张三', group: '冲压车间', status: 'active', password: '123@456.com' };
-      users['100002'] = { empid: '100002', name: '李四', group: '焊装车间', status: 'active', password: '123@456.com' };
-      users['100003'] = { empid: '100003', name: '王五', group: '研发部', status: 'active', password: '123@456.com' };
+      // Default sample users removed — admin creates real users via the management UI.
       this.saveUsers(users);
     }
-    // Unlock business English for test account 100003 (only if user still exists and is active)
-    var currentUsers = this.getUsers();
-    if (currentUsers['100003'] && currentUsers['100003'].status === 'active') {
-      var allStudy = JSON.parse(localStorage.getItem('hi_english_study') || '{}');
-      if (!allStudy['100003']) {
-        allStudy['100003'] = {
-          checkIns: [],
-          basic: { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: [], weeklyTests: [], monthlyTests: [], totalSeconds: 0 },
-          business: { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: [], weeklyTests: [], monthlyTests: [], totalSeconds: 0, unlocked: true }
-        };
-      } else if (!allStudy['100003'].business) {
-        allStudy['100003'].business = { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: {}, checkIns: [], weeklyTests: [], monthlyTests: [], totalSeconds: 0, unlocked: true };
-      } else {
-        allStudy['100003'].business.unlocked = true;
-      }
-      localStorage.setItem('hi_english_study', JSON.stringify(allStudy));
-    }
+    // Test-account 100003 business unlock removed.
   },
 
   // ===== Excel Export (real .xls format) =====

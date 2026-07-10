@@ -14,6 +14,8 @@ import secrets
 import threading
 import time
 import base64
+import atexit
+import signal
 import urllib.request
 import urllib.error
 from urllib.parse import urlparse, parse_qs
@@ -52,6 +54,9 @@ _file_sha_cache = {}
 # 防抖定时器（避免短时间内频繁推送）
 _sync_timers = {}
 _sync_timers_lock = threading.Lock()
+# 脏文件集合（save_json 后标记，进程退出时强制刷到 GitHub，防止部署丢数据）
+_dirty_files = set()
+_dirty_lock = threading.Lock()
 
 
 def github_api_get(path):
@@ -138,6 +143,110 @@ def schedule_sync(filepath, data):
         timer.daemon = True
         _sync_timers[rel_path] = timer
         timer.start()
+
+
+def flush_all_to_github():
+    """进程退出前，把仍未推送的脏文件同步刷到 GitHub data-sync 分支。
+    根因：Render 每次部署会杀掉旧进程，最后几秒（客户端2s防抖→服务端3s防抖）
+    的数据可能没落到 data-sync，新实例拉到的就是旧快照 → 数据丢失。
+    此处做同步强制落盘，确保部署安全。"""
+    with _dirty_lock:
+        files = list(_dirty_files)
+    if not files:
+        return
+    print(f'[Flush] 进程退出，正在强制同步 {len(files)} 个脏文件到 GitHub...', flush=True)
+    for fp in files:
+        try:
+            rel = os.path.relpath(fp, WEB_ROOT).replace('\\', '/')
+            data = load_json(fp)
+            if github_api_put(rel, data):
+                with _dirty_lock:
+                    _dirty_files.discard(fp)
+        except Exception as e:
+            print(f'[Flush] 同步 {fp} 失败: {e}', flush=True)
+    print('[Flush] 完成', flush=True)
+
+
+def _merge_stage(existing, incoming):
+    """合并单个阶段（basic/business）的学习记录：并集 + 取最大值，绝不互相覆盖。"""
+    if not existing:
+        return dict(incoming) if incoming else {}
+    if not incoming:
+        return dict(existing)
+    out = dict(existing)
+    # 列表类字段：并集去重
+    for key in ('learned', 'mastered'):
+        a = set(str(x) for x in (existing.get(key) or []))
+        b = set(str(x) for x in (incoming.get(key) or []))
+        out[key] = sorted(a | b, key=lambda v: (len(v), v))
+    # 数值类字段：取最大值
+    for key in ('readIndex', 'spellIndex', 'totalSeconds'):
+        out[key] = max(int(existing.get(key) or 0), int(incoming.get(key) or 0))
+    # learnedDates：合并，冲突时取较新（字典序更大的 YYYY-MM-DD）日期
+    ld = dict(existing.get('learnedDates') or {})
+    for k, v in (incoming.get('learnedDates') or {}).items():
+        if k not in ld or (str(v or '') > str(ld[k] or '')):
+            ld[k] = v
+    out['learnedDates'] = ld
+    # checkIns：按 date 合并，seconds 取最大、completed 取或
+    ci = {}
+    for arr in (existing.get('checkIns') or [], incoming.get('checkIns') or []):
+        if not arr or not arr.get('date'):
+            continue
+        d = arr['date']
+        cur = ci.get(d, {'date': d, 'seconds': 0, 'completed': False})
+        cur['seconds'] = max(int(cur.get('seconds') or 0), int(arr.get('seconds') or 0))
+        if arr.get('completed'):
+            cur['completed'] = True
+        ci[d] = cur
+    out['checkIns'] = list(ci.values())
+    # speakScores：深层合并，分数取最大
+    ss = dict(existing.get('speakScores') or {})
+    for w, exs in (incoming.get('speakScores') or {}).items():
+        if w not in ss:
+            ss[w] = dict(exs)
+        else:
+            for ex, sc in (exs or {}).items():
+                ss[w][ex] = max(float(ss[w].get(ex, 0) or 0), float(sc or 0))
+    out['speakScores'] = ss
+    # weeklyTests / monthlyTests：并集去重（按内容）
+    for key in ('weeklyTests', 'monthlyTests'):
+        seen = set()
+        merged = []
+        for arr in (existing.get(key) or [], incoming.get(key) or []):
+            h = json.dumps(arr, sort_keys=True, ensure_ascii=False)
+            if h not in seen:
+                seen.add(h)
+                merged.append(arr)
+        out[key] = merged
+    # business 特有字段
+    if 'unlocked' in (existing or {}) or 'unlocked' in (incoming or {}):
+        out['unlocked'] = bool(existing.get('unlocked')) or bool(incoming.get('unlocked'))
+    return out
+
+
+def merge_study_data(existing, incoming):
+    """合并两个用户的学习记录（顶层 + basic + business），双向并集/取最大。"""
+    if not existing:
+        return dict(incoming) if incoming else {}
+    if not incoming:
+        return dict(existing)
+    out = dict(existing)
+    for stage in ('basic', 'business'):
+        out[stage] = _merge_stage(existing.get(stage), incoming.get(stage))
+    # 顶层 checkIns：同样按 date 合并
+    ci = {}
+    for arr in (existing.get('checkIns') or [], incoming.get('checkIns') or []):
+        if not arr or not arr.get('date'):
+            continue
+        d = arr['date']
+        cur = ci.get(d, {'date': d, 'seconds': 0, 'completed': False})
+        cur['seconds'] = max(int(cur.get('seconds') or 0), int(arr.get('seconds') or 0))
+        if arr.get('completed'):
+            cur['completed'] = True
+        ci[d] = cur
+    out['checkIns'] = list(ci.values())
+    return out
 
 
 # ---- 数据存储工具函数 ----
@@ -230,6 +339,9 @@ def save_json(filepath, data):
     with open(tmp_path, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
     os.replace(tmp_path, filepath)
+    # 标记为脏文件，进程退出时强制刷到 GitHub（防部署丢数据）
+    with _dirty_lock:
+        _dirty_files.add(filepath)
     # 2. 异步同步到 GitHub（防抖3秒，避免频繁推送）
     schedule_sync(filepath, data)
 
@@ -687,7 +799,8 @@ def handle_save_study_data():
     sd = body.get('studyData', {})
     with data_lock:
         all_data = load_json(os.path.join(DATA_DIR, 'study_data.json'))
-        all_data[empid] = sd
+        # 合并而非覆盖：避免部署/多端并发时互相覆盖丢失数据
+        all_data[empid] = merge_study_data(all_data.get(empid), sd)
         save_json(os.path.join(DATA_DIR, 'study_data.json'), all_data)
     return jsonify({'success': True})
 
@@ -1153,6 +1266,23 @@ if __name__ == '__main__':
         print('[OK] speech_recognition 库已安装', flush=True)
     except ImportError:
         print('[WARN] speech_recognition 未安装，/api/transcribe 将无法使用', flush=True)
+
+    # 注册进程退出时的数据刷盘：确保部署/重启时最后几秒数据不丢失
+    def _on_shutdown(*args):
+        print('[Shutdown] 收到退出信号，强制刷新数据到 GitHub data-sync...', flush=True)
+        flush_all_to_github()
+    atexit.register(_on_shutdown)
+    def _sig_handler(signum, frame):
+        _on_shutdown(signum, frame)
+        # 恢复默认行为并重新向自身发送信号，让进程正常退出
+        signal.signal(signum, signal.SIG_DFL)
+        os.kill(os.getpid(), signum)
+    try:
+        signal.signal(signal.SIGTERM, _sig_handler)
+        signal.signal(signal.SIGINT, _sig_handler)
+        print('[Shutdown] 已注册 SIGTERM/SIGINT 数据刷盘处理器', flush=True)
+    except (ValueError, OSError) as e:
+        print(f'[Shutdown] 信号处理器注册失败（可接受）: {e}', flush=True)
 
     # 启动保活线程
     ka_thread = threading.Thread(target=keepalive_loop, daemon=True)
