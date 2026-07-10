@@ -872,16 +872,16 @@
           "phrase": 85
         },
         "5": {
-          "phrase": 81,
           "ex1": 93,
           "ex2": 85,
-          "ex3": 96
+          "ex3": 96,
+          "phrase": 81
         },
         "6": {
-          "phrase": 85,
           "ex1": 93,
           "ex2": 87,
-          "ex3": 85
+          "ex3": 85,
+          "phrase": 85
         }
       },
       "spellIndex": 49,
@@ -898,9 +898,21 @@
       "speakScores": {},
       "spellIndex": 0,
       "totalSeconds": 0,
-      "unlocked": false,
+      "unlocked": true,
       "weeklyTests": []
-    }
+    },
+    "checkIns": [
+      {
+        "date": "2026-07-09",
+        "seconds": 429,
+        "completed": false
+      },
+      {
+        "date": "2026-07-10",
+        "seconds": 0,
+        "completed": false
+      }
+    ]
   },
   "228174": {
     "basic": {
