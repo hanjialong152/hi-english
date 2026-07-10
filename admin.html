@@ -26,6 +26,7 @@ body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Mi
 .admin-nav { display:flex; background:var(--card); border-bottom:1px solid var(--border); position:sticky; top:57px; z-index:99; }
 .admin-nav-item { flex:1; text-align:center; padding:12px; cursor:pointer; font-size:14px; color:var(--text-sub); border-bottom:2px solid transparent; }
 .admin-nav-item.active { color:var(--primary); border-bottom-color:var(--primary); font-weight:600; }
+.dev-label { font-size:11px; color:var(--text-sub); opacity:.65; margin-left:2px; font-weight:400; }
 .admin-page { display:none; padding:16px; }
 .admin-page.active { display:block; }
 
@@ -147,7 +148,7 @@ body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Mi
       <div class="admin-nav-item" onclick="aNav('students',this)">学员管理</div>
       <div class="admin-nav-item" onclick="aNav('groups',this)">分组管理</div>
       <div class="admin-nav-item" onclick="aNav('export',this)">数据导出</div>
-      <div class="admin-nav-item" onclick="aNav('content',this)">内容管理（开发中）</div>
+      <div class="admin-nav-item" onclick="aNav('content',this)">内容管理<span class="dev-label">（开发中）</span></div>
     </div>
     <div class="admin-content">
 
@@ -466,7 +467,7 @@ body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Mi
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script src="js/common.js?v=20260711a"></script>
-<script src="js/admin.js?v=20260711a"></script>
+<script src="js/common.js?v=20260711b"></script>
+<script src="js/admin.js?v=20260711b"></script>
 </body>
 </html>
