@@ -91,7 +91,7 @@ def sb_upsert_study(empid, data, retry=2):
     for attempt in range(retry + 1):
         try:
             supabase.table('study_data').upsert(
-                {'empid': empid, 'data': data, 'updated_at': datetime.now().isoformat()}
+                {'empid': empid, 'data': data, 'updated_at': datetime.datetime.now().isoformat()}
             ).execute()
             return True
         except Exception as e:
@@ -134,7 +134,7 @@ def sb_upsert_config(key, value, retry=2):
     for attempt in range(retry + 1):
         try:
             supabase.table('app_config').upsert(
-                {'key': key, 'value': value, 'updated_at': datetime.now().isoformat()}
+                {'key': key, 'value': value, 'updated_at': datetime.datetime.now().isoformat()}
             ).execute()
             return True
         except Exception as e:
