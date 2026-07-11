@@ -1,5 +1,22 @@
 {
   "10001": {
+    "empid": "10001",
+    "name": "张三",
+    "learnedIds": [
+      1,
+      2,
+      3
+    ],
+    "masteredIds": [
+      1
+    ],
+    "studyDates": [
+      "Thu Jun 25 2026"
+    ],
+    "sessions": [],
+    "lastIndex": 3,
+    "totalStudySeconds": 120,
+    "updatedAt": 1782399759372,
     "basic": {
       "readIndex": 0,
       "spellIndex": 0,
@@ -22,9 +39,22 @@
       "monthlyTests": [],
       "totalSeconds": 0,
       "unlocked": false
-    }
+    },
+    "checkIns": []
   },
   "10002": {
+    "empid": "10002",
+    "name": "李四",
+    "learnedIds": [],
+    "masteredIds": [],
+    "favoriteIds": [],
+    "speakScores": {},
+    "sessions": [],
+    "studyDates": [],
+    "lastIndex": 0,
+    "totalStudySeconds": 0,
+    "createdAt": 1782399759418,
+    "updatedAt": 1782399759418,
     "basic": {
       "readIndex": 0,
       "spellIndex": 0,
@@ -47,9 +77,22 @@
       "monthlyTests": [],
       "totalSeconds": 0,
       "unlocked": false
-    }
+    },
+    "checkIns": []
   },
   "10003": {
+    "empid": "10003",
+    "name": "王五",
+    "learnedIds": [],
+    "masteredIds": [],
+    "favoriteIds": [],
+    "speakScores": {},
+    "sessions": [],
+    "studyDates": [],
+    "lastIndex": 0,
+    "totalStudySeconds": 0,
+    "createdAt": 1782399759418,
+    "updatedAt": 1782399759418,
     "basic": {
       "readIndex": 0,
       "spellIndex": 0,
@@ -72,9 +115,45 @@
       "monthlyTests": [],
       "totalSeconds": 0,
       "unlocked": true
-    }
+    },
+    "checkIns": []
   },
   "gw00147407": {
+    "empid": "gw00147407",
+    "name": "韩家龙",
+    "learnedIds": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      344,
+      12
+    ],
+    "masteredIds": [
+      4
+    ],
+    "favoriteIds": [],
+    "speakScores": {
+      "4": 85
+    },
+    "sessions": [],
+    "studyDates": [
+      "Thu Jun 25 2026",
+      "Fri Jun 26 2026"
+    ],
+    "lastIndex": 12,
+    "totalStudySeconds": 401,
+    "createdAt": 1782400169193,
+    "updatedAt": 1782403425466,
+    "lastLogin": 1782403422083,
+    "loginCount": 7,
     "basic": {
       "readIndex": 0,
       "spellIndex": 0,
@@ -97,9 +176,22 @@
       "monthlyTests": [],
       "totalSeconds": 0,
       "unlocked": false
-    }
+    },
+    "checkIns": []
   },
   "GW0100256": {
+    "empid": "GW0100256",
+    "name": "刘海玲",
+    "learnedIds": [],
+    "masteredIds": [],
+    "favoriteIds": [],
+    "speakScores": {},
+    "sessions": [],
+    "studyDates": [],
+    "lastIndex": 0,
+    "totalStudySeconds": 0,
+    "createdAt": 1782402576147,
+    "updatedAt": 1782402576147,
     "basic": {
       "readIndex": 0,
       "spellIndex": 0,
@@ -122,9 +214,22 @@
       "monthlyTests": [],
       "totalSeconds": 0,
       "unlocked": false
-    }
+    },
+    "checkIns": []
   },
   "GW00058704": {
+    "empid": "GW00058704",
+    "name": "刘桂霄",
+    "learnedIds": [],
+    "masteredIds": [],
+    "favoriteIds": [],
+    "speakScores": {},
+    "sessions": [],
+    "studyDates": [],
+    "lastIndex": 0,
+    "totalStudySeconds": 0,
+    "createdAt": 1782402602907,
+    "updatedAt": 1782402602907,
     "basic": {
       "readIndex": 0,
       "spellIndex": 0,
@@ -147,6 +252,107 @@
       "monthlyTests": [],
       "totalSeconds": 0,
       "unlocked": false
-    }
+    },
+    "checkIns": []
+  },
+  "147407": {
+    "basic": {
+      "learned": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "learnedDates": {
+        "1": "2026-07-09",
+        "2": "2026-07-09",
+        "3": "2026-07-09",
+        "4": "2026-07-07",
+        "5": "2026-07-07",
+        "6": "2026-07-09"
+      },
+      "mastered": [
+        "1"
+      ],
+      "monthlyTests": [],
+      "readIndex": 6,
+      "speakScores": {
+        "1": {
+          "ex1": 89,
+          "ex2": 83,
+          "ex3": 85,
+          "phrase": 85
+        },
+        "2": {
+          "ex1": 85,
+          "ex2": 84,
+          "ex3": 53,
+          "phrase": 29
+        },
+        "3": {
+          "ex3": 30,
+          "phrase": 28
+        },
+        "4": {
+          "ex1": 83,
+          "ex2": 61,
+          "ex3": 60,
+          "phrase": 85
+        },
+        "5": {
+          "ex1": 85,
+          "ex2": 16,
+          "ex3": 18,
+          "phrase": 28
+        },
+        "6": {
+          "phrase": 15
+        }
+      },
+      "spellIndex": 1,
+      "totalSeconds": 0,
+      "weeklyTests": []
+    },
+    "business": {
+      "learned": [],
+      "learnedDates": {},
+      "mastered": [],
+      "monthlyTests": [],
+      "readIndex": 0,
+      "speakScores": {},
+      "spellIndex": 0,
+      "totalSeconds": 0,
+      "unlocked": true,
+      "weeklyTests": []
+    },
+    "checkIns": [
+      {
+        "date": "2026-07-06",
+        "seconds": 6,
+        "completed": false
+      },
+      {
+        "date": "2026-07-07",
+        "seconds": 355,
+        "completed": false
+      },
+      {
+        "date": "2026-07-08",
+        "seconds": 7,
+        "completed": false
+      },
+      {
+        "date": "2026-07-09",
+        "seconds": 60,
+        "completed": false
+      },
+      {
+        "date": "2026-07-11",
+        "seconds": 0,
+        "completed": false
+      }
+    ]
   }
 }
