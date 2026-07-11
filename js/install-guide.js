@@ -238,7 +238,9 @@
         '<button class="ib-btn" id="ib-action">查看</button>' +
         '<button class="ib-close" id="ib-close">×</button>';
       document.body.appendChild(b);
-      document.getElementById('ib-action').onclick = function () {
+      var actionBtn = document.getElementById('ib-action');
+      actionBtn.textContent = canNativeInstall() ? '安装' : '查看';
+      actionBtn.onclick = function () {
         if (canNativeInstall()) { doNativeInstall(); }
         else { showModal(); }
       };
