@@ -494,7 +494,7 @@ def save_json(filepath, data):
     if supabase:
         sb_upsert_config(cfg_key, data)
 
-def init_data_files():
+def init_data_files():  # v-restart-trigger-20260711
     """初始化数据文件：启动时从 Supabase 拉取最新数据到本地缓存。
 
     2026-07-11 起改为 Supabase 主存储（根治发版丢数据）：
