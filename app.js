@@ -17,7 +17,7 @@ let speakZoneExpanded = false;
 let allData = [];
 let recognizedText = '';
 let currentAudio = null;
-const AUDIO_VERSION = '?v=6'; // 音频版本号，修改后强制浏览器刷新缓存
+const AUDIO_VERSION = '?v=7'; // 音频版本号，修改后强制浏览器刷新缓存
 
 // ---- 初始化 ----
 document.addEventListener('DOMContentLoaded', () => {
@@ -528,18 +528,18 @@ function getLocalAudioUrl(text) {
   
   // 单词
   if (text === word.word) {
-    return `audio/w_${wid}.mp3`;
+    return `audio/w_${wid}.mp3` + AUDIO_VERSION;
   }
   // 词组
   const phrases = cleanPhrases(word.phrases);
   if (text === phrases) {
-    return `audio/p_${wid}.mp3`;
+    return `audio/p_${wid}.mp3` + AUDIO_VERSION;
   }
   // 例句
   const examples = buildExamples(word);
   for (let i = 0; i < examples.length; i++) {
     if (text === examples[i].en) {
-      return `audio/e_${wid}_${i+1}.mp3`;
+      return `audio/e_${wid}_${i+1}.mp3` + AUDIO_VERSION;
     }
   }
   return null;

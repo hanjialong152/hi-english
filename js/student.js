@@ -623,7 +623,7 @@ function speakWithTimer(text) {
 }
 
 // 基础词汇：优先播放本地真人录制 mp3（兼容性最好），失败自动回退 TTS
-var AUDIO_VER = '?v=20260712d';
+var AUDIO_VER = '?v=20260712e';
 function playBasicAudio(type, id, text) {
   isAudioActive = true;
   var url;
