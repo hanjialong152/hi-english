@@ -2,15 +2,15 @@
  * Hi English - 三端下载/安装渠道弹窗
  * 安卓 / 苹果(iOS) / 鸿蒙(HarmonyOS) 均可"添加到主屏幕"（PWA）；
  * 安卓 Chrome/Edge 支持一键安装，苹果/鸿蒙为图文引导。
- * 弹窗可手动关闭（× / 点遮罩 / 关闭按钮）；"不再提示"可永久关闭自动弹窗。
- * 登录后自动弹一次（每个会话一次，避免像旧版那样关一次就再也看不到）；
- * 并提供常驻入口（📲 安装到手机）随时再打开。
+ *
+ * 行为（按需求）：
+ *  - 登录学员端后自动弹出（每次进入都弹，确保用户能看到下载渠道）。
+ *  - 弹窗可手动关闭（× / 点遮罩 / 关闭按钮）。
+ *  - 不设"不再提示"、不设常驻按钮——避免引导被关掉后用户再也找不到入口。
  */
 (function () {
   'use strict';
 
-  var KEY_DISMISS = 'hi_english_install_dismissed';      // 永久关闭（"不再提示"）
-  var KEY_SESSION = 'hi_english_install_shown_session';   // 本次会话已弹过
   var deferredPrompt = null;
 
   function detectPlatform() {
@@ -51,25 +51,15 @@
       deferredPrompt.prompt();
       deferredPrompt.userChoice.then(function (choice) {
         deferredPrompt = null;
-        if (choice.outcome === 'accepted') { try { localStorage.setItem(KEY_DISMISS, '1'); } catch (e) {} }
-        closeModal();
+        if (choice.outcome === 'accepted') {
+          closeModal();
+        } else {
+          closeModal();
+        }
       });
       return true;
     }
     return false;
-  }
-
-  function isPermanentlyDismissed() {
-    try { return localStorage.getItem(KEY_DISMISS) === '1'; } catch (e) { return false; }
-  }
-  function markPermanentlyDismissed() {
-    try { localStorage.setItem(KEY_DISMISS, '1'); } catch (e) {}
-  }
-  function sessionShown() {
-    try { return sessionStorage.getItem(KEY_SESSION) === '1'; } catch (e) { return false; }
-  }
-  function markSessionShown() {
-    try { sessionStorage.setItem(KEY_SESSION, '1'); } catch (e) {}
   }
 
   // ===== 每个平台的分步引导 =====
@@ -188,9 +178,7 @@
       '.dg-btn.primary{background:#4A90D9;color:#fff;}',
       '.dg-btn.ghost{background:#F5F7FA;color:#666;}',
       '.dg-close{position:absolute;top:10px;right:12px;background:none;border:none;color:#bbb;font-size:22px;line-height:1;cursor:pointer;padding:0 4px;}',
-      '.dg-dismiss{display:block;margin:10px auto 0;background:none;border:none;color:#aaa;font-size:12px;text-decoration:underline;cursor:pointer;}',
-      '@keyframes popIn{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}',
-      '#dg-reopen{position:fixed;left:14px;bottom:16px;z-index:8000;background:#4A90D9;color:#fff;border:none;border-radius:20px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.18);}'
+      '@keyframes popIn{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}'
     ].join('');
     document.head.appendChild(s);
     cssInjected = true;
@@ -233,7 +221,6 @@
         '<button class="dg-btn ghost" onclick="InstallGuide.closeModal()">关闭</button>' +
         '<button class="dg-btn primary" id="dg-primary">知道了</button>' +
         '</div>' +
-        '<button class="dg-dismiss" onclick="InstallGuide.dismissPermanent()">不再提示</button>' +
         '</div>';
       document.body.appendChild(mask);
       mask.addEventListener('click', function (e) { if (e.target === mask) closeModal(); });
@@ -265,35 +252,14 @@
     if (m) m.classList.remove('show');
   }
 
-  // 登录后自动弹（每个会话一次）
+  // 登录后自动弹（每次进入学员端都弹；关闭仅隐藏当前弹窗，下次进入仍会再弹）
   function maybeAutoShow() {
-    if (isPermanentlyDismissed()) return;
-    if (sessionShown()) return;
-    markSessionShown();
     showDownloadGuide();
-  }
-
-  // 常驻入口：随时再打开
-  function ensureReopenBtn() {
-    if (document.getElementById('dg-reopen')) return;
-    var b = document.createElement('button');
-    b.id = 'dg-reopen';
-    b.textContent = '📲 安装到手机';
-    b.onclick = function () { showDownloadGuide(); };
-    document.body.appendChild(b);
   }
 
   window.InstallGuide = {
     maybeAutoShow: maybeAutoShow,
     showDownloadGuide: showDownloadGuide,
-    closeModal: closeModal,
-    dismissPermanent: function () { markPermanentlyDismissed(); closeModal(); }
+    closeModal: closeModal
   };
-
-  // 页面加载后注入常驻入口（所有端都可见，方便随时查看/重新打开）
-  if (document.readyState === 'loading') {
-    window.addEventListener('DOMContentLoaded', ensureReopenBtn);
-  } else {
-    ensureReopenBtn();
-  }
 })();
