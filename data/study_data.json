@@ -215,35 +215,18 @@
   },
   "407556": {
     "basic": {
-      "checkIns": [
-        {
-          "completed": false,
-          "date": "2026-07-07",
-          "seconds": 15
-        },
-        {
-          "completed": false,
-          "date": "2026-07-08",
-          "seconds": 179
-        },
-        {
-          "date": "2026-07-09",
-          "seconds": 59,
-          "completed": false
-        }
-      ],
       "learned": [
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10",
+        "11"
       ],
       "learnedDates": {
         "1": "2026-07-07",
@@ -266,21 +249,21 @@
       "readIndex": 11,
       "speakScores": {
         "9": {
-          "ex1": 84,
-          "ex2": 62,
-          "phrase": 85
+          "ex1": 84.0,
+          "ex2": 62.0,
+          "phrase": 85.0
         },
         "10": {
-          "ex1": 85,
-          "ex2": 87,
-          "ex3": 83,
-          "phrase": 85
+          "ex1": 85.0,
+          "ex2": 87.0,
+          "ex3": 83.0,
+          "phrase": 85.0
         },
         "11": {
-          "phrase": 85,
-          "ex1": 86,
-          "ex2": 85,
-          "ex3": 88
+          "phrase": 85.0,
+          "ex1": 86.0,
+          "ex2": 85.0,
+          "ex3": 88.0
         }
       },
       "spellIndex": 65,
@@ -288,7 +271,6 @@
       "weeklyTests": []
     },
     "business": {
-      "checkIns": [],
       "learned": [],
       "learnedDates": {},
       "mastered": [],
@@ -299,7 +281,24 @@
       "totalSeconds": 0,
       "unlocked": false,
       "weeklyTests": []
-    }
+    },
+    "checkIns": [
+      {
+        "date": "2026-07-07",
+        "seconds": 15,
+        "completed": false
+      },
+      {
+        "date": "2026-07-08",
+        "seconds": 179,
+        "completed": false
+      },
+      {
+        "date": "2026-07-09",
+        "seconds": 59,
+        "completed": false
+      }
+    ]
   },
   "102334": {
     "basic": {
