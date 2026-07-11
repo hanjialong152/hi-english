@@ -176,7 +176,7 @@ const HiEnglish = {
     if (this._syncTimer) clearTimeout(this._syncTimer);
     this._syncTimer = setTimeout(function() {
       self._doPush(empid, data);
-    }, 2000); // 2秒防抖
+    }, 400); // 400ms 防抖：尽快把进度推到服务端，缩短丢失窗口
   },
 
   // 立即推送未保存的数据（页面隐藏/关闭时调用）
@@ -197,7 +197,8 @@ const HiEnglish = {
     }
   },
 
-  _doPush(empid, data) {
+  _doPush(empid, data, attempt) {
+    attempt = attempt || 1;
     var self = this;
     fetch(self.getServerUrl() + '/api/study-data', {
       method: 'POST',
@@ -206,7 +207,13 @@ const HiEnglish = {
     }).then(function(resp) {
       console.log('[Sync] 学习数据已推送到服务端');
     }).catch(function(e) {
-      console.log('[Sync] 推送学习数据失败:', e.message);
+      // 退避重试，确保网络抖动时也能可靠送达（最多4次）
+      if (attempt < 4) {
+        setTimeout(function() { self._doPush(empid, data, attempt + 1); }, 800 * attempt);
+        console.log('[Sync] 推送失败，第' + attempt + '次重试:', e.message);
+      } else {
+        console.log('[Sync] 推送失败，将在下次保存/打开App时由服务端自愈合并:', e.message);
+      }
     });
   },
 

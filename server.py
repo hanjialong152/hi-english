@@ -57,6 +57,8 @@ _sync_timers_lock = threading.Lock()
 # 脏文件集合（save_json 后标记，进程退出时强制刷到 GitHub，防止部署丢数据）
 _dirty_files = set()
 _dirty_lock = threading.Lock()
+# 所有 GitHub 写入串行锁：避免并发写同一文件导致 sha 冲突 / 互相覆盖丢数据
+github_push_lock = threading.Lock()
 
 
 def github_api_get(path):
@@ -88,8 +90,8 @@ def github_api_get(path):
     return None
 
 
-def github_api_put(path, data):
-    """推送文件到 GitHub data-sync 分支"""
+def github_api_put(path, data, timeout=15):
+    """推送文件到 GitHub data-sync 分支（调用方负责用 github_push_lock 串行化）"""
     if not GITHUB_TOKEN:
         return False
     url = f'https://api.github.com/repos/{GITHUB_REPO}/contents/{path}'
@@ -108,7 +110,7 @@ def github_api_put(path, data):
             req.add_header('Authorization', f'token {GITHUB_TOKEN}')
             req.add_header('Accept', 'application/vnd.github.v3+json')
             req.add_header('Content-Type', 'application/json')
-            with urllib.request.urlopen(req, timeout=15) as resp:
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
                 result = json.loads(resp.read().decode('utf-8'))
                 if 'content' in result:
                     _file_sha_cache[path] = result['content'].get('sha', '')
@@ -132,17 +134,23 @@ def github_api_put(path, data):
 
 
 def schedule_sync(filepath, data):
-    """防抖推送：3秒内多次保存合并为一次 GitHub 推送"""
+    """防抖推送：3秒内多次保存合并为一次 GitHub 推送（推送时加锁，避免并发覆盖）"""
     if not GITHUB_TOKEN:
         return
     rel_path = os.path.relpath(filepath, WEB_ROOT).replace('\\', '/')
     with _sync_timers_lock:
         if rel_path in _sync_timers:
             _sync_timers[rel_path].cancel()
-        timer = threading.Timer(3.0, github_api_put, args=(rel_path, data))
+        timer = threading.Timer(3.0, _do_sync, args=(rel_path, data))
         timer.daemon = True
         _sync_timers[rel_path] = timer
         timer.start()
+
+
+def _do_sync(rel_path, data):
+    """实际执行 GitHub 推送（在锁内串行，避免并发写同一文件导致 sha 冲突/互相覆盖）"""
+    with github_push_lock:
+        github_api_put(rel_path, data)
 
 
 def flush_all_to_github():
@@ -159,12 +167,24 @@ def flush_all_to_github():
         try:
             rel = os.path.relpath(fp, WEB_ROOT).replace('\\', '/')
             data = load_json(fp)
-            if github_api_put(rel, data):
+            with github_push_lock:
+                ok = github_api_put(rel, data)
+            if ok:
                 with _dirty_lock:
                     _dirty_files.discard(fp)
         except Exception as e:
             print(f'[Flush] 同步 {fp} 失败: {e}', flush=True)
     print('[Flush] 完成', flush=True)
+
+
+def push_study_data_immediate():
+    """写穿（write-through）：把最新 study_data 同步推到 GitHub data-sync。
+    在学习数据 POST 时调用，确保请求返回前数据已持久化；
+    Render 部署杀进程 / 用户清缓存都不会再丢失（已在 GitHub 落盘）。
+    返回是否推送成功（失败则由防抖兜底 + 退出强刷覆盖）。"""
+    study_path = os.path.join(DATA_DIR, 'study_data.json')
+    with github_push_lock:
+        return github_api_put('data/study_data.json', load_json(study_path), timeout=6)
 
 
 def _merge_stage(existing, incoming):
@@ -797,12 +817,26 @@ def handle_save_study_data():
     body = request.json or {}
     empid = (body.get('empid') or '').strip()
     sd = body.get('studyData', {})
+    study_path = os.path.join(DATA_DIR, 'study_data.json')
     with data_lock:
-        all_data = load_json(os.path.join(DATA_DIR, 'study_data.json'))
+        all_data = load_json(study_path)
         # 合并而非覆盖：避免部署/多端并发时互相覆盖丢失数据
         all_data[empid] = merge_study_data(all_data.get(empid), sd)
-        save_json(os.path.join(DATA_DIR, 'study_data.json'), all_data)
-    return jsonify({'success': True})
+        # 本地原子写 + 标脏 + 防抖兜底
+        save_json(study_path, all_data)
+    # 写穿（write-through）：同步推到 GitHub data-sync，确保本请求返回即已持久化，
+    # 之后无论 Render 部署杀进程、还是用户清缓存，服务端数据都已落盘，不会丢失。
+    try:
+        persisted = push_study_data_immediate()
+    except Exception as e:
+        persisted = False
+        print(f'[Sync] study-data 写穿异常: {e}', flush=True)
+    if persisted:
+        with _dirty_lock:
+            _dirty_files.discard(study_path)
+    else:
+        print('[Sync] study-data 写穿失败，依赖防抖/退出强刷兜底', flush=True)
+    return jsonify({'success': True, 'persisted': bool(persisted)})
 
 
 # ---- 密码管理 API ----
