@@ -28,6 +28,11 @@ from flask import Flask, request, jsonify, send_from_directory, send_file
 
 app = Flask(__name__, static_folder='.', static_url_path='')
 
+import traceback
+@app.errorhandler(500)
+def handle_500(e):
+    return jsonify({'error': '500', 'msg': str(e), 'tb': traceback.format_exc()[-800:]}), 500
+
 # 配置
 PORT = int(os.environ.get('PORT', 8090))
 WEB_ROOT = os.path.dirname(os.path.abspath(__file__))
