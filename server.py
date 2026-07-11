@@ -8,6 +8,7 @@ Hi English - Flask Web 服务
 import json
 import os
 import sys
+import datetime
 import tempfile
 import hashlib
 import secrets
@@ -89,7 +90,7 @@ def sb_upsert_study(empid, data, retry=2):
     for attempt in range(retry + 1):
         try:
             supabase.table('study_data').upsert(
-                {'empid': empid, 'data': data, 'updated_at': 'now()'}
+                {'empid': empid, 'data': data, 'updated_at': datetime.now().isoformat()}
             ).execute()
             return True
         except Exception as e:
@@ -129,7 +130,7 @@ def sb_upsert_config(key, value, retry=2):
     for attempt in range(retry + 1):
         try:
             supabase.table('app_config').upsert(
-                {'key': key, 'value': value, 'updated_at': 'now()'}
+                {'key': key, 'value': value, 'updated_at': datetime.now().isoformat()}
             ).execute()
             return True
         except Exception as e:
@@ -523,9 +524,13 @@ def init_data_files():  # v-restart-trigger-20260711
                     print(f'[Supabase] 写本地缓存 {key} 失败: {e}', flush=True)
         all_sd = sb_get_all_study()
         try:
-            with open(os.path.join(DATA_DIR, 'study_data.json'), 'w', encoding='utf-8') as f:
-                json.dump(all_sd or {}, f, ensure_ascii=False, indent=2)
-            print(f'[Supabase] 已加载 {len(all_sd)} 个学员学习数据', flush=True)
+            # 关键修复：Supabase 读空/失败时不写空本地文件，防止把空数据回推覆盖真实数据
+            if all_sd:
+                with open(os.path.join(DATA_DIR, 'study_data.json'), 'w', encoding='utf-8') as f:
+                    json.dump(all_sd, f, ensure_ascii=False, indent=2)
+                print(f'[Supabase] 已加载 {len(all_sd)} 个学员学习数据', flush=True)
+            else:
+                print('[Supabase] study_data 为空或读取失败，保留本地现有缓存', flush=True)
         except Exception as e:
             print(f'[Supabase] 写本地 study_data 缓存失败: {e}', flush=True)
     elif GITHUB_TOKEN:
