@@ -988,20 +988,5 @@
       "totalSeconds": 0,
       "unlocked": false
     }
-  },
-  "WT_TEST_196ca0": {
-    "basic": {
-      "learned": [
-        "__wt_test__"
-      ],
-      "mastered": []
-    },
-    "business": {
-      "learned": [
-        "__wt_test__"
-      ],
-      "mastered": []
-    },
-    "checkIns": []
   }
 }
