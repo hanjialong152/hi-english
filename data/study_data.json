@@ -734,19 +734,12 @@
   },
   "339911": {
     "basic": {
-      "checkIns": [
-        {
-          "date": "2026-07-08",
-          "seconds": 229,
-          "completed": false
-        }
-      ],
       "learned": [
-        1,
-        2,
-        3,
-        4,
-        5
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
       ],
       "learnedDates": {
         "1": "2026-07-08",
@@ -764,7 +757,6 @@
       "weeklyTests": []
     },
     "business": {
-      "checkIns": [],
       "learned": [],
       "learnedDates": {},
       "mastered": [],
@@ -775,7 +767,14 @@
       "totalSeconds": 0,
       "unlocked": false,
       "weeklyTests": []
-    }
+    },
+    "checkIns": [
+      {
+        "date": "2026-07-08",
+        "seconds": 229,
+        "completed": false
+      }
+    ]
   },
   "059707": {
     "basic": {
