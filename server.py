@@ -1006,12 +1006,16 @@ def handle_save_study_data():
         save_json(study_path, all_data)
     # 写穿（write-through）：实时 UPSERT 到 Supabase（按 empid 单行），
     # 确保本请求返回即已持久化，Render 部署/休眠/清缓存都不丢。
+    err_detail = None
     try:
         persisted = sb_upsert_study(empid, merged)
     except Exception as e:
         persisted = False
+        err_detail = str(e)
         print(f'[Supabase] study-data 写入异常: {e}', flush=True)
-    return jsonify({'success': True, 'persisted': bool(persisted)})
+    if not persisted and err_detail is None:
+        err_detail = 'supabase client is None (未连接)' if not supabase else 'upsert returned falsy'
+    return jsonify({'success': True, 'persisted': bool(persisted), 'sb_debug': err_detail, 'sb_connected': bool(supabase)})
 
 
 # ---- 密码管理 API ----
