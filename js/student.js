@@ -175,6 +175,11 @@ async function init() {
   renderHome();
   updateMessageBadge();
 
+  // 登录后自动弹出"三端下载/安装渠道"引导（每个会话一次，可手动关闭）
+  if (window.InstallGuide && window.InstallGuide.maybeAutoShow) {
+    setTimeout(function () { window.InstallGuide.maybeAutoShow(); }, 1200);
+  }
+
   // 启动周期性同步（每60秒静默推一次），兜底防止单次推送因网络/后台限制失败
   HiEnglish.startPeriodicSync(user.empid, function() { return studyData; });
   
