@@ -844,8 +844,8 @@ function setSpeakTarget(btn, target, wordId) {
   document.getElementById('speak-en').innerHTML = c.en;
 }
 
-// ===== Voice Recording (MediaRecorder + Server-side Google SpeechRecognition) =====
-// 录音上传到 Render 服务器 /api/transcribe，服务器用 Google Speech API 识别
+// ===== Voice Recording (浏览器录音 + 服务端 Whisper 识别) =====
+// 录音上传到 Render 服务器 /api/transcribe，服务端用开源 Whisper 模型识别（非谷歌）
 // 返回文本后前端用 similarity 评分，80分通过
 // 服务器不可用时降级到时长评分
 
