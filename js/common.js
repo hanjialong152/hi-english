@@ -181,6 +181,7 @@ const HiEnglish = {
   // ===== Push study data to server (debounced) =====
   _syncTimer: null,
   _lastPushedData: null,
+  _periodicTimer: null,
   pushServerStudyData(empid, data) {
     var self = this;
     this._lastPushedData = { empid: empid, data: data };
@@ -188,6 +189,33 @@ const HiEnglish = {
     this._syncTimer = setTimeout(function() {
       self._doPush(empid, data);
     }, 400); // 400ms 防抖：尽快把进度推到服务端，缩短丢失窗口
+  },
+
+  // 立即推送（绕过防抖）：用于关键状态变化（打卡完成、学习完成等）
+  // 确保这类事件零延迟落盘，避免跨终端竞态导致数据不一致
+  pushServerStudyDataImmediate(empid, data) {
+    this._lastPushedData = { empid: empid, data: data };
+    if (this._syncTimer) { clearTimeout(this._syncTimer); this._syncTimer = null; }
+    this._doPush(empid, data);
+  },
+
+  // 周期性同步：每60秒静默推一次当前状态，兜底防止单次推送失败
+  startPeriodicSync(empid, getData) {
+    var self = this;
+    this.stopPeriodicSync();
+    this._periodicTimer = setInterval(function() {
+      try {
+        var data = typeof getData === 'function' ? getData() : self._lastPushedData && self._lastPushedData.data;
+        if (data && empid) {
+          console.log('[Sync] 周期性同步：静默推送学习数据');
+          self._doPush(empid, data);
+        }
+      } catch(e) { console.warn('[Sync] 周期性同步跳过:', e.message); }
+    }, 30000); // 每30秒（更频繁，加速恢复）
+  },
+
+  stopPeriodicSync() {
+    if (this._periodicTimer) { clearInterval(this._periodicTimer); this._periodicTimer = null; }
   },
 
   // 立即推送未保存的数据（页面隐藏/关闭时调用）
@@ -291,11 +319,12 @@ const HiEnglish = {
     return null;
   },
 
-  // API: Load 850 words
-  async loadWords() {
-    if (this.words850) return this.words850;
-    try {
-      const res = await fetch('data/ogden_850_final.json');
+    // API: Load 850 words
+    async loadWords() {
+      const DATA_VER = '?v=20260712d';
+      if (this.words850) return this.words850;
+      try {
+        const res = await fetch('data/ogden_850_final.json' + DATA_VER);
       this.words850 = await res.json();
       return this.words850;
     } catch(e) {

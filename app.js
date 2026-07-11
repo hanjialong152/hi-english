@@ -17,7 +17,7 @@ let speakZoneExpanded = false;
 let allData = [];
 let recognizedText = '';
 let currentAudio = null;
-const AUDIO_VERSION = '?v=5'; // 音频版本号，修改后强制浏览器刷新缓存
+const AUDIO_VERSION = '?v=6'; // 音频版本号，修改后强制浏览器刷新缓存
 
 // ---- 初始化 ----
 document.addEventListener('DOMContentLoaded', () => {
