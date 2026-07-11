@@ -121,7 +121,9 @@ const HiEnglish = {
     return out;
   },
 
-  async fetchServerStudyData(empid) {
+  async fetchServerStudyData(empid, attempt) {
+    attempt = attempt || 1;
+    var MAX_RETRY = 3;
     try {
       var resp = await fetch(this.getServerUrl() + '/api/study-data?empid=' + encodeURIComponent(empid));
       var data = await resp.json();
@@ -134,10 +136,10 @@ const HiEnglish = {
         localStorage.setItem('hi_english_study', JSON.stringify(all));
         // 把合并后的真相回推服务端，确保服务端也拿到客户端持有的最新进度（自愈恢复）
         this.pushServerStudyData(empid, merged);
-        console.log('[Sync] 从服务端拉取并与本地合并学习数据成功');
+        console.log('[Sync] 从服务端拉取并与本地合并学习数据成功 (attempt ' + attempt + ')');
         return merged;
       }
-      console.log('[Sync] 服务端无学习数据');
+      console.log('[Sync] 服务端无学习数据 (attempt ' + attempt + ')');
       // 服务端无记录但本地有进度：把本地真相推上去，避免部署清空后本地进度丢不上来
       var all = JSON.parse(localStorage.getItem('hi_english_study') || '{}');
       if (all[empid]) {
@@ -146,7 +148,13 @@ const HiEnglish = {
       }
       return null;
     } catch(e) {
-      console.log('[Sync] 拉取学习数据失败:', e.message);
+      console.log('[Sync] 拉取学习数据失败 (attempt ' + attempt + '/' + MAX_RETRY + '):', e.message);
+      if (attempt < MAX_RETRY) {
+        // 退避重试：1s, 2s, 3s — 覆盖 Render 冷启动 / 网络抖动 / DNS 偶发失败
+        await new Promise(function(resolve) { setTimeout(resolve, 1000 * attempt); });
+        return this.fetchServerStudyData(empid, attempt + 1);
+      }
+      console.error('[Sync] 拉取学习数据最终失败，已重试' + MAX_RETRY + '次');
       return null;
     }
   },

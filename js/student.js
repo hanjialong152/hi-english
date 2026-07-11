@@ -31,12 +31,15 @@ async function init() {
   refreshUserInfo(user);
   startAccountWatchdog();
 
+  // 显示同步中提示（跨终端首次打开时用户能看到系统在拉数据，而非误以为丢数据）
+  _showSyncLoading(true);
+
   words = await HiEnglish.loadWords();
   var lessonsData = await HiEnglish.loadLessons();
   lessons = lessonsData.lessons || [];
 
   studyData = HiEnglish.getStudyData(user.empid);
-  // 从服务端拉取最新学习数据（跨终端同步）
+  // 从服务端拉取最新学习数据（跨终端同步）——带3次重试（common.js内退避）
   var serverData = await HiEnglish.fetchServerStudyData(user.empid);
   if (serverData) {
     studyData = serverData;
@@ -81,6 +84,35 @@ async function init() {
   if (studyData.basic.mastered.length >= 850) {
     studyData.business.unlocked = true;
   }
+
+  // 跨终端同步兜底：如果拉取到的数据看起来像全新账号（已学=0且已掌握=0），
+  // 可能是 Render 冷启动 / 网络抖动导致前3次重试全部落在服务端恢复过程中。
+  // 延迟2秒后再拉一次（此时服务端应已就绪），避免用户看到空数据以为丢进度。
+  var isFreshAccount = (!studyData.basic || studyData.basic.learned.length === 0) &&
+    (!studyData.basic || studyData.basic.mastered.length === 0) &&
+    (!studyData.business || studyData.business.learned.length === 0);
+  if (isFreshAccount && !window._syncRetryDone) {
+    window._syncRetryDone = true;
+    console.log('[Sync] 数据看起来像新账号，2秒后尝试延迟重拉...');
+    await new Promise(function(resolve) { setTimeout(resolve, 2000); });
+    var retryData = await HiEnglish.fetchServerStudyData(user.empid);
+    if (retryData && (retryData.basic.learned.length > 0 || retryData.basic.mastered.length > 0 || retryData.business.learned.length > 0)) {
+      studyData = retryData;
+      console.log('[Sync] 延迟重拉成功，已恢复学习数据');
+      // 重新确保结构完整
+      if (!studyData.basic) studyData.basic = { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: {}, weeklyTests: [], monthlyTests: [], totalSeconds: 0 };
+      if (!studyData.business) studyData.business = { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: {}, weeklyTests: [], monthlyTests: [], totalSeconds: 0, unlocked: false };
+      if (!studyData.basic.learnedDates) studyData.basic.learnedDates = {};
+      if (!studyData.business.learnedDates) studyData.business.learnedDates = {};
+      unifyCheckIns();
+      saveStudyData();
+    } else {
+      console.log('[Sync] 延迟重拉仍未拿到数据，确认为新账号或服务端确实无记录');
+    }
+  }
+
+  // 隐藏同步加载提示
+  _showSyncLoading(false);
 
   // 众测模式：从服务端拉取全局开关，开启则解锁商务英语并放开周测/月测时间限制
   fetch(HiEnglish.getServerUrl() + '/api/beta-config').then(function(r) { return r.json(); }).then(function(data) {
@@ -1191,7 +1223,7 @@ function uploadAndTranscribe() {
         // 短句宽限：单/双词目标（如 Why? / Okay.），确属朗读但 ASR 未识别，
         // 给封顶 80 的通过分，避免被无意义卡死（需满足最短时长，防误触静音）
         if (_tk.length <= 2 && dur >= 0.4) {
-          showScoreModal(80, '短句已记录，朗读通过（语音识别较弱时按通过计）');
+          showScoreModal(80, '朗读通过');
           _recApplyScore(recState.mode, 80);
         } else {
           var score = dur >= 1.5 ? 35 : 25;
@@ -2650,6 +2682,19 @@ function changeStudentPassword() {
 function closeModal(id) {
   var el = document.getElementById(id);
   if (el) el.classList.remove('show');
+}
+
+// ===== 同步加载提示（跨终端数据拉取时显示，避免用户误以为丢数据）=====
+var _syncEl = null;
+function _showSyncLoading(show) {
+  if (!_syncEl) {
+    _syncEl = document.createElement('div');
+    _syncEl.id = 'sync-loading';
+    _syncEl.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(255,255,255,0.95);padding:24px 36px;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.15);z-index:9999;text-align:center;font-size:15px;color:#333;display:none;';
+    _syncEl.innerHTML = '<div style="font-size:18px;margin-bottom:8px;">🔄</div><div>正在同步学习数据...</div>';
+    document.body.appendChild(_syncEl);
+  }
+  _syncEl.style.display = show ? 'block' : 'none';
 }
 
 // ===== Toast =====
