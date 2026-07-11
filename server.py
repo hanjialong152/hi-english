@@ -496,22 +496,29 @@ def load_json(filepath):
         return {}
 
 def save_json(filepath, data):
-    """保存 JSON 到本地文件 + 实时同步到 Supabase（配置类）。
+    """保存 JSON 到本地文件 + 实时持久化（Supabase 优先，GitHub data-sync 兜底）。
 
     学习数据(study_data.json)由 /api/study-data 路由单独 UPSERT 单用户行，
-    此处跳过以免重复写入。Supabase 为主存储，取代 GitHub 防抖推送。"""
+    此处跳过以免重复写入。配置类(users/admin/groups/...)优先写 Supabase；
+    当 Supabase 不可达（DNS失败/项目暂停）时，自动回退 GitHub data-sync 防抖推送，
+    确保任何配置变更（改密码/加学员/改分组）在 Render 部署/休眠后都不丢失。"""
     # 1. 写本地文件（原子操作，作为运行时缓存）
     tmp_path = filepath + '.tmp'
     with open(tmp_path, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
     os.replace(tmp_path, filepath)
-    # 2. 实时同步到 Supabase（主存储，根治发版丢数据）
+    # 2. 实时持久化：Supabase 优先，失败则 GitHub data-sync 兜底
     fname = os.path.basename(filepath)
+    _dirty_files.add(os.path.abspath(filepath))  # 标脏，进程退出时强制刷盘
     if fname == 'study_data.json':
         return  # 学习数据由 POST 路由单独 UPSERT 单用户行
     cfg_key = fname[:-5] if fname.endswith('.json') else fname  # 去 .json 后缀
     if supabase:
         sb_upsert_config(cfg_key, data)
+    elif GITHUB_TOKEN:
+        # Supabase 不可达 → 回退 GitHub（可靠兜底，避免配置变更随部署丢失）
+        schedule_sync(filepath, data)
+        print(f'[GitHub回退] 配置 {cfg_key} 已加入防抖推送队列', flush=True)
 
 def init_data_files():  # v-restart-trigger-20260711
     """初始化数据文件：启动时从 Supabase 拉取最新数据到本地缓存。
