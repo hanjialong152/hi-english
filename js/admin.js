@@ -31,10 +31,14 @@ function aNav(page, el) {
 }
 
 // ===== Helper: calculate scores for a user =====
+var BIZ_TOTAL_LESSONS = 116; // 商务英语总课数（与 data/business_lessons.json totalLessons 一致）
 function calcUserScores(empid) {
   var allStudyData = JSON.parse(localStorage.getItem('hi_english_study') || '{}');
   var sd = allStudyData[empid] || {basic: {mastered: [], weeklyTests: [], monthlyTests: []}, checkIns: []};
   var mastered = sd.basic && sd.basic.mastered ? sd.basic.mastered.length : 0;
+  // 商务英语进度（只读展示，不写入任何数据）
+  var bizLearned = sd.business && sd.business.learned ? sd.business.learned.length : 0;
+  var bizMastered = sd.business && sd.business.mastered ? sd.business.mastered.length : 0;
   // 使用统一打卡数据（与学员端一致）
   var checkIns = sd.checkIns || [];
   var completedDays = checkIns.filter(function(c) { return c.completed; }).length;
@@ -51,6 +55,7 @@ function calcUserScores(empid) {
   return {
     mastered: mastered, readIndex: readIndex, completedDays: completedDays,
     weeklyAvg: weeklyAvg, monthlyAvg: monthlyAvg, score: score, checkinRate: checkinRate,
+    bizLearned: bizLearned, bizMastered: bizMastered,
     basicComplete: readIndex >= 850, businessUnlocked: sd.business && sd.business.unlocked
   };
 }
@@ -63,6 +68,7 @@ function renderDashboard() {
   var activeThisWeek = 0;
   var totalScore = 0;
   var totalProgress = 0;
+  var totalBizProgress = 0;
   var totalMastered = 0;
   var totalCheckinDays = 0;
   var totalWeeklyScore = 0;
@@ -77,6 +83,7 @@ function renderDashboard() {
 
     totalScore += s.score;
     totalProgress += s.readIndex;
+    totalBizProgress += s.bizLearned;
     totalMastered += s.mastered;
     totalCheckinDays += s.completedDays;
     totalCheckinRate += s.checkinRate;
@@ -87,6 +94,7 @@ function renderDashboard() {
 
   var avgScore = totalStudents > 0 ? Math.round(totalScore / totalStudents * 10) / 10 : 0;
   var avgProgress = totalStudents > 0 ? Math.round(totalProgress / totalStudents) : 0;
+  var avgBizProgress = totalStudents > 0 ? Math.round(totalBizProgress / totalStudents * 10) / 10 : 0;
   var avgMastered = totalStudents > 0 ? Math.round(totalMastered / totalStudents) : 0;
   var avgCheckinDays = totalStudents > 0 ? Math.round(totalCheckinDays / totalStudents) : 0;
   var avgWeekly = weeklyCount > 0 ? Math.round(totalWeeklyScore / weeklyCount) : 0;
@@ -100,11 +108,12 @@ function renderDashboard() {
       '<div class="stat-card"><div class="stat-val">' + avgCheckinRate + '%</div><div class="stat-key">打卡率</div></div>' +
       '<div class="stat-card"><div class="stat-val">' + avgScore + '</div><div class="stat-key">平均分</div></div>' +
     '</div>' +
-    '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;">' +
+    '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px;">' +
       '<div class="stat-card"><div class="stat-val">' + avgProgress + '/850</div><div class="stat-key">平均学习进度</div></div>' +
       '<div class="stat-card"><div class="stat-val">' + avgMastered + '</div><div class="stat-key">平均已掌握</div></div>' +
       '<div class="stat-card"><div class="stat-val">' + avgCheckinDays + '</div><div class="stat-key">平均打卡天数</div></div>' +
       '<div class="stat-card"><div class="stat-val">' + avgWeekly + '</div><div class="stat-key">平均周测分</div></div>' +
+      '<div class="stat-card"><div class="stat-val">' + avgBizProgress + '/' + BIZ_TOTAL_LESSONS + '</div><div class="stat-key">平均商务进度</div></div>' +
     '</div>';
 
   // Personal ranking - with monthly scores
@@ -416,7 +425,9 @@ function renderStudentTable() {
       '<td>' + u.name + '</td>' +
       '<td>' + (u.group || '') + '</td>' +
       '<td>' + s.readIndex + '/850</td>' +
+      '<td>' + (s.bizLearned > 0 ? s.bizLearned + '/' + BIZ_TOTAL_LESSONS : '-') + '</td>' +
       '<td>' + s.mastered + '</td>' +
+      '<td>' + (s.bizMastered > 0 ? s.bizMastered : '-') + '</td>' +
       '<td>' + s.completedDays + '</td>' +
       '<td>' + s.score + '</td>' +
       '<td><span class="status-tag ' + u.status + '">' + (u.status === 'active' ? '启用' : '禁用') + '</span></td>' +
@@ -428,7 +439,7 @@ function renderStudentTable() {
         '<button class="btn btn-danger" style="padding:4px 10px;font-size:12px;" onclick="deleteStudent(\'' + u.empid + '\')">删除</button>' +
       '</td>' +
     '</tr>';
-  }).join('') || '<tr><td colspan="9" style="text-align:center;color:var(--text-sub);padding:20px;">暂无学员数据</td></tr>';
+  }).join('') || '<tr><td colspan="11" style="text-align:center;color:var(--text-sub);padding:20px;">暂无学员数据</td></tr>';
 }
 
 function showAddStudentModal() {
@@ -930,9 +941,9 @@ function exportStudentData() {
   var users = HiEnglish.getUsers();
   var rows = Object.values(users).map(function(u) {
     var s = calcUserScores(u.empid);
-    return [u.empid, u.name, u.group, s.readIndex + '/850', s.mastered, s.completedDays, s.score, u.status === 'active' ? '启用' : '禁用'];
+    return [u.empid, u.name, u.group, s.readIndex + '/850', (s.bizLearned > 0 ? s.bizLearned + '/' + BIZ_TOTAL_LESSONS : '-'), s.mastered, (s.bizMastered > 0 ? s.bizMastered : '-'), s.completedDays, s.score, u.status === 'active' ? '启用' : '禁用'];
   });
-  HiEnglish.exportExcel('学员数据.xls', ['账号', '姓名', '组别', '学习进度', '已掌握', '打卡天数', '平均分', '状态'], rows, '学员数据');
+  HiEnglish.exportExcel('学员数据.xls', ['账号', '姓名', '组别', '基础进度', '商务进度', '基础掌握', '商务掌握', '打卡天数', '平均分', '状态'], rows, '学员数据');
   showToast('学员数据已导出');
 }
 
@@ -969,7 +980,8 @@ function exportAllReport() {
   var rows = Object.values(users).map(function(u) {
     var s = calcUserScores(u.empid);
     var stageStatus = s.basicComplete ? '基础词汇已完成' : '基础词汇进行中(' + s.readIndex + '/850)';
-    if (s.businessUnlocked) stageStatus += ' + 商务英语进行中';
+    if (s.bizLearned > 0) stageStatus += ' + 商务英语(' + s.bizLearned + '/' + BIZ_TOTAL_LESSONS + ', 掌握' + s.bizMastered + ')';
+    else if (s.businessUnlocked) stageStatus += ' + 商务英语(未开始)';
     return [u.empid, u.name, u.group, stageStatus, s.checkinRate + '%', s.weeklyAvg, s.monthlyAvg || '-', s.score];
   });
   HiEnglish.exportExcel('全员学习报告.xls', ['账号', '姓名', '组别', '学习阶段完成情况', '月度打卡完成率', '周测成绩', '月测成绩', '累计总成绩'], rows, '全员学习报告');
