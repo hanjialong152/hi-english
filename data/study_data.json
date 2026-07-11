@@ -714,7 +714,6 @@
       "learnedDates": {},
       "mastered": [],
       "speakScores": {},
-      "checkIns": [],
       "weeklyTests": [],
       "monthlyTests": [],
       "totalSeconds": 0
@@ -726,12 +725,12 @@
       "learnedDates": {},
       "mastered": [],
       "speakScores": {},
-      "checkIns": [],
       "weeklyTests": [],
       "monthlyTests": [],
       "totalSeconds": 0,
       "unlocked": false
-    }
+    },
+    "checkIns": []
   },
   "339911": {
     "basic": {
