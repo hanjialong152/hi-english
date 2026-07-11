@@ -361,25 +361,13 @@
   },
   "100256": {
     "basic": {
-      "checkIns": [
-        {
-          "completed": false,
-          "date": "2026-07-08",
-          "seconds": 23
-        },
-        {
-          "completed": false,
-          "date": "2026-07-09",
-          "seconds": 160
-        }
-      ],
       "learned": [
-        1,
-        2,
-        3,
-        4,
-        5,
-        6
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6"
       ],
       "learnedDates": {
         "1": "2026-07-10",
@@ -397,31 +385,31 @@
       "readIndex": 6,
       "speakScores": {
         "1": {
-          "ex1": 85,
-          "ex2": 85,
-          "ex3": 85,
-          "phrase": 85
+          "ex1": 85.0,
+          "ex2": 85.0,
+          "ex3": 85.0,
+          "phrase": 85.0
         },
         "2": {
-          "ex1": 85,
-          "ex2": 85,
-          "ex3": 85,
-          "phrase": 85
+          "ex1": 85.0,
+          "ex2": 85.0,
+          "ex3": 85.0,
+          "phrase": 85.0
         },
         "3": {
-          "ex1": 91,
-          "ex2": 85,
-          "ex3": 58,
-          "phrase": 85
+          "ex1": 91.0,
+          "ex2": 85.0,
+          "ex3": 58.0,
+          "phrase": 85.0
         },
         "4": {
-          "ex1": 85,
-          "ex2": 85,
-          "ex3": 11,
-          "phrase": 85
+          "ex1": 85.0,
+          "ex2": 85.0,
+          "ex3": 11.0,
+          "phrase": 85.0
         },
         "5": {
-          "phrase": 21
+          "phrase": 21.0
         }
       },
       "spellIndex": 0,
@@ -429,9 +417,8 @@
       "weeklyTests": []
     },
     "business": {
-      "checkIns": [],
       "learned": [
-        1
+        "1"
       ],
       "learnedDates": {
         "1": "2026-07-10"
@@ -447,19 +434,19 @@
     },
     "checkIns": [
       {
-        "completed": false,
         "date": "2026-07-08",
-        "seconds": 23
+        "seconds": 23,
+        "completed": false
       },
       {
-        "completed": false,
         "date": "2026-07-09",
-        "seconds": 160
+        "seconds": 160,
+        "completed": false
       },
       {
-        "completed": false,
         "date": "2026-07-10",
-        "seconds": 262
+        "seconds": 262,
+        "completed": false
       }
     ]
   },
