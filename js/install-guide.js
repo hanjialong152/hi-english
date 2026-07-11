@@ -252,14 +252,22 @@
     if (m) m.classList.remove('show');
   }
 
-  // 登录后自动弹（每次进入学员端都弹；关闭仅隐藏当前弹窗，下次进入仍会再弹）
+  var SESSION_KEY = 'dg_autoshow_dismiss';
+  function markAutoShown() { try { sessionStorage.setItem(SESSION_KEY, '1'); } catch (e) {} }
+  function shouldAutoShow() { try { return !sessionStorage.getItem(SESSION_KEY); } catch (e) { return true; } }
+  function resetAutoShow() { try { sessionStorage.removeItem(SESSION_KEY); } catch (e) {} }
+
+  // 登录后自动弹；同一浏览器会话内刷新页面不重复弹，仅重新登录（doStudentLogin 清标记）才再弹
   function maybeAutoShow() {
+    if (!shouldAutoShow()) return;
     showDownloadGuide();
+    markAutoShown();
   }
 
   window.InstallGuide = {
     maybeAutoShow: maybeAutoShow,
     showDownloadGuide: showDownloadGuide,
-    closeModal: closeModal
+    closeModal: closeModal,
+    resetAutoShow: resetAutoShow
   };
 })();
