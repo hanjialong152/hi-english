@@ -614,7 +614,6 @@
   },
   "073508": {
     "basic": {
-      "checkIns": [],
       "learned": [],
       "learnedDates": {},
       "mastered": [],
@@ -622,7 +621,7 @@
       "readIndex": 0,
       "speakScores": {
         "1": {
-          "phrase": 13
+          "phrase": 13.0
         }
       },
       "spellIndex": 0,
@@ -630,7 +629,6 @@
       "weeklyTests": []
     },
     "business": {
-      "checkIns": [],
       "learned": [],
       "learnedDates": {},
       "mastered": [],
