@@ -60,6 +60,95 @@ _dirty_lock = threading.Lock()
 # 所有 GitHub 写入串行锁：避免并发写同一文件导致 sha 冲突 / 互相覆盖丢数据
 github_push_lock = threading.Lock()
 
+# ============================================================
+# Supabase 云数据库（主存储，根治"发版丢数据"）
+# 2026-07-11 起，学习数据与配置统一持久化到 Supabase Postgres，
+# 不受 Render 免费版文件系统重置 / 部署 / 休眠影响。
+# 凭证通过环境变量注入（SUPABASE_URL / SUPABASE_KEY=service_role），
+# 不硬编码到代码，避免泄露。本地/生产未配置时降级为本地文件（兼容开发）。
+# ============================================================
+SUPABASE_URL = os.environ.get('SUPABASE_URL', '')
+SUPABASE_KEY = os.environ.get('SUPABASE_KEY', '')
+supabase = None
+if SUPABASE_URL and SUPABASE_KEY:
+    try:
+        from supabase import create_client
+        supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+        print('[Supabase] 已连接:', SUPABASE_URL, flush=True)
+    except Exception as e:
+        supabase = None
+        print('[Supabase] 初始化失败（将降级本地文件）:', e, flush=True)
+else:
+    print('[Supabase] 未配置 SUPABASE_URL/SUPABASE_KEY，使用本地文件存储（开发模式）', flush=True)
+
+
+def sb_upsert_study(empid, data, retry=2):
+    """把单个学员学习数据 UPSERT 到 Supabase study_data 表（按 empid 单行）。"""
+    if not supabase or not empid:
+        return False
+    for attempt in range(retry + 1):
+        try:
+            supabase.table('study_data').upsert(
+                {'empid': empid, 'data': data, 'updated_at': 'now()'}
+            ).execute()
+            return True
+        except Exception as e:
+            print(f'[Supabase] upsert study {empid} 失败(第{attempt+1}次): {e}', flush=True)
+    return False
+
+
+def sb_get_study(empid):
+    """从 Supabase 读取单个学员学习数据。"""
+    if not supabase or not empid:
+        return None
+    try:
+        res = supabase.table('study_data').select('data').eq('empid', empid).execute()
+        if res.data:
+            return res.data[0]['data']
+    except Exception as e:
+        print(f'[Supabase] get study {empid} 失败: {e}', flush=True)
+    return None
+
+
+def sb_get_all_study():
+    """读取全部学员学习数据（排行榜 / 管理后台用）。"""
+    if not supabase:
+        return {}
+    try:
+        res = supabase.table('study_data').select('empid,data').execute()
+        return {r['empid']: r['data'] for r in (res.data or [])}
+    except Exception as e:
+        print(f'[Supabase] get all study 失败: {e}', flush=True)
+        return {}
+
+
+def sb_upsert_config(key, value, retry=2):
+    """把配置类 JSON（users/admin/groups/...）UPSERT 到 app_config 表。"""
+    if not supabase or not key:
+        return False
+    for attempt in range(retry + 1):
+        try:
+            supabase.table('app_config').upsert(
+                {'key': key, 'value': value, 'updated_at': 'now()'}
+            ).execute()
+            return True
+        except Exception as e:
+            print(f'[Supabase] upsert config {key} 失败(第{attempt+1}次): {e}', flush=True)
+    return False
+
+
+def sb_get_config(key, default=None):
+    """从 app_config 读取配置。"""
+    if not supabase or not key:
+        return default
+    try:
+        res = supabase.table('app_config').select('value').eq('key', key).execute()
+        if res.data:
+            return res.data[0]['value']
+    except Exception as e:
+        print(f'[Supabase] get config {key} 失败: {e}', flush=True)
+    return default
+
 
 def github_api_get(path):
     """从 GitHub data-sync 分支获取文件内容"""
@@ -388,52 +477,69 @@ def load_json(filepath):
         return {}
 
 def save_json(filepath, data):
-    """保存 JSON 到本地文件 + 异步同步到 GitHub（防抖3秒）"""
-    # 1. 写本地文件（原子操作）
+    """保存 JSON 到本地文件 + 实时同步到 Supabase（配置类）。
+
+    学习数据(study_data.json)由 /api/study-data 路由单独 UPSERT 单用户行，
+    此处跳过以免重复写入。Supabase 为主存储，取代 GitHub 防抖推送。"""
+    # 1. 写本地文件（原子操作，作为运行时缓存）
     tmp_path = filepath + '.tmp'
     with open(tmp_path, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
     os.replace(tmp_path, filepath)
-    # 标记为脏文件，进程退出时强制刷到 GitHub（防部署丢数据）
-    with _dirty_lock:
-        _dirty_files.add(filepath)
-    # 2. 异步同步到 GitHub（防抖3秒，避免频繁推送）
-    schedule_sync(filepath, data)
+    # 2. 实时同步到 Supabase（主存储，根治发版丢数据）
+    fname = os.path.basename(filepath)
+    if fname == 'study_data.json':
+        return  # 学习数据由 POST 路由单独 UPSERT 单用户行
+    cfg_key = fname[:-5] if fname.endswith('.json') else fname  # 去 .json 后缀
+    if supabase:
+        sb_upsert_config(cfg_key, data)
 
 def init_data_files():
-    """初始化数据文件：启动时从 GitHub data-sync 分支拉取最新数据，与本地合并（本地优先）。
-    
-    关键变更（2026-07-11 修复）：之前是直接覆盖，导致 Render 重启后
-    用 GitHub 旧/空数据覆盖了客户端刚推送的进度。现在改为合并策略：
-    - study_data.json: 按用户逐个合并（learned/mastered取并集、checkIns取最大秒数）
-    - users.json/admin.json/groups.json: 远程覆盖（服务端配置以远程为准）
-    """
-    if GITHUB_TOKEN:
-        print('[Sync] 从 GitHub data-sync 分支拉取最新数据...', flush=True)
+    """初始化数据文件：启动时从 Supabase 拉取最新数据到本地缓存。
+
+    2026-07-11 起改为 Supabase 主存储（根治发版丢数据）：
+    - 配置类(users/admin/groups/...)：从 app_config 表拉取
+    - study_data：从 study_data 表全量拉取
+    本地文件仅作运行时缓存，Render 重启/部署后从 Supabase 重建，永不丢失。
+    未配置 Supabase 时回退到 GitHub data-sync（兼容开发/迁移过渡）。"""
+    if supabase:
+        print('[Supabase] 从数据库加载最新数据到本地缓存...', flush=True)
+        for key in ['users', 'admin', 'groups', 'messages', 'dingtalk', 'beta']:
+            remote = sb_get_config(key)
+            if remote is not None:
+                try:
+                    with open(os.path.join(DATA_DIR, key + '.json'), 'w', encoding='utf-8') as f:
+                        json.dump(remote, f, ensure_ascii=False, indent=2)
+                except Exception as e:
+                    print(f'[Supabase] 写本地缓存 {key} 失败: {e}', flush=True)
+        all_sd = sb_get_all_study()
+        try:
+            with open(os.path.join(DATA_DIR, 'study_data.json'), 'w', encoding='utf-8') as f:
+                json.dump(all_sd or {}, f, ensure_ascii=False, indent=2)
+            print(f'[Supabase] 已加载 {len(all_sd)} 个学员学习数据', flush=True)
+        except Exception as e:
+            print(f'[Supabase] 写本地 study_data 缓存失败: {e}', flush=True)
+    elif GITHUB_TOKEN:
+        # 兼容回退：未配置 Supabase 时使用原 GitHub 逻辑
+        print('[Sync] 未配置 Supabase，回退 GitHub data-sync 拉取...', flush=True)
         for filename in ['users.json', 'study_data.json', 'admin.json', 'groups.json', 'messages.json', 'dingtalk.json', 'beta.json']:
             rel_path = f'data/{filename}'
             remote_data = github_api_get(rel_path)
             local_path = os.path.join(DATA_DIR, filename)
             if remote_data is not None:
-                # study_data.json 必须合并而非覆盖——防止用 GitHub 旧快照抹掉客户端刚推送的进度
                 if filename == 'study_data.json' and os.path.exists(local_path):
                     local_data = load_json(local_path) or {}
-                    # 按用户逐个合并：learned/mastered 并集、数值取最大、checkIns 合并
                     for uid, remote_sd in (remote_data or {}).items():
                         local_sd = local_data.get(uid) or {}
                         merged_sd = merge_study_data(local_sd, remote_sd)
                         merged_sd = unify_checkins(merged_sd)
                         local_data[uid] = merged_sd
-                    # 保留本地有但远程没有的用户（不能丢）
                     with open(local_path, 'w', encoding='utf-8') as f:
                         json.dump(local_data, f, ensure_ascii=False, indent=2)
-                    print(f'[Sync] 已合并 {filename} ({len(local_data)} users, preserved local progress)', flush=True)
+                    print(f'[Sync] 已合并 {filename} ({len(local_data)} users)', flush=True)
                 else:
                     with open(local_path, 'w', encoding='utf-8') as f:
                         json.dump(remote_data, f, ensure_ascii=False, indent=2)
-                    print(f'[Sync] 已拉取 {filename} ({len(str(remote_data))} bytes)', flush=True)
-            else:
-                print(f'[Sync] {filename} 远程不存在，使用本地默认值', flush=True)
 
     # 本地文件不存在时创建默认值
     users_path = os.path.join(DATA_DIR, 'users.json')
@@ -849,8 +955,12 @@ def handle_toggle_user():
 @app.route('/api/study-data', methods=['GET'])
 def handle_get_study_data():
     empid = (request.args.get('empid') or '').strip()
-    study_data = load_json(os.path.join(DATA_DIR, 'study_data.json'))
-    data = study_data.get(empid)
+    # 优先从 Supabase 实时读取（管理后台/跨终端一致的唯一真相源）
+    data = sb_get_study(empid)
+    if data is None:
+        # 降级：读本地缓存
+        study_data = load_json(os.path.join(DATA_DIR, 'study_data.json'))
+        data = study_data.get(empid)
     if not data:
         return jsonify({'success': True, 'studyData': None})
     return jsonify({'success': True, 'studyData': data})
@@ -858,11 +968,10 @@ def handle_get_study_data():
 
 @app.route('/api/all-study-data', methods=['GET'])
 def handle_all_study_data():
-    """学员端排行榜专用：返回全体学员学习数据。
-    根因：学员端排行榜需要全体学习数据，但过去只从 localStorage 读取，
-    手机端/清缓存后本地只有自己一条，导致其他人分数全为0、与管理员端不一致。
-    排行榜本就公开展示各人姓名/小组/得分，故此接口无需鉴权。"""
-    study_data = load_json(os.path.join(DATA_DIR, 'study_data.json'))
+    """学员端排行榜专用：返回全体学员学习数据（实时从 Supabase 读取，保证全员一致）。"""
+    study_data = sb_get_all_study()
+    if not study_data:
+        study_data = load_json(os.path.join(DATA_DIR, 'study_data.json'))
     return jsonify({'success': True, 'studyData': study_data})
 
 
@@ -881,18 +990,13 @@ def handle_save_study_data():
         all_data[empid] = merged
         # 本地原子写 + 标脏 + 防抖兜底
         save_json(study_path, all_data)
-    # 写穿（write-through）：同步推到 GitHub data-sync，确保本请求返回即已持久化，
-    # 之后无论 Render 部署杀进程、还是用户清缓存，服务端数据都已落盘，不会丢失。
+    # 写穿（write-through）：实时 UPSERT 到 Supabase（按 empid 单行），
+    # 确保本请求返回即已持久化，Render 部署/休眠/清缓存都不丢。
     try:
-        persisted = push_study_data_immediate()
+        persisted = sb_upsert_study(empid, merged)
     except Exception as e:
         persisted = False
-        print(f'[Sync] study-data 写穿异常: {e}', flush=True)
-    if persisted:
-        with _dirty_lock:
-            _dirty_files.discard(study_path)
-    else:
-        print('[Sync] study-data 写穿失败，依赖防抖/退出强刷兜底', flush=True)
+        print(f'[Supabase] study-data 写入异常: {e}', flush=True)
     return jsonify({'success': True, 'persisted': bool(persisted)})
 
 
@@ -1113,7 +1217,10 @@ def handle_admin_get_study_data():
     admin = load_json(os.path.join(DATA_DIR, 'admin.json'))
     if token != admin.get('admin', {}).get('session_token', ''):
         return jsonify({'success': False, 'error': '未授权'}), 401
-    study_data = load_json(os.path.join(DATA_DIR, 'study_data.json'))
+    # 实时从 Supabase 读取全体学习数据，保证管理后台与学员端一致
+    study_data = sb_get_all_study()
+    if not study_data:
+        study_data = load_json(os.path.join(DATA_DIR, 'study_data.json'))
     return jsonify({'success': True, 'studyData': study_data})
 
 
@@ -1376,10 +1483,9 @@ if __name__ == '__main__':
     except ImportError:
         print('[WARN] speech_recognition 未安装，/api/transcribe 将无法使用', flush=True)
 
-    # 注册进程退出时的数据刷盘：确保部署/重启时最后几秒数据不丢失
+    # 进程退出时无需刷盘：数据已实时写入 Supabase，不再依赖本地文件/GitHub
     def _on_shutdown(*args):
-        print('[Shutdown] 收到退出信号，强制刷新数据到 GitHub data-sync...', flush=True)
-        flush_all_to_github()
+        print('[Shutdown] 进程退出（数据已实时持久化到 Supabase）', flush=True)
     atexit.register(_on_shutdown)
     def _sig_handler(signum, frame):
         _on_shutdown(signum, frame)

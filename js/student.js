@@ -111,8 +111,54 @@ async function init() {
     }
   }
 
+  // 全量延迟兜底（5秒后）：无论是否像新账号，都再拉一次服务端数据做静默对比更新。
+  // 覆盖场景：Chrome刚完成打卡→推送还在路上→Edge立刻打开→首次拉到旧打卡数据（59%）。
+  // 5秒足够Chrome的400ms防抖+网络往返+服务端处理完成。
+  setTimeout(function() {
+    if (!HiEnglish.getCurrentUser()) return;
+    HiEnglish.fetchServerStudyData(user.empid).then(function(latestData) {
+      if (!latestData) return;
+      var todayStr = HiEnglish.today();
+      var localToday = (studyData.checkIns||[]).find(function(c){return c.date===todayStr;});
+      var serverToday = (latestData.checkIns||[]).find(function(c){return c.date===todayStr;});
+      var hasNewerCheckin = serverToday && (
+        (serverToday.seconds||0) > (localToday&&localToday.seconds||0) ||
+        (serverToday.completed && !(localToday&&localToday.completed))
+      );
+      var hasMoreProgress =
+        (latestData.basic&&latestData.basic.learned.length||0) > (studyData.basic&&studyData.basic.learned.length||0) ||
+        (latestData.basic&&latestData.basic.mastered.length||0) > (studyData.basic&&studyData.basic.mastered.length||0) ||
+        (latestData.business&&latestData.business.learned.length||0) > (studyData.business&&studyData.business.learned.length||0);
+      if (hasNewerCheckin || hasMoreProgress) {
+        console.log('[Sync] 5秒兜底重拉发现更新，静默合并', hasNewerCheckin?'(打卡)':'(进度)');
+        studyData = latestData;
+        if (!studyData.basic) studyData.basic = { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: [], weeklyTests: [], monthlyTests: [], totalSeconds: 0 };
+        if (!studyData.business) studyData.business = { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: [], weeklyTests: [], monthlyTests: [], totalSeconds: 0, unlocked: false };
+        unifyCheckIns();
+        saveStudyData();
+        renderHome();
+        renderCheckIn();
+        renderStageSwitcher();
+      }
+    });
+  }, 5000);
+
   // 隐藏同步加载提示
   _showSyncLoading(false);
+
+  // ===== 强制推送：init完成后立即把本地真相推到服务端（无论是否变化）=====
+  (function forcePushOnInit() {
+    var u = HiEnglish.getCurrentUser();
+    if (u && studyData) {
+      // 延迟500ms确保结构完整，然后立即推送一次
+      setTimeout(function() {
+        HiEnglish.pushServerStudyDataImmediate(u.empid, studyData);
+        console.log('[Sync] init完成，已强制推送本地数据到服务端');
+      }, 500);
+    }
+  })();
+
+  // 注：手动同步按钮已移除，跨终端同步现由系统自动完成（登录即同步 + 实时推送 + 可见性自愈）
 
   // 众测模式：从服务端拉取全局开关，开启则解锁商务英语并放开周测/月测时间限制
   fetch(HiEnglish.getServerUrl() + '/api/beta-config').then(function(r) { return r.json(); }).then(function(data) {
@@ -128,6 +174,9 @@ async function init() {
   renderStageSwitcher();
   renderHome();
   updateMessageBadge();
+
+  // 启动周期性同步（每60秒静默推一次），兜底防止单次推送因网络/后台限制失败
+  HiEnglish.startPeriodicSync(user.empid, function() { return studyData; });
   
   // Initialize recording button event delegation
   _setupRecEventDelegation();
@@ -141,6 +190,24 @@ async function init() {
   document.addEventListener('visibilitychange', function() {
     if (document.visibilityState === 'hidden') {
       HiEnglish.flushServerStudyData();
+    } else if (document.visibilityState === 'visible') {
+      // 页面回到前台：立即推送本地真相 + 拉取服务端最新
+      var u = HiEnglish.getCurrentUser();
+      if (u && studyData) {
+        HiEnglish.pushServerStudyDataImmediate(u.empid, studyData);
+        HiEnglish.fetchServerStudyData(u.empid).then(function(serverData) {
+          if (serverData) {
+            studyData = serverData;
+            if (!studyData.basic) studyData.basic = { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: [], weeklyTests: [], monthlyTests: [], totalSeconds: 0 };
+            if (!studyData.business) studyData.business = { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: [], weeklyTests: [], monthlyTests: [], totalSeconds: 0, unlocked: false };
+            unifyCheckIns();
+            saveStudyData();
+            renderHome();
+            renderCheckIn();
+            renderStageSwitcher();
+          }
+        });
+      }
     }
   });
   window.addEventListener('beforeunload', function() {
@@ -2602,6 +2669,8 @@ function startStudyTimer() {
       } else {
         showToast('🎉 今日打卡完成！');
       }
+      // 关键状态变化：立即推送（绕过防抖），确保跨终端秒级可见
+      HiEnglish.pushServerStudyDataImmediate(HiEnglish.getCurrentUser().empid, studyData);
     }
     saveStudyData();
     renderCheckIn();

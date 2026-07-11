@@ -13,3 +13,6 @@ fastdtw>=0.3.4
 # 科学计算（scipy 会自动装 numpy）
 scipy>=1.10.0
 numpy>=1.23.0
+
+# Supabase 云数据库（主存储，根治发版丢数据）
+supabase>=2.0.0
