@@ -506,6 +506,15 @@ def init_data_files():
         print('[Supabase] 从数据库加载最新数据到本地缓存...', flush=True)
         for key in ['users', 'admin', 'groups', 'messages', 'dingtalk', 'beta']:
             remote = sb_get_config(key)
+            # 关键修复：app_config 为空时回退读 GitHub users.json，
+            # 避免 Supabase 配置后丢失已注册的学员账号（之前误创建默认张三/李四/王五）
+            if remote is None and GITHUB_TOKEN:
+                gh_data = github_api_get(f'data/{key}.json')
+                if gh_data is not None:
+                    remote = gh_data
+                    # 同步写入 app_config，之后启动不再依赖 GitHub
+                    sb_upsert_config(key, remote)
+                    print(f'[Supabase] app_config[{key}] 为空，回退 GitHub 加载并写库', flush=True)
             if remote is not None:
                 try:
                     with open(os.path.join(DATA_DIR, key + '.json'), 'w', encoding='utf-8') as f:
