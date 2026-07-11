@@ -269,6 +269,35 @@ def merge_study_data(existing, incoming):
     return out
 
 
+def unify_checkins(sd):
+    """统一打卡字段：将 basic/business 下的 checkIns 合并进顶层 checkIns（按 date 去重，
+    seconds 取最大、completed 取或），并删除 sub-field，使顶层 checkIns 成为唯一真相。
+    幂等、安全：顶层已含全部数据时不会丢失任何记录。"""
+    if not isinstance(sd, dict):
+        return sd
+    src = list(sd.get('checkIns') or [])
+    for stage in ('basic', 'business'):
+        s = sd.get(stage)
+        if isinstance(s, dict):
+            src += list(s.get('checkIns') or [])
+    ci = {}
+    for arr in src:
+        if not isinstance(arr, dict) or not arr.get('date'):
+            continue
+        d = arr['date']
+        cur = ci.get(d, {'date': d, 'seconds': 0, 'completed': False})
+        cur['seconds'] = max(int(cur.get('seconds') or 0), int(arr.get('seconds') or 0))
+        if arr.get('completed'):
+            cur['completed'] = True
+        ci[d] = cur
+    sd['checkIns'] = list(ci.values())
+    for stage in ('basic', 'business'):
+        s = sd.get(stage)
+        if isinstance(s, dict) and 'checkIns' in s:
+            del s['checkIns']
+    return sd
+
+
 # ---- 数据存储工具函数 ----
 def hash_password(password, salt=None):
     if salt is None:
@@ -419,8 +448,8 @@ def init_data_files():
         default_study = {}
         for empid, name, group in default_students:
             default_study[empid] = {
-                'basic': {'readIndex': 0, 'spellIndex': 0, 'learned': [], 'learnedDates': {}, 'mastered': [], 'speakScores': {}, 'checkIns': [], 'weeklyTests': [], 'monthlyTests': [], 'totalSeconds': 0},
-                'business': {'readIndex': 0, 'spellIndex': 0, 'learned': [], 'learnedDates': {}, 'mastered': [], 'speakScores': {}, 'checkIns': [], 'weeklyTests': [], 'monthlyTests': [], 'totalSeconds': 0, 'unlocked': empid == '100003'}
+                'basic': {'readIndex': 0, 'spellIndex': 0, 'learned': [], 'learnedDates': {}, 'mastered': [], 'speakScores': {}, 'weeklyTests': [], 'monthlyTests': [], 'totalSeconds': 0},
+                'business': {'readIndex': 0, 'spellIndex': 0, 'learned': [], 'learnedDates': {}, 'mastered': [], 'speakScores': {}, 'weeklyTests': [], 'monthlyTests': [], 'totalSeconds': 0, 'unlocked': empid == '100003'}
             }
         save_json(study_path, default_study)
         # 保存默认分组
@@ -534,8 +563,8 @@ def handle_register():
         save_json(os.path.join(DATA_DIR, 'users.json'), users)
         study_data = load_json(os.path.join(DATA_DIR, 'study_data.json'))
         study_data[empid] = {
-            'basic': {'readIndex': 0, 'spellIndex': 0, 'learned': [], 'learnedDates': {}, 'mastered': [], 'speakScores': {}, 'checkIns': [], 'weeklyTests': [], 'monthlyTests': [], 'totalSeconds': 0},
-            'business': {'readIndex': 0, 'spellIndex': 0, 'learned': [], 'learnedDates': {}, 'mastered': [], 'speakScores': {}, 'checkIns': [], 'weeklyTests': [], 'monthlyTests': [], 'totalSeconds': 0, 'unlocked': False}
+            'basic': {'readIndex': 0, 'spellIndex': 0, 'learned': [], 'learnedDates': {}, 'mastered': [], 'speakScores': {}, 'weeklyTests': [], 'monthlyTests': [], 'totalSeconds': 0},
+            'business': {'readIndex': 0, 'spellIndex': 0, 'learned': [], 'learnedDates': {}, 'mastered': [], 'speakScores': {}, 'weeklyTests': [], 'monthlyTests': [], 'totalSeconds': 0, 'unlocked': False}
         }
         save_json(os.path.join(DATA_DIR, 'study_data.json'), study_data)
     return jsonify({'success': True, 'message': f'已添加学员 {name}，初始密码 {DEFAULT_PASSWORD}'})
@@ -568,8 +597,8 @@ def handle_import_students():
                 'last_login': 0, 'login_count': 0, 'must_change_password': False
             }
             study_data[empid] = {
-                'basic': {'readIndex': 0, 'spellIndex': 0, 'learned': [], 'learnedDates': {}, 'mastered': [], 'speakScores': {}, 'checkIns': [], 'weeklyTests': [], 'monthlyTests': [], 'totalSeconds': 0},
-                'business': {'readIndex': 0, 'spellIndex': 0, 'learned': [], 'learnedDates': {}, 'mastered': [], 'speakScores': {}, 'checkIns': [], 'weeklyTests': [], 'monthlyTests': [], 'totalSeconds': 0, 'unlocked': False}
+            'basic': {'readIndex': 0, 'spellIndex': 0, 'learned': [], 'learnedDates': {}, 'mastered': [], 'speakScores': {}, 'weeklyTests': [], 'monthlyTests': [], 'totalSeconds': 0},
+            'business': {'readIndex': 0, 'spellIndex': 0, 'learned': [], 'learnedDates': {}, 'mastered': [], 'speakScores': {}, 'weeklyTests': [], 'monthlyTests': [], 'totalSeconds': 0, 'unlocked': False}
             }
             added += 1
         save_json(os.path.join(DATA_DIR, 'users.json'), users)
@@ -677,7 +706,7 @@ def handle_unlock_business():
         sd = study_data.get(empid) or {}
         if not isinstance(sd.get('business'), dict):
             sd['business'] = {'readIndex': 0, 'spellIndex': 0, 'learned': [], 'learnedDates': {},
-                              'mastered': [], 'speakScores': {}, 'checkIns': [],
+                              'mastered': [], 'speakScores': {},
                               'weeklyTests': [], 'monthlyTests': [], 'totalSeconds': 0, 'unlocked': False}
         sd['business']['unlocked'] = bool(unlock)
         study_data[empid] = sd
@@ -821,7 +850,10 @@ def handle_save_study_data():
     with data_lock:
         all_data = load_json(study_path)
         # 合并而非覆盖：避免部署/多端并发时互相覆盖丢失数据
-        all_data[empid] = merge_study_data(all_data.get(empid), sd)
+        sd = unify_checkins(sd)  # 先把传入数据里的 basic/business.checkIns 归并到顶层
+        merged = merge_study_data(all_data.get(empid), sd)
+        unify_checkins(merged)  # 收敛为单一顶层 checkIns，清理 sub-field
+        all_data[empid] = merged
         # 本地原子写 + 标脏 + 防抖兜底
         save_json(study_path, all_data)
     # 写穿（write-through）：同步推到 GitHub data-sync，确保本请求返回即已持久化，
@@ -947,8 +979,6 @@ def handle_admin_get_users():
         mastered_business = business.get('mastered', []) if isinstance(business, dict) else []
         speak_scores_basic = basic.get('speakScores', {}) if isinstance(basic, dict) else {}
         speak_scores_business = business.get('speakScores', {}) if isinstance(business, dict) else {}
-        checkins_basic = basic.get('checkIns', []) if isinstance(basic, dict) else []
-        checkins_business = business.get('checkIns', []) if isinstance(business, dict) else []
         total_seconds_basic = basic.get('totalSeconds', 0) if isinstance(basic, dict) else 0
         total_seconds_business = business.get('totalSeconds', 0) if isinstance(business, dict) else 0
 
@@ -965,13 +995,13 @@ def handle_admin_get_users():
                     elif isinstance(v, (int, float)):
                         all_scores.append(v)
         avg_score = round(sum(all_scores) / len(all_scores)) if all_scores else 0
-        # 汇总 study dates (from checkIns)
+        # 统一打卡：先把 basic/business 的 checkIns 合并进顶层（幂等），再从顶层统计打卡天数，
+        # 避免"顶层 checkIns"与"basic/business.checkIns"两套字段不一致导致管理端与学员端统计歧义。
+        sd = unify_checkins(sd)
         study_dates = set()
-        for cl in [checkins_basic, checkins_business]:
-            if isinstance(cl, list):
-                for c in cl:
-                    if isinstance(c, dict) and c.get('date'):
-                        study_dates.add(c['date'])
+        for c in (sd.get('checkIns') or []):
+            if isinstance(c, dict) and c.get('date'):
+                study_dates.add(c['date'])
 
         all_users.append({
             'empid': empid, 'name': user['name'],

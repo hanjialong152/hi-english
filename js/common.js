@@ -104,6 +104,9 @@ const HiEnglish = {
       }
       return o;
     }
+    // 收敛：把 a/b 中 basic/business 下的 checkIns 先归并到各自顶层，避免双字段不一致
+    function _promoteCI(o){ if(o&&typeof o==='object'){ ['basic','business'].forEach(function(s){ var st=o[s]; if(st&&Array.isArray(st.checkIns)&&st.checkIns.length){ o.checkIns=o.checkIns||[]; var m={}; (o.checkIns||[]).forEach(function(c){if(c&&c.date)m[c.date]=c;}); st.checkIns.forEach(function(c){ if(!c||!c.date)return; if(!m[c.date])m[c.date]={date:c.date,seconds:c.seconds||0,completed:!!c.completed}; else {var x=m[c.date]; x.seconds=Math.max(x.seconds||0,c.seconds||0); if(c.completed)x.completed=true;} }); o.checkIns=Object.keys(m).map(function(k){return m[k];}); delete st.checkIns; } }); } }
+    _promoteCI(a); _promoteCI(b);
     var out = JSON.parse(JSON.stringify(a));
     ['basic','business'].forEach(function(s){ out[s] = mergeStage(a[s], b[s]); });
     var ci = {};

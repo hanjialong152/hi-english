@@ -50,7 +50,6 @@ async function init() {
         learnedDates: {},
         mastered: studyData.masteredIds || [],
         speakScores: {},
-        checkIns: [],
         weeklyTests: [],
         monthlyTests: [],
         totalSeconds: studyData.totalStudySeconds || 0
@@ -59,36 +58,25 @@ async function init() {
       if (studyData.studyDates && studyData.studyDates.length) {
         studyData.studyDates.forEach(function(d) { studyData.basic.learnedDates[d] = true; });
       }
-      studyData.business = { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: {}, checkIns: [], weeklyTests: [], monthlyTests: [], totalSeconds: 0, unlocked: false };
+      studyData.business = { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: {}, weeklyTests: [], monthlyTests: [], totalSeconds: 0, unlocked: false };
       delete studyData.learnedIds; delete studyData.masteredIds; delete studyData.lastIndex;
       delete studyData.studyDates; delete studyData.totalStudySeconds; delete studyData.sessions;
       saveStudyData();
       console.log('[Migrate] 数据迁移完成');
     }
     // 确保结构完整
-    if (!studyData.basic) studyData.basic = { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: {}, checkIns: [], weeklyTests: [], monthlyTests: [], totalSeconds: 0 };
-    if (!studyData.business) studyData.business = { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: {}, checkIns: [], weeklyTests: [], monthlyTests: [], totalSeconds: 0, unlocked: false };
+    if (!studyData.basic) studyData.basic = { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: {}, weeklyTests: [], monthlyTests: [], totalSeconds: 0 };
+    if (!studyData.business) studyData.business = { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: {}, weeklyTests: [], monthlyTests: [], totalSeconds: 0, unlocked: false };
   }
   // Migrate: ensure learnedDates exists (backward compat)
   if (!studyData.basic.learnedDates) studyData.basic.learnedDates = {};
   if (!studyData.business.learnedDates) studyData.business.learnedDates = {};
-  // ===== 统一打卡数据：将 basic/business 的独立 checkIns 合并到顶层 studyData.checkIns =====
-  // 根因：两个阶段各自维护独立checkIns数组，导致切换阶段后打卡进度不一致（如基础17% vs 商务10%）
-  // 修复：使用统一的顶层 checkIns，两个阶段共享同一打卡进度
-  if (!studyData.checkIns || !Array.isArray(studyData.checkIns)) {
-    var mergedCheckIns = {};
-    // 按 date 去重合并，取各阶段的最大 seconds 和 completed 状态
-    [studyData.basic.checkIns || [], studyData.business.checkIns || []].forEach(function(arr) {
-      arr.forEach(function(c) {
-        if (!c || !c.date) return;
-        var existing = mergedCheckIns[c.date];
-        if (!existing) { mergedCheckIns[c.date] = {date: c.date, seconds: c.seconds || 0, completed: !!c.completed}; }
-        else { existing.seconds = Math.max(existing.seconds, c.seconds || 0); if (c.completed) existing.completed = true; }
-      });
-    });
-    studyData.checkIns = Object.values(mergedCheckIns);
-    console.log('[Migrate] 打卡数据已统一合并，共', studyData.checkIns.length, '条记录');
+  // ===== 统一打卡数据：将 basic/business 的 checkIns 合并到顶层 studyData.checkIns（一次性、幂等）=====
+  // 根因：两个阶段各自维护独立 checkIns 数组，导致切换阶段后打卡进度不一致、管理端与学员端统计歧义。
+  // 修复：顶层 checkIns 为唯一真相；basic/business 下的 checkIns 合并进顶层后删除 sub-field。
+  if (unifyCheckIns()) {
     saveStudyData();
+    console.log('[Migrate] 打卡数据已统一合并为顶层 checkIns');
   }
   if (studyData.basic.mastered.length >= 850) {
     studyData.business.unlocked = true;
@@ -137,13 +125,7 @@ async function init() {
             if (!studyData.basic) studyData.basic = { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: [], weeklyTests: [], monthlyTests: [], totalSeconds: 0 };
             if (!studyData.business) studyData.business = { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: [], weeklyTests: [], monthlyTests: [], totalSeconds: 0, unlocked: false };
             // 统一打卡数据迁移（与 init() 中一致）
-            if (!studyData.checkIns || !Array.isArray(studyData.checkIns)) {
-              var _mergedCI = {};
-              [studyData.basic.checkIns || [], studyData.business.checkIns || []].forEach(function(arr) {
-                arr.forEach(function(c) { if (c && c.date) { var e = _mergedCI[c.date]; if (!e) { _mergedCI[c.date] = {date:c.date, seconds:c.seconds||0, completed:!!c.completed}; } else { e.seconds=Math.max(e.seconds,c.seconds||0); if(c.completed)e.completed=true; } } });
-              });
-              studyData.checkIns = Object.values(_mergedCI);
-            }
+            if (unifyCheckIns()) saveStudyData();
             renderHome();
             renderStageSwitcher();
             console.log('[Sync] 从后台切回，已同步服务端最新数据');
@@ -2170,14 +2152,8 @@ async function renderReport() {
     var serverData = await HiEnglish.fetchServerStudyData(user.empid);
     if (serverData) {
       studyData = serverData;
-      // 统一打卡迁移
-      if (!studyData.checkIns || !Array.isArray(studyData.checkIns)) {
-        var _mCI = {};
-        [studyData.basic.checkIns||[], studyData.business.checkIns||[]].forEach(function(arr){
-          arr.forEach(function(c){if(c&&c.date){var e=_mCI[c.date];if(!e){_mCI[c.date]={date:c.date,seconds:c.seconds||0,completed:!!c.completed};}else{e.seconds=Math.max(e.seconds,c.seconds||0);if(c.completed)e.completed=true;}}});
-        });
-        studyData.checkIns = Object.values(_mCI);
-      }
+      // 统一打卡迁移（与服务端合并后确保顶层 checkIns 为唯一真相）
+      if (unifyCheckIns()) saveStudyData();
       console.log('[Report] 已从服务端同步最新学习数据');
     }
     // 同步用户列表（确保排行榜数据准确）
@@ -2509,6 +2485,38 @@ function closeCalendar() {
 function goLearnFromCalendar() {
   closeCalendar();
   goLearn();
+}
+
+// 统一打卡字段：把 basic/business 的 checkIns 合并进顶层 studyData.checkIns（去重取最大），
+// 并删除 sub-field，使顶层 checkIns 成为唯一真相。幂等，返回是否发生变化。
+function unifyCheckIns() {
+  if (typeof studyData !== 'object' || !studyData) return false;
+  var top = (studyData.checkIns && Array.isArray(studyData.checkIns)) ? studyData.checkIns : null;
+  var map = {};
+  (top || []).forEach(function(c) { if (c && c.date) map[c.date] = c; });
+  var changed = false;
+  ['basic', 'business'].forEach(function(stage) {
+    var s = studyData[stage];
+    if (s && Array.isArray(s.checkIns) && s.checkIns.length) {
+      s.checkIns.forEach(function(c) {
+        if (!c || !c.date) return;
+        if (!map[c.date]) { map[c.date] = {date: c.date, seconds: c.seconds || 0, completed: !!c.completed}; changed = true; }
+        else {
+          var m = map[c.date];
+          var ns = Math.max(m.seconds || 0, c.seconds || 0);
+          var nc = m.completed || !!c.completed;
+          if (ns !== m.seconds || nc !== m.completed) { m.seconds = ns; m.completed = nc; changed = true; }
+        }
+      });
+      delete s.checkIns;
+      changed = true;
+    }
+  });
+  var unified = Object.keys(map).map(function(k) { return map[k]; });
+  var before = JSON.stringify(top || []);
+  studyData.checkIns = unified;
+  if (JSON.stringify(unified) !== before) changed = true;
+  return changed;
 }
 
 // ===== Study Timer (only counts when audio is active) =====
