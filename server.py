@@ -87,6 +87,7 @@ def sb_upsert_study(empid, data, retry=2):
     """把单个学员学习数据 UPSERT 到 Supabase study_data 表（按 empid 单行）。"""
     if not supabase or not empid:
         return False
+    last_err = None
     for attempt in range(retry + 1):
         try:
             supabase.table('study_data').upsert(
@@ -94,7 +95,10 @@ def sb_upsert_study(empid, data, retry=2):
             ).execute()
             return True
         except Exception as e:
+            last_err = str(e)
             print(f'[Supabase] upsert study {empid} 失败(第{attempt+1}次): {e}', flush=True)
+    if last_err:
+        raise Exception(last_err)
     return False
 
 
