@@ -1136,6 +1136,23 @@ def handle_transcribe():
             if 'l16' in audio_mime.lower() or 'pcm' in audio_mime.lower():
                 # raw PCM: 16kHz, mono, 16-bit
                 print('[Transcribe] 检测到 raw PCM 数据，包装为 WAV', flush=True)
+                # 短音频静音填充：首尾各补 0.4s 静音并保底 0.9s，
+                # 避免单字/短句被 ASR 当作静音丢弃（根治单字句识别返回空→35 分）
+                try:
+                    import numpy as _np
+                    _samples = _np.frombuffer(audio_data, dtype=_np.int16).copy()
+                    _pad = int(16000 * 0.4)
+                    _min = int(16000 * 0.9)
+                    if len(_samples) == 0:
+                        _samples = _np.zeros(_min, dtype=_np.int16)
+                    else:
+                        _samples = _np.concatenate([_np.zeros(_pad, dtype=_np.int16), _samples,
+                                                    _np.zeros(_pad, dtype=_np.int16)])
+                        if len(_samples) < _min:
+                            _samples = _np.concatenate([_samples, _np.zeros(_min - len(_samples), dtype=_np.int16)])
+                    audio_data = _samples.astype(_np.int16).tobytes()
+                except Exception as _pe:
+                    print(f'[Transcribe] 静音填充失败，沿用原音频: {_pe}', flush=True)
                 wav_path = tempfile.NamedTemporaryFile(suffix='.wav', delete=False).name
                 with wave.open(wav_path, 'wb') as wf:
                     wf.setnchannels(1)
@@ -1218,7 +1235,10 @@ def transcribe_audio(filepath):
         try:
             import time as _t
             start = _t.time()
-            result = model.transcribe(filepath, language='en', fp16=False)
+            result = model.transcribe(filepath, language='en', fp16=False,
+                                      condition_on_previous_text=False,
+                                      no_speech_threshold=0.3,
+                                      logprob_threshold=-1.0)
             text = result.get('text', '').strip()
             elapsed = _t.time() - start
             if text:

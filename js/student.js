@@ -1185,12 +1185,19 @@ function uploadAndTranscribe() {
         _evaluateSpeaking(data.text);
       } else {
         // 识别未成功：服务器收到了音频但无法识别出有效英文
-        // 不使用时长评分（因为用户可能说了乱七八糟的内容），给低分
         recState.evaluatedAlready = true;
         var dur = (Date.now() - recState.startTime) / 1000;
-        var score = dur >= 1.5 ? 35 : 25;
-        showScoreModal(score, '语音识别未成功，请清晰朗读英文后重试');
-        _recApplyScore(recState.mode, score);
+        var _tk = (recState.targetText || '').trim().split(/\s+/).filter(Boolean);
+        // 短句宽限：单/双词目标（如 Why? / Okay.），确属朗读但 ASR 未识别，
+        // 给封顶 80 的通过分，避免被无意义卡死（需满足最短时长，防误触静音）
+        if (_tk.length <= 2 && dur >= 0.4) {
+          showScoreModal(80, '短句已记录，朗读通过（语音识别较弱时按通过计）');
+          _recApplyScore(recState.mode, 80);
+        } else {
+          var score = dur >= 1.5 ? 35 : 25;
+          showScoreModal(score, '语音识别未成功，请清晰朗读英文后重试');
+          _recApplyScore(recState.mode, score);
+        }
       }
     })
     .catch(function(err) {
@@ -1288,8 +1295,11 @@ function _evaluateSpeaking(recognized) {
   if (recState.evaluatedAlready) return;
   recState.evaluatedAlready = true;
 
-  var target = (recState.targetText || '').toLowerCase().trim();
+  var targetRaw = (recState.targetText || '').toLowerCase().trim();
+  // 归一化：去标点、压缩空格，用于稳健比对（"why?" 与 "why" 视为一致）
+  var target = targetRaw.replace(/[.,!?;:]/g, '').replace(/\s+/g, ' ').trim();
   recognized = (recognized || '').toLowerCase().trim();
+  var recNorm = recognized.replace(/[.,!?;:]/g, '').replace(/\s+/g, ' ').trim();
 
   var score = 0;
   var detail = '';
@@ -1297,42 +1307,60 @@ function _evaluateSpeaking(recognized) {
   if (!recognized) {
     score = 0;
     detail = '没有听到您的声音，请按住麦克风再试一次';
-  } else if (recognized === target) {
+  } else if (recNorm === target) {
     score = 100;
     detail = '发音非常标准！';
-  } else if (recognized.includes(target)) {
+  } else if (recognized.includes(targetRaw) || recNorm.includes(target)) {
     score = 90;
     detail = '很好！发音正确';
-  } else if (target.includes(recognized)) {
-    score = 85;
-    detail = '发音不错，已包含目标内容';
   } else {
     // 清理常见填充词后再比对
-    var cleanRecognized = recognized
+    var clean = recNorm
       .replace(/\s*(uh|um|ah|er|mm|hm)\s*/g, ' ')
       .replace(/^(the|a|an|i|it|is|to|my|we|they)\s+/, '')
       .replace(/\s+(the|a|an|is|was|were|to|for|on|in|at)$/, '')
-      .replace(/[.,!?;:]/g, '')
       .replace(/\s+/g, ' ')
       .trim();
 
-    if (cleanRecognized === target) {
-      score = 95;
-      detail = '发音正确！';
-    } else if (cleanRecognized.includes(target) || target.includes(cleanRecognized)) {
-      score = 85;
-      detail = '基本正确，注意清晰度';
+    // 词覆盖率：识别文本按顺序覆盖目标多少比例词（防"只读片段就 80+"）
+    var cov = tokenCoverage(clean, target);
+    if (cov >= 0.95) {
+      var isShort = target.split(/\s+/).filter(Boolean).length <= 2;
+      score = isShort ? 100 : 85;
+      detail = '发音不错，已读全目标内容';
+    } else if (cov >= 0.8) {
+      score = 80 + Math.round((cov - 0.8) * 75); // 80~约97
+      detail = '基本读全，注意个别词';
     } else {
+      // 覆盖率低：可能是(1)只读片段，或(2)整句但有多处替换/错词
+      // 用字符级相似度区分：相似度高=整句近读（可过），相似度低=真片段（不过）
       var sim1 = _similarity(recognized, target);
-      var sim2 = _similarity(cleanRecognized, target);
+      var sim2 = _similarity(clean, target);
       var bestSim = Math.max(sim1, sim2);
-      score = Math.round(bestSim * 100);
-      detail = score >= 70 ? '基本正确，注意个别发音' : '发音偏差较大，请多听标准发音后再试';
+      if (bestSim >= 0.8) {
+        score = Math.round(bestSim * 100);
+        detail = '基本正确，注意个别发音';
+      } else {
+        score = Math.min(78, Math.round(bestSim * 100)); // 只读片段，封顶不过 80
+        detail = '只读了一部分，请完整朗读整句后再试';
+      }
     }
   }
 
   showScoreModal(score, detail);
   _recApplyScore(recState.mode, score);
+}
+
+// 计算识别文本按顺序覆盖目标文本的词比例（0~1）：用于防"只读片段即高分"
+function tokenCoverage(rec, tgt) {
+  var rt = (rec || '').split(/\s+/).filter(Boolean);
+  var tt = (tgt || '').split(/\s+/).filter(Boolean);
+  if (!tt.length || !rt.length) return 0;
+  var i = 0, matched = 0;
+  for (var k = 0; k < rt.length && i < tt.length; k++) {
+    if (rt[k] === tt[i]) { matched++; i++; }
+  }
+  return matched / tt.length;
 }
 
 function _similarity(a, b) {
