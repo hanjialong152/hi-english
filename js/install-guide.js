@@ -1,13 +1,16 @@
 /*
- * Hi English - PWA 安装引导
- * 三端（iOS / Android / HarmonyOS）均支持"添加到主屏幕"；
- * 安卓 Chrome/Edge 可一键安装，苹果/鸿蒙为图文引导手动添加。
- * 支持 Safari / 华为浏览器 / Chrome / Edge / Firefox 等任意现代浏览器。
+ * Hi English - 三端下载/安装渠道弹窗
+ * 安卓 / 苹果(iOS) / 鸿蒙(HarmonyOS) 均可"添加到主屏幕"（PWA）；
+ * 安卓 Chrome/Edge 支持一键安装，苹果/鸿蒙为图文引导。
+ * 弹窗可手动关闭（× / 点遮罩 / 关闭按钮）；"不再提示"可永久关闭自动弹窗。
+ * 登录后自动弹一次（每个会话一次，避免像旧版那样关一次就再也看不到）；
+ * 并提供常驻入口（📲 安装到手机）随时再打开。
  */
 (function () {
   'use strict';
 
-  var KEY_DISMISS = 'hi_english_install_dismissed';
+  var KEY_DISMISS = 'hi_english_install_dismissed';      // 永久关闭（"不再提示"）
+  var KEY_SESSION = 'hi_english_install_shown_session';   // 本次会话已弹过
   var deferredPrompt = null;
 
   function detectPlatform() {
@@ -18,18 +21,16 @@
     var isAndroid = /android/.test(u);
     var isHarmony = /harmonyos|huawei|honor/.test(u);
     var isMobile = isIOS || isAndroid || isHarmony || /mobile/.test(u);
-    // 微信 / 钉钉 / 微博 / QQ 内置浏览器（限制麦克风与 PWA 安装）
     var isInApp = /micromessenger|dingtalk|weibo|qq\//.test(u);
     var isSafari = /safari/.test(u) && !/chrome/.test(u) && !/chromium/.test(u);
     var isChrome = /chrome|chromium|crios/.test(u) && !/edg/.test(u);
     var isEdge = /edg/.test(u);
     var isHuaweiBrowser = /huaweibrowser|huaweibrowserlite/.test(u);
-    var isFirefox = /firefox|fxios/.test(u);
     return {
       isIOS: isIOS, isAndroid: isAndroid, isHarmony: isHarmony,
       isMobile: isMobile, isInApp: isInApp,
       isSafari: isSafari, isChrome: isChrome, isEdge: isEdge,
-      isHuaweiBrowser: isHuaweiBrowser, isFirefox: isFirefox
+      isHuaweiBrowser: isHuaweiBrowser
     };
   }
 
@@ -50,112 +51,119 @@
       deferredPrompt.prompt();
       deferredPrompt.userChoice.then(function (choice) {
         deferredPrompt = null;
-        if (choice.outcome === 'accepted') dismiss(true);
+        if (choice.outcome === 'accepted') { try { localStorage.setItem(KEY_DISMISS, '1'); } catch (e) {} }
+        closeModal();
       });
       return true;
     }
     return false;
   }
 
-  function isDismissed() {
+  function isPermanentlyDismissed() {
     try { return localStorage.getItem(KEY_DISMISS) === '1'; } catch (e) { return false; }
   }
-  function dismiss(permanent) {
-    if (permanent) { try { localStorage.setItem(KEY_DISMISS, '1'); } catch (e) {} }
-    var b = document.getElementById('install-banner');
-    if (b) b.style.display = 'none';
-    var m = document.getElementById('install-modal-mask');
-    if (m) m.style.display = 'none';
+  function markPermanentlyDismissed() {
+    try { localStorage.setItem(KEY_DISMISS, '1'); } catch (e) {}
+  }
+  function sessionShown() {
+    try { return sessionStorage.getItem(KEY_SESSION) === '1'; } catch (e) { return false; }
+  }
+  function markSessionShown() {
+    try { sessionStorage.setItem(KEY_SESSION, '1'); } catch (e) {}
   }
 
-  // 按平台/浏览器返回引导文案与配图
-  function getGuide() {
-    if (P.isInApp) {
-      return {
-        title: '请先在系统浏览器中打开',
-        tip: '当前在 App 内置浏览器中，无法安装到主屏幕。',
-        steps: [
-          { icon: '···', text: '点击右上角「···」或「↗」' },
-          { icon: '🌐', text: '选择「在浏览器中打开」' },
-          { icon: '📱', text: '用 Chrome / Safari / 华为浏览器打开后，再安装' }
-        ]
-      };
-    }
-    if (P.isIOS) {
-      if (P.isSafari) {
-        return {
-          title: '添加到主屏幕（Safari）',
-          tip: '苹果系统限制，需手动 3 步，无法一键安装。',
-          steps: [
-            { icon: '⬆', text: '点击底部中间的「分享」图标' },
-            { icon: '➕', text: '向上滑动找到并点击「添加到主屏幕」' },
-            { icon: '✓', text: '点击右上角「添加」即可' }
-          ]
-        };
-      }
-      return {
-        title: '添加到主屏幕（Chrome）',
-        tip: 'iOS 上的 Chrome 使用苹果内核，需手动添加。',
-        steps: [
-          { icon: '⋮', text: '点击右下角「⋯」菜单' },
-          { icon: '➕', text: '点击「添加到主屏幕」' },
-          { icon: '✓', text: '点击「添加」即可' }
-        ]
-      };
-    }
-    if (P.isHarmony) {
-      if (P.isHuaweiBrowser) {
-        return {
-          title: '添加到主屏幕（华为浏览器）',
-          tip: '华为浏览器支持一键添加到主屏幕。',
-          steps: [
-            { icon: '⋮', text: '点击右下角「菜单」按钮' },
-            { icon: '➕', text: '点击「添加到主屏幕」' },
-            { icon: '✓', text: '点击「添加」即可' }
-          ]
-        };
-      }
-      return {
-        title: '添加到主屏幕（Chrome）',
-        tip: '鸿蒙 Chrome 需手动添加到主屏幕。',
-        steps: [
-          { icon: '⋮', text: '点击右上角「⋯」菜单' },
-          { icon: '➕', text: '点击「添加到主屏幕」' },
-          { icon: '✓', text: '点击「添加」即可' }
-        ]
-      };
-    }
-    if (P.isAndroid) {
-      if (canNativeInstall()) {
-        return {
-          title: '一键安装到主屏幕',
-          tip: '点击下方「安装」按钮即可，体验接近原生 App。',
-          steps: [
-            { icon: '📲', text: '点击「安装」→ 确认' },
-            { icon: '🏠', text: '主屏幕出现 Hi English 图标即完成' }
-          ],
-          native: true
-        };
-      }
-      return {
-        title: '添加到主屏幕（Android）',
-        tip: '当前浏览器不支持一键安装，手动添加同样好用。',
-        steps: [
-          { icon: '⋮', text: '点击右上角「⋯」菜单' },
-          { icon: '➕', text: '点击「安装应用 / 添加到主屏幕」' },
-          { icon: '✓', text: '点击「安装」即可' }
-        ]
-      };
-    }
-    // 桌面端
-    return {
+  // ===== 每个平台的分步引导 =====
+  var GUIDES = {
+    inapp: {
+      title: '请先在系统浏览器中打开',
+      tip: '当前在 App 内置浏览器中，无法直接安装到主屏幕。',
+      steps: [
+        { icon: '···', text: '点击右上角「···」或「↗」' },
+        { icon: '🌐', text: '选择「在浏览器中打开」' },
+        { icon: '📱', text: '用 Chrome / Safari / 华为浏览器打开后，再安装' }
+      ]
+    },
+    ios_safari: {
+      title: '苹果 Safari · 添加到主屏幕',
+      tip: '苹果系统限制，需手动 3 步，无法一键安装。',
+      steps: [
+        { icon: '⬆', text: '点击底部中间的「分享」图标' },
+        { icon: '➕', text: '向上滑动找到并点击「添加到主屏幕」' },
+        { icon: '✓', text: '点击右上角「添加」即可' }
+      ]
+    },
+    ios_chrome: {
+      title: '苹果 Chrome · 添加到主屏幕',
+      tip: 'iOS 上的 Chrome 使用苹果内核，需手动添加。',
+      steps: [
+        { icon: '⋮', text: '点击右下角「⋯」菜单' },
+        { icon: '➕', text: '点击「添加到主屏幕」' },
+        { icon: '✓', text: '点击「添加」即可' }
+      ]
+    },
+    harmony_hw: {
+      title: '鸿蒙 · 华为浏览器添加到主屏幕',
+      tip: '华为浏览器支持一键添加到主屏幕。',
+      steps: [
+        { icon: '⋮', text: '点击右下角「菜单」按钮' },
+        { icon: '➕', text: '点击「添加到主屏幕」' },
+        { icon: '✓', text: '点击「添加」即可' }
+      ]
+    },
+    harmony_chrome: {
+      title: '鸿蒙 · Chrome 添加到主屏幕',
+      tip: '鸿蒙 Chrome 需手动添加到主屏幕。',
+      steps: [
+        { icon: '⋮', text: '点击右上角「⋯」菜单' },
+        { icon: '➕', text: '点击「添加到主屏幕」' },
+        { icon: '✓', text: '点击「添加」即可' }
+      ]
+    },
+    android_native: {
+      title: '安卓 · 一键安装到主屏幕',
+      tip: '点击下方「安装」按钮即可，体验接近原生 App。',
+      steps: [
+        { icon: '📲', text: '点击「安装」→ 确认' },
+        { icon: '🏠', text: '主屏幕出现 Hi English 图标即完成' }
+      ],
+      native: true
+    },
+    android_manual: {
+      title: '安卓 · 添加到主屏幕',
+      tip: '当前浏览器不支持一键安装，手动添加同样好用。',
+      steps: [
+        { icon: '⋮', text: '点击右上角「⋯」菜单' },
+        { icon: '➕', text: '点击「安装应用 / 添加到主屏幕」' },
+        { icon: '✓', text: '点击「安装」即可' }
+      ]
+    },
+    desktop: {
       title: '安装到桌面',
       tip: '可像 App 一样在桌面打开，离线也能用。',
       steps: [
         { icon: '🔒', text: '点击地址栏右侧的「安装」图标' },
         { icon: '🖥', text: '或浏览器菜单 →「安装 Hi English」' }
       ]
-    };
+    }
+  };
+
+  // 决定三端 tab 与默认选中
+  function resolveTabs() {
+    if (P.isInApp) {
+      return { tabs: [{ key: 'inapp', label: '📋 浏览器打开', guideKey: 'inapp' }], def: 'inapp' };
+    }
+    if (!P.isMobile) {
+      return { tabs: [{ key: 'desktop', label: '🖥 桌面', guideKey: 'desktop' }], def: 'desktop' };
+    }
+    var tabs = [
+      { key: 'android', label: '🤖 安卓', guideKey: canNativeInstall() ? 'android_native' : 'android_manual' },
+      { key: 'ios', label: '🍎 苹果', guideKey: P.isSafari ? 'ios_safari' : 'ios_chrome' },
+      { key: 'harmony', label: '🌟 鸿蒙', guideKey: P.isHuaweiBrowser ? 'harmony_hw' : 'harmony_chrome' }
+    ];
+    var def = 'android';
+    if (P.isIOS) def = 'ios';
+    else if (P.isHarmony) def = 'harmony';
+    return { tabs: tabs, def: def };
   }
 
   // ===== UI 渲染 =====
@@ -164,110 +172,128 @@
     if (cssInjected) return;
     var s = document.createElement('style');
     s.textContent = [
-      '#install-banner{position:fixed;left:50%;transform:translateX(-50%);bottom:72px;width:92%;max-width:400px;',
-      'background:#fff;border:1px solid #E8E8E8;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,.12);',
-      'padding:12px 14px;display:flex;align-items:center;gap:10px;z-index:9000;font-size:13px;}',
-      '#install-banner .ib-icon{font-size:22px;}',
-      '#install-banner .ib-text{flex:1;color:#333;line-height:1.4;}',
-      '#install-banner .ib-btn{background:#4A90D9;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;}',
-      '#install-banner .ib-close{background:none;border:none;color:#999;font-size:18px;cursor:pointer;padding:0 4px;}',
-      '#install-modal-mask{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:10000;justify-content:center;align-items:center;}',
+      '#install-modal-mask{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:10000;justify-content:center;align-items:flex-start;padding-top:14vh;box-sizing:border-box;}',
       '#install-modal-mask.show{display:flex;}',
-      '.install-modal{background:#fff;border-radius:16px;padding:24px 20px;width:90%;max-width:340px;text-align:center;animation:popIn .25s ease;}',
-      '.install-modal h3{font-size:17px;margin-bottom:6px;color:#333;}',
-      '.install-modal .im-tip{font-size:12px;color:#999;margin-bottom:16px;line-height:1.5;}',
-      '.install-step{display:flex;align-items:center;gap:12px;background:#F5F7FA;border-radius:10px;padding:12px;margin-bottom:10px;text-align:left;}',
-      '.install-step .is-icon{width:36px;height:36px;border-radius:50%;background:#E8F2FC;color:#4A90D9;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}',
-      '.install-step .is-text{font-size:13px;color:#333;line-height:1.4;}',
-      '.install-modal .im-actions{display:flex;gap:10px;margin-top:8px;}',
-      '.install-modal .im-btn{flex:1;padding:11px;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;}',
-      '.install-modal .im-btn.primary{background:#4A90D9;color:#fff;}',
-      '.install-modal .im-btn.ghost{background:#F5F7FA;color:#666;}',
-      '@keyframes popIn{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}'
+      '.dg-modal{background:#fff;border-radius:16px;padding:22px 20px 18px;width:92%;max-width:360px;text-align:center;animation:popIn .25s ease;position:relative;}',
+      '.dg-modal h3{font-size:17px;margin:0 0 4px;color:#222;}',
+      '.dg-modal .dg-tip{font-size:12px;color:#999;margin-bottom:14px;line-height:1.5;}',
+      '.dg-tabs{display:flex;gap:8px;margin-bottom:14px;}',
+      '.dg-tab{flex:1;padding:9px 4px;border:1px solid #E8E8E8;border-radius:10px;background:#F5F7FA;color:#666;font-size:13px;font-weight:600;cursor:pointer;}',
+      '.dg-tab.active{background:#E8F2FC;border-color:#4A90D9;color:#4A90D9;}',
+      '.dg-step{display:flex;align-items:center;gap:12px;background:#F5F7FA;border-radius:10px;padding:11px 12px;margin-bottom:9px;text-align:left;}',
+      '.dg-step .ds-icon{width:34px;height:34px;border-radius:50%;background:#E8F2FC;color:#4A90D9;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}',
+      '.dg-step .ds-text{font-size:13px;color:#333;line-height:1.4;}',
+      '.dg-actions{display:flex;gap:10px;margin-top:6px;}',
+      '.dg-btn{flex:1;padding:11px;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;}',
+      '.dg-btn.primary{background:#4A90D9;color:#fff;}',
+      '.dg-btn.ghost{background:#F5F7FA;color:#666;}',
+      '.dg-close{position:absolute;top:10px;right:12px;background:none;border:none;color:#bbb;font-size:22px;line-height:1;cursor:pointer;padding:0 4px;}',
+      '.dg-dismiss{display:block;margin:10px auto 0;background:none;border:none;color:#aaa;font-size:12px;text-decoration:underline;cursor:pointer;}',
+      '@keyframes popIn{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}',
+      '#dg-reopen{position:fixed;left:14px;bottom:16px;z-index:8000;background:#4A90D9;color:#fff;border:none;border-radius:20px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.18);}'
     ].join('');
     document.head.appendChild(s);
     cssInjected = true;
   }
 
-  function showModal() {
-    ensureCss();
-    var g = getGuide();
-    var stepsHtml = g.steps.map(function (st) {
-      return '<div class="install-step"><div class="is-icon">' + st.icon + '</div>' +
-        '<div class="is-text">' + st.text + '</div></div>';
+  function renderBody(guideKey) {
+    var g = GUIDES[guideKey] || GUIDES.android_manual;
+    var stepsHtml = (g.steps || []).map(function (st) {
+      return '<div class="dg-step"><div class="ds-icon">' + st.icon + '</div>' +
+        '<div class="ds-text">' + st.text + '</div></div>';
     }).join('');
+    var body = document.getElementById('dg-body');
+    if (body) body.innerHTML = stepsHtml;
+    var primary = document.getElementById('dg-primary');
+    if (primary) {
+      if (g.native) {
+        primary.textContent = '安装';
+        primary.onclick = function () { doNativeInstall(); };
+      } else {
+        primary.textContent = '知道了';
+        primary.onclick = function () { closeModal(); };
+      }
+    }
+  }
 
+  function showDownloadGuide() {
+    ensureCss();
+    var resolved = resolveTabs();
     var mask = document.getElementById('install-modal-mask');
     if (!mask) {
       mask = document.createElement('div');
       mask.id = 'install-modal-mask';
-      mask.innerHTML = '<div class="install-modal">' +
-        '<h3 id="im-title"></h3>' +
-        '<div class="im-tip" id="im-tip"></div>' +
-        '<div id="im-steps"></div>' +
-        '<div class="im-actions">' +
-        '<button class="im-btn ghost" onclick="InstallGuide.closeModal()">关闭</button>' +
-        '<button class="im-btn primary" id="im-primary" onclick="InstallGuide.primary()">知道了</button>' +
-        '</div></div>';
+      mask.innerHTML = '<div class="dg-modal">' +
+        '<button class="dg-close" onclick="InstallGuide.closeModal()">×</button>' +
+        '<h3 id="dg-title"></h3>' +
+        '<div class="dg-tip" id="dg-tip"></div>' +
+        '<div class="dg-tabs" id="dg-tabs"></div>' +
+        '<div id="dg-body"></div>' +
+        '<div class="dg-actions">' +
+        '<button class="dg-btn ghost" onclick="InstallGuide.closeModal()">关闭</button>' +
+        '<button class="dg-btn primary" id="dg-primary">知道了</button>' +
+        '</div>' +
+        '<button class="dg-dismiss" onclick="InstallGuide.dismissPermanent()">不再提示</button>' +
+        '</div>';
       document.body.appendChild(mask);
-      mask.addEventListener('click', function (e) { if (e.target === mask) InstallGuide.closeModal(); });
+      mask.addEventListener('click', function (e) { if (e.target === mask) closeModal(); });
     }
-    document.getElementById('im-title').textContent = g.title;
-    document.getElementById('im-tip').textContent = g.tip || '';
-    document.getElementById('im-steps').innerHTML = stepsHtml;
-    var primary = document.getElementById('im-primary');
-    if (g.native) {
-      primary.textContent = '安装';
-      primary.onclick = function () { doNativeInstall(); InstallGuide.closeModal(); };
-    } else {
-      primary.textContent = '知道了';
-      primary.onclick = function () { InstallGuide.closeModal(); };
-    }
+    // 渲染 tab
+    var tabsHtml = resolved.tabs.map(function (t) {
+      return '<div class="dg-tab' + (t.key === resolved.def ? ' active' : '') + '" data-guide="' + t.guideKey + '" data-key="' + t.key + '">' + t.label + '</div>';
+    }).join('');
+    var tabsEl = document.getElementById('dg-tabs');
+    tabsEl.innerHTML = tabsHtml;
+    tabsEl.querySelectorAll('.dg-tab').forEach(function (el) {
+      el.onclick = function () {
+        tabsEl.querySelectorAll('.dg-tab').forEach(function (x) { x.classList.remove('active'); });
+        el.classList.add('active');
+        renderBody(el.getAttribute('data-guide'));
+      };
+    });
+    // 默认选中平台
+    var defGuide = (resolved.tabs.filter(function (t) { return t.key === resolved.def; })[0] || resolved.tabs[0]).guideKey;
+    var dg = GUIDES[defGuide] || GUIDES.android_manual;
+    document.getElementById('dg-title').textContent = dg.title;
+    document.getElementById('dg-tip').textContent = dg.tip || '';
+    renderBody(defGuide);
     mask.classList.add('show');
   }
 
-  function showBanner() {
-    if (isDismissed()) return;
-    ensureCss();
-    var b = document.getElementById('install-banner');
-    if (!b) {
-      b = document.createElement('div');
-      b.id = 'install-banner';
-      b.innerHTML = '<span class="ib-icon">📱</span>' +
-        '<span class="ib-text">安装 Hi English 到主屏幕，像 App 一样随时学习</span>' +
-        '<button class="ib-btn" id="ib-action">查看</button>' +
-        '<button class="ib-close" id="ib-close">×</button>';
-      document.body.appendChild(b);
-      var actionBtn = document.getElementById('ib-action');
-      actionBtn.textContent = canNativeInstall() ? '安装' : '查看';
-      actionBtn.onclick = function () {
-        if (canNativeInstall()) { doNativeInstall(); }
-        else { showModal(); }
-      };
-      document.getElementById('ib-close').onclick = function () { dismiss(true); };
-    }
-    b.style.display = 'flex';
+  function closeModal() {
+    var m = document.getElementById('install-modal-mask');
+    if (m) m.classList.remove('show');
   }
 
-  // 登录后弹一次（仅移动端）
-  function maybeShow() {
-    if (!P.isMobile) return;       // 桌面端不弹 banner，但 modal 仍可手动触发
-    if (isDismissed()) return;
-    showBanner();
+  // 登录后自动弹（每个会话一次）
+  function maybeAutoShow() {
+    if (isPermanentlyDismissed()) return;
+    if (sessionShown()) return;
+    markSessionShown();
+    showDownloadGuide();
+  }
+
+  // 常驻入口：随时再打开
+  function ensureReopenBtn() {
+    if (document.getElementById('dg-reopen')) return;
+    var b = document.createElement('button');
+    b.id = 'dg-reopen';
+    b.textContent = '📲 安装到手机';
+    b.onclick = function () { showDownloadGuide(); };
+    document.body.appendChild(b);
   }
 
   window.InstallGuide = {
-    maybeShow: maybeShow,
-    showModal: showModal,
-    closeModal: function () {
-      var m = document.getElementById('install-modal-mask');
-      if (m) m.classList.remove('show');
-    },
-    primary: function () { /* placeholder, overwritten per guide */ }
+    maybeAutoShow: maybeAutoShow,
+    showDownloadGuide: showDownloadGuide,
+    closeModal: closeModal,
+    dismissPermanent: function () { markPermanentlyDismissed(); closeModal(); }
   };
 
-  // 移动端：登录页(index.html)与学员端(student.html)登录落地后均自动弹一次
-  if (P.isMobile) {
-    window.addEventListener('DOMContentLoaded', function () { setTimeout(maybeShow, 800); });
+  // 页面加载后注入常驻入口（所有端都可见，方便随时查看/重新打开）
+  if (document.readyState === 'loading') {
+    window.addEventListener('DOMContentLoaded', ensureReopenBtn);
+  } else {
+    ensureReopenBtn();
   }
 })();
