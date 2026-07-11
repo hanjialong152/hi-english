@@ -1220,27 +1220,27 @@
       "sentences": [
         {
           "speaker": "A",
-          "en": "Think the company has finally made a profit. That's great news",
+          "en": "I think the company has finally made a profit. That's great news.",
           "zh": "我觉得公司终于盈利了。这是好消息。"
         },
         {
           "speaker": "B",
-          "en": "We're all getting raises and bonuses this year",
+          "en": "We're all getting raises and bonuses this year.",
           "zh": "今年我们都会加薪和发奖金。"
         },
         {
           "speaker": "A",
-          "en": "That makes me very happy me too. We haven't had raises in four years",
-          "zh": "那让我很高兴。——我也是。我们已经四年没加薪了。"
+          "en": "That makes me very happy. Me too. We haven't had raises in four years.",
+          "zh": "那让我很高兴。我也是。我们已经四年没加薪了。"
         },
         {
           "speaker": "B",
-          "en": "We've never had bonuses",
-          "zh": "我们从没发过奖金。"
+          "en": "We've never had bonuses.",
+          "zh": "我们从来没发过奖金。"
         },
         {
           "speaker": "A",
-          "en": "That's right. If the company is doing well financially, we should definitely receive some benefits",
+          "en": "That's right. If the company is doing well financially, we should definitely receive some benefits.",
           "zh": "没错，如果公司财务状况良好，我们肯定应该得到一些福利。"
         },
         {
@@ -1553,7 +1553,7 @@
         {
           "speaker": "A",
           "en": "Yeah, our president was very conservative.",
-          "zh": "是的，我们的总统非常保守。"
+          "zh": "是的，我们的总裁非常保守。"
         },
         {
           "speaker": "B",
@@ -1688,18 +1688,43 @@
       "sentences": [
         {
           "speaker": "A",
-          "en": "Veronica, when is your baby due next month? Are you going on maternity leave?",
-          "zh": "维罗妮卡，你的宝宝下个月什么时候出生？你要休产假吗？"
+          "en": "Veronica, when is your baby due?",
+          "zh": "维罗妮卡，你的宝宝预产期是什么时候？"
         },
         {
           "speaker": "B",
-          "en": "How long will you be gone?",
-          "zh": "你要离开多久？"
+          "en": "Next month. I'm going on maternity leave.",
+          "zh": "下个月。我要休产假了。"
         },
         {
           "speaker": "A",
-          "en": "three months",
-          "zh": "三个月。"
+          "en": "How long will you be away?",
+          "zh": "你要离开多久？"
+        },
+        {
+          "speaker": "B",
+          "en": "About three months.",
+          "zh": "大约三个月。"
+        },
+        {
+          "speaker": "A",
+          "en": "We'll miss you at the office.",
+          "zh": "办公室里大家都会想你的。"
+        },
+        {
+          "speaker": "B",
+          "en": "Thanks. I'll keep in touch by email.",
+          "zh": "谢谢。我会用邮件和大家保持联系。"
+        },
+        {
+          "speaker": "A",
+          "en": "Will you come back part-time after that?",
+          "zh": "那之后你会回来做兼职吗？"
+        },
+        {
+          "speaker": "B",
+          "en": "Yes, two days a week at first.",
+          "zh": "会的，刚开始每周两天。"
         }
       ]
     },
@@ -1985,28 +2010,33 @@
       "sentences": [
         {
           "speaker": "A",
-          "en": "What is the vacation policy you earn one week of paid vacation after you've been at the company for one year?",
-          "zh": "在公司工作一年后，你获得一周的带薪假期政策是什么？"
-        },
-        {
-          "speaker": "B",
-          "en": "I've only been here for nine months, but I would like to take one week off next month. Is it a medical situation?",
-          "zh": "我在这里只工作了九个月，但我下个月想休息一周。是医疗情况吗？"
-        },
-        {
-          "speaker": "A",
-          "en": "No, my parents live in Italy, and it's their 50th wedding anniversary",
-          "zh": "不，我父母住在意大利，这是他们结婚50周年纪念日。"
-        },
-        {
-          "speaker": "B",
-          "en": "You can take one week off with your supervisor's approval, but it will not be a paid week",
-          "zh": "经主管批准，你可以休假一周，但不会带薪休假。"
-        },
-        {
-          "speaker": "A",
           "en": "What is the vacation policy?",
-          "zh": "度假政策是什么？"
+          "zh": "休假政策是怎样的？"
+        },
+        {
+          "speaker": "B",
+          "en": "You earn one week of paid vacation after you've worked at the company for one year.",
+          "zh": "在公司工作满一年后，你可以获得一周带薪休假。"
+        },
+        {
+          "speaker": "A",
+          "en": "I've only been here for nine months, but I'd like to take one week off next month.",
+          "zh": "我来了才九个月，但我想下个月休一周假。"
+        },
+        {
+          "speaker": "B",
+          "en": "Is it a medical situation?",
+          "zh": "是身体原因吗？"
+        },
+        {
+          "speaker": "A",
+          "en": "No. My parents live in Italy, and it's their 50th wedding anniversary.",
+          "zh": "不是。我父母住在意大利，那天是他们结婚50周年纪念日。"
+        },
+        {
+          "speaker": "B",
+          "en": "You can take one week off with your supervisor's approval, but it won't be paid.",
+          "zh": "经主管批准你可以休一周，但不会是带薪的。"
         }
       ]
     },
@@ -2095,7 +2125,7 @@
         {
           "speaker": "A",
           "en": "What do you mean?",
-          "zh": "什么是等分呀？"
+          "zh": "你是什么意思？"
         },
         {
           "speaker": "B",
@@ -2177,7 +2207,7 @@
         {
           "speaker": "A",
           "en": "It's not that easy.",
-          "zh": "（ 笑聲 ） 這種 機會 可不 容易 找 。"
+          "zh": "没那么容易。"
         },
         {
           "speaker": "B",
@@ -2213,23 +2243,33 @@
       "sentences": [
         {
           "speaker": "A",
-          "en": "Let's arrange a meeting for next week",
-          "zh": "让我们为下周安排一个会议。"
+          "en": "Let's arrange a meeting for next week.",
+          "zh": "我们安排下周开个会吧。"
         },
         {
           "speaker": "B",
           "en": "Sounds good. Tuesday at 11 a.m. works for me. Shall we meet in my office?",
-          "zh": "听起来不错。周二上午11点对我来说很合适。我们在我的办公室见面好吗？"
+          "zh": "听起来不错。周二上午11点我有空。我们在我办公室见面好吗？"
         },
         {
           "speaker": "A",
-          "en": "How about a lunch meeting?",
-          "zh": "去开个午餐会怎么样？"
+          "en": "How about a lunch meeting instead?",
+          "zh": "改成午餐会怎么样？"
         },
         {
           "speaker": "B",
           "en": "Even better. Let's meet at the restaurant across the street. We can negotiate our business contract then.",
-          "zh": "更好。我们在街对面的餐厅见面吧。我们可以在那时协商商业合同。"
+          "zh": "更好。我们在街对面的餐厅见面吧。到时候我们可以谈一下商务合同。"
+        },
+        {
+          "speaker": "A",
+          "en": "Perfect. I'll book a table for two.",
+          "zh": "太好了。我来订一张两人的桌。"
+        },
+        {
+          "speaker": "B",
+          "en": "Great. Please send me the agenda before Tuesday.",
+          "zh": "好的。请在周二前把议程发给我。"
         }
       ]
     },
@@ -2640,7 +2680,37 @@
         {
           "speaker": "B",
           "en": "It's a lovely city. I just don't like the rain.",
-          "zh": "这是个美丽的城市。我只是不喜欢下雨。"
+          "zh": "这是个漂亮的城市。我只是不太喜欢下雨。"
+        },
+        {
+          "speaker": "A",
+          "en": "Where are you from?",
+          "zh": "你来自哪里？"
+        },
+        {
+          "speaker": "B",
+          "en": "I'm from Detroit. I work in the auto industry.",
+          "zh": "我来自底特律。我在汽车行业工作。"
+        },
+        {
+          "speaker": "A",
+          "en": "Really? I visited a factory there last year.",
+          "zh": "真的吗？我去年参观了那里的一家工厂。"
+        },
+        {
+          "speaker": "B",
+          "en": "Small world. Which company?",
+          "zh": "真巧。哪家公司的？"
+        },
+        {
+          "speaker": "A",
+          "en": "A parts supplier near the river.",
+          "zh": "河边一家零部件供应商。"
+        },
+        {
+          "speaker": "B",
+          "en": "I might know them. Let's exchange cards later.",
+          "zh": "我可能认识他们。待会儿我们交换一下名片吧。"
         }
       ]
     },
@@ -2657,22 +2727,42 @@
         {
           "speaker": "A",
           "en": "We're 15 minutes early for the meeting. Should we wait for everyone to arrive?",
-          "zh": "我们开会早到了15分钟。要等大家都到吗？"
+          "zh": "我们比会议时间早到了15分钟。要等大家都到吗？"
         },
         {
           "speaker": "B",
-          "en": "Okay, so how do you like this weather? I don't like it at all",
-          "zh": "好吧，你觉得这天气怎么样？我一点都不喜欢。"
+          "en": "Okay. So how do you like this weather? I don't like it at all.",
+          "zh": "好吧。你觉得这天气怎么样？我是一点都不喜欢。"
         },
         {
           "speaker": "A",
           "en": "Me too. It's been raining all week. Have you been out of town?",
-          "zh": "我也是。下了一整周的雨了。你出城了吗？"
+          "zh": "我也是。整周都在下雨。你出城去了吗？"
         },
         {
           "speaker": "B",
           "en": "Yes, I just got back from Hawaii last night. I do miss the weather there.",
           "zh": "是的，我昨晚刚从夏威夷回来。我确实想念那边的天气。"
+        },
+        {
+          "speaker": "A",
+          "en": "Hawaii sounds amazing. Was it for business or vacation?",
+          "zh": "夏威夷听起来太棒了。你是出差还是度假？"
+        },
+        {
+          "speaker": "B",
+          "en": "A bit of both. I went to a trade show and stayed an extra day.",
+          "zh": "两者都有。我参加了一个展会，多待了一天。"
+        },
+        {
+          "speaker": "A",
+          "en": "Lucky you. I haven't traveled for fun in years.",
+          "zh": "你真幸运。我好多年没出去玩过了。"
+        },
+        {
+          "speaker": "B",
+          "en": "You should. A short trip really helps.",
+          "zh": "你该去。短途旅行真的很有帮助。"
         }
       ]
     },
@@ -2731,7 +2821,7 @@
         {
           "speaker": "A",
           "en": "We've all enjoyed working with you. It's been a lot of fun.",
-          "zh": "我们都很喜欢和你一起工作。这段时间很开心。"
+          "zh": "我们都很喜欢和你共事。这段时间很开心。"
         },
         {
           "speaker": "B",
@@ -2740,23 +2830,23 @@
         },
         {
           "speaker": "A",
-          "en": "Wow, this would be a great business opportunity for me",
-          "zh": "哇，对我来说这是个很好的商业机会。"
+          "en": "Wow, this would be a great business opportunity for me.",
+          "zh": "哇，这对我来说是个很好的职业机会。"
         },
         {
           "speaker": "B",
-          "en": "My secretary will email you the job description and our salary offer",
+          "en": "My secretary will email you the job description and our salary offer.",
           "zh": "我的秘书会把职位描述和薪资方案发邮件给你。"
         },
         {
           "speaker": "A",
-          "en": "When do you need an answer? We would like an answer by the end of the week",
-          "zh": "你们什么时候需要答复？我们希望本周末前能得到答复。"
+          "en": "When do you need an answer? We would like an answer by the end of the week.",
+          "zh": "你们什么时候需要答复？我们希望本周结束前能得到答复。"
         },
         {
           "speaker": "B",
-          "en": "Okay, I will think about it carefully and let you know by Friday",
-          "zh": "好的，我会仔细考虑，周五前给你答复。"
+          "en": "Okay, I will think about it carefully and let you know by Friday.",
+          "zh": "好的，我会认真考虑，周五前给你答复。"
         }
       ]
     },
@@ -3427,7 +3517,7 @@
         {
           "speaker": "A",
           "en": "How old are they now?",
-          "zh": "这些系统的使用年限为何？"
+          "zh": "他们现在多大了？"
         },
         {
           "speaker": "B",
@@ -3727,7 +3817,7 @@
         {
           "speaker": "B",
           "en": "That's cool.",
-          "zh": "好主意。"
+          "zh": "真酷。"
         },
         {
           "speaker": "A",
@@ -3924,23 +4014,38 @@
       "sentences": [
         {
           "speaker": "A",
-          "en": "Hey, can you give me a ride to the airport when tomorrow morning?",
-          "zh": "嘿，明天早上可以载我去机场吗？"
+          "en": "Hey, can you give me a ride to the airport tomorrow morning?",
+          "zh": "嘿，明天早上你能载我去机场吗？"
         },
         {
           "speaker": "B",
-          "en": "I'm sorry, but my car is in the shop. How long has it been in the shop a couple of days?",
-          "zh": "很抱歉，我的车在商店里。在店里多久了？"
+          "en": "I'm sorry, but my car is in the shop.",
+          "zh": "抱歉，我的车还在修理厂。"
+        },
+        {
+          "speaker": "A",
+          "en": "How long has it been there?",
+          "zh": "在店里多久了？"
+        },
+        {
+          "speaker": "B",
+          "en": "A couple of days. Why do you ask?",
+          "zh": "好几天了。你问这个干嘛？"
         },
         {
           "speaker": "A",
           "en": "That's interesting. I saw you washing your car this morning.",
-          "zh": "有意思。我看到你今天早上洗车了。"
+          "zh": "有意思。我今天早上还看到你在洗车呢。"
         },
         {
           "speaker": "B",
           "en": "I'm sorry. I lied. I just hate morning traffic.",
-          "zh": "对不起，我撒谎了。我只是讨厌早晨的交通。"
+          "zh": "对不起，我撒谎了。我只是讨厌早高峰的交通。"
+        },
+        {
+          "speaker": "A",
+          "en": "Come on. I'll take a taxi then.",
+          "zh": "算了吧。那我自己打车去。"
         }
       ]
     },
@@ -3962,7 +4067,7 @@
         {
           "speaker": "B",
           "en": "I don't feel like it.",
-          "zh": "我不喜欢。"
+          "zh": "我没那个心情。"
         },
         {
           "speaker": "A",
@@ -3972,7 +4077,7 @@
         {
           "speaker": "B",
           "en": "It's Friday night.",
-          "zh": "在星期五晚上。"
+          "zh": "今天是周五晚上啊。"
         },
         {
           "speaker": "A",
@@ -3982,7 +4087,7 @@
         {
           "speaker": "B",
           "en": "Come on.",
-          "zh": "加油。"
+          "zh": "走吧。"
         },
         {
           "speaker": "A",
@@ -3992,12 +4097,12 @@
         {
           "speaker": "B",
           "en": "Okay.",
-          "zh": "那好吧～。"
+          "zh": "那好吧。"
         },
         {
           "speaker": "A",
           "en": "I'll go for an hour.",
-          "zh": "我去一个小时。"
+          "zh": "我去一个小时就回来。"
         }
       ]
     },
@@ -4096,7 +4201,7 @@
         {
           "speaker": "A",
           "en": "Why? What's the problem?",
-          "zh": "問題 出 在 哪兒 ？"
+          "zh": "为什么？出什么问题了？"
         },
         {
           "speaker": "B",
@@ -4185,7 +4290,7 @@
         {
           "speaker": "A",
           "en": "It looked so real.",
-          "zh": "“这看起来很像真的！"
+          "zh": "这看起来很像真的。"
         },
         {
           "speaker": "B",
@@ -4195,7 +4300,7 @@
         {
           "speaker": "A",
           "en": "Are you sure?",
-          "zh": "你確定嗎？"
+          "zh": "你确定吗？"
         },
         {
           "speaker": "B",
@@ -4232,7 +4337,7 @@
         {
           "speaker": "B",
           "en": "What do you mean?",
-          "zh": "什么是等分呀？"
+          "zh": "你是什么意思？"
         },
         {
           "speaker": "A",
@@ -4294,7 +4399,7 @@
         {
           "speaker": "A",
           "en": "Yes. It was boring.",
-          "zh": "上学太无聊了。"
+          "zh": "是的，电影挺无聊的。"
         },
         {
           "speaker": "B",
@@ -4346,7 +4451,7 @@
         {
           "speaker": "A",
           "en": "John was just telling the truth.",
-          "zh": "說的是真話。"
+          "zh": "约翰只是说了实话。"
         },
         {
           "speaker": "B",
@@ -4398,7 +4503,7 @@
         {
           "speaker": "A",
           "en": "You're right.",
-          "zh": "回答正确。"
+          "zh": "你说得对。"
         },
         {
           "speaker": "B",
@@ -4481,18 +4586,43 @@
       "sentences": [
         {
           "speaker": "A",
-          "en": "This hotel is so old. It's not that bad",
-          "zh": "这家酒店太旧了。没那么糟吧。"
+          "en": "This hotel is so old. It's not that bad.",
+          "zh": "这家酒店太旧了。其实也没那么糟。"
         },
         {
           "speaker": "B",
           "en": "This place is awful. There's a bug in my bed.",
-          "zh": "这地方太糟糕了。我床上有虫子。"
+          "zh": "这地方太糟糕了。我床上有只虫子。"
         },
         {
           "speaker": "A",
-          "en": "Okay, this place is pretty bad",
+          "en": "Okay, this place is pretty bad.",
           "zh": "好吧，这地方确实挺糟的。"
+        },
+        {
+          "speaker": "B",
+          "en": "And the air conditioner is broken.",
+          "zh": "而且空调还坏了。"
+        },
+        {
+          "speaker": "A",
+          "en": "Did you tell the front desk?",
+          "zh": "你跟前台说了吗？"
+        },
+        {
+          "speaker": "B",
+          "en": "Yes, but they said no rooms are available.",
+          "zh": "说了，但他们说没有空房间了。"
+        },
+        {
+          "speaker": "A",
+          "en": "Let's ask for a refund when we check out.",
+          "zh": "那我们退房的时候要求退款吧。"
+        },
+        {
+          "speaker": "B",
+          "en": "Good idea. I'll write a review, too.",
+          "zh": "好主意。我还要写条差评。"
         }
       ]
     },
@@ -4840,23 +4970,33 @@
       "sentences": [
         {
           "speaker": "A",
-          "en": "Why is this elevator so slow how long have you been waiting 10 minutes?",
-          "zh": "这电梯怎么这么慢？你等了多久了？十分钟？"
+          "en": "Why is this elevator so slow? How long have you been waiting?",
+          "zh": "这电梯怎么这么慢？你等了多久了？"
         },
         {
           "speaker": "B",
-          "en": "This is a very old building. I don't have time to wait. I'm going to take the stairs.",
-          "zh": "这是一栋很旧的建筑。我没时间等了。我走楼梯。"
+          "en": "About ten minutes.",
+          "zh": "大概十分钟了。"
         },
         {
           "speaker": "A",
-          "en": "We're on the 18th floor. But I'll come with you.",
-          "zh": "我们在18楼啊。不过我跟你一起走。"
+          "en": "This is a very old building. I don't have time to wait. I'm going to take the stairs.",
+          "zh": "这是栋很老的建筑。我没时间等了。我走楼梯。"
         },
         {
           "speaker": "B",
+          "en": "We're on the 18th floor. But I'll come with you.",
+          "zh": "我们在18楼啊。不过我陪你一起走。"
+        },
+        {
+          "speaker": "A",
           "en": "Okay, but you're wearing high heels. Good luck.",
           "zh": "好吧，但你穿着高跟鞋呢。祝你好运。"
+        },
+        {
+          "speaker": "B",
+          "en": "I'll take them off. Let's race.",
+          "zh": "我脱了就行。我们比赛吧。"
         }
       ]
     },
@@ -4915,27 +5055,27 @@
         {
           "speaker": "A",
           "en": "I think I want the blue car instead.",
-          "zh": "我想还是买蓝色的车吧。"
+          "zh": "我想还是买那辆蓝色的车吧。"
         },
         {
           "speaker": "B",
-          "en": "Like the blue one better. You always change your mind",
-          "zh": "更喜欢蓝色的。你总是改变主意。"
+          "en": "You like the blue one better. You always change your mind.",
+          "zh": "你更喜欢蓝色的。你总是变来变去。"
         },
         {
           "speaker": "A",
-          "en": "This is an expensive purchase",
-          "zh": "这是一笔昂贵的消费。"
+          "en": "This is an expensive purchase.",
+          "zh": "这可是一笔不小的开销。"
         },
         {
           "speaker": "B",
-          "en": "What if you change your mind again after we buy it? I promise I won't change my mind",
-          "zh": "要是买了之后你又改变主意怎么办？我保证不会改变主意。"
+          "en": "What if you change your mind again after we buy it? I promise I won't change my mind.",
+          "zh": "要是买了之后你又变卦怎么办？我保证我不会变主意。"
         },
         {
           "speaker": "A",
           "en": "Okay, let's buy the blue one.",
-          "zh": "好吧，那买蓝色的吧。"
+          "zh": "好吧，那我们就买蓝色的。"
         }
       ]
     },
@@ -5596,7 +5736,7 @@
         {
           "speaker": "A",
           "en": "I have a problem with my online order.",
-          "zh": "我的线上订单有问题。"
+          "zh": "我的线上订单有点问题。"
         },
         {
           "speaker": "B",
@@ -5605,28 +5745,28 @@
         },
         {
           "speaker": "A",
-          "en": "I order a black jacket, but I received a white one.",
-          "zh": "我订了一件黑色夹克，但收到的是白色的。"
+          "en": "I ordered a black jacket, but I received a white one.",
+          "zh": "我订的是黑色夹克，但收到的是白色的。"
         },
         {
           "speaker": "B",
           "en": "I'm very sorry to hear that.",
-          "zh": "非常抱歉。"
+          "zh": "非常抱歉听到这个消息。"
         },
         {
           "speaker": "A",
-          "en": "We can exchange the jacket for you.",
-          "zh": "我们可以为你换一件夹克。"
+          "en": "Can you exchange the jacket for me?",
+          "zh": "你们能帮我换一件吗？"
         },
         {
           "speaker": "B",
           "en": "How do I return the wrong one?",
-          "zh": "我怎么退回发错的那件？"
+          "zh": "我怎么把这件错的退回去？"
         },
         {
           "speaker": "A",
           "en": "You can return it by mail or return it to one of our stores.",
-          "zh": "你可以邮寄退回，也可以到我们的门店退回。"
+          "zh": "你可以邮寄退回，也可以到我们的任意门店退回。"
         }
       ]
     },
@@ -5808,16 +5948,21 @@
       "sentences": [
         {
           "speaker": "A",
-          "en": "What should we have for dinner I am in the mood for pizza pizza sounds good",
-          "zh": "晚饭吃什么？我想吃披萨。披萨不错。"
+          "en": "What should we have for dinner? I'm in the mood for pizza.",
+          "zh": "晚饭吃什么？我想吃披萨。"
         },
         {
           "speaker": "B",
-          "en": "I found a coupon in the newspaper for free delivery",
-          "zh": "我在报纸上找到了一张免费配送的优惠券。"
+          "en": "Pizza sounds good.",
+          "zh": "披萨听起来不错。"
         },
         {
           "speaker": "A",
+          "en": "I found a coupon in the newspaper for free delivery.",
+          "zh": "我在报纸上找到一张免配送费的优惠券。"
+        },
+        {
+          "speaker": "B",
           "en": "Great. I don't want to go out to pick it up. It's raining.",
           "zh": "太好了。我不想出去取。外面在下雨。"
         }
@@ -5835,7 +5980,7 @@
       "sentences": [
         {
           "speaker": "A",
-          "en": "What should we have for dinner? Let's order something for delivery",
+          "en": "What should we have for dinner? Let's order something for delivery.",
           "zh": "晚饭吃什么？我们点外卖吧。"
         },
         {
@@ -5845,28 +5990,28 @@
         },
         {
           "speaker": "A",
-          "en": "We can order pizza Chinese food Indian food",
-          "zh": "我们可以点披萨、中餐、印度菜。"
+          "en": "We can order pizza, Chinese food, or Indian food.",
+          "zh": "我们可以点披萨、中餐或者印度菜。"
         },
         {
           "speaker": "B",
-          "en": "Sandwiches or something else",
-          "zh": "三明治或者别的什么。"
+          "en": "Sandwiches or something else?",
+          "zh": "三明治还是别的什么？"
         },
         {
           "speaker": "A",
           "en": "What sounds good to you? I'm very hungry now.",
-          "zh": "你想吃什么？我现在很饿。"
+          "zh": "你想吃什么？我现在饿坏了。"
         },
         {
           "speaker": "B",
-          "en": "How about Chinese food? We can eat the leftovers tomorrow night",
-          "zh": "中餐怎么样？明晚可以吃剩菜。"
+          "en": "How about Chinese food? We can eat the leftovers tomorrow night.",
+          "zh": "中餐怎么样？明晚还能吃剩菜。"
         },
         {
           "speaker": "A",
-          "en": "I'm so hungry. There may not be any leftovers",
-          "zh": "我太饿了。可能不会有剩菜。"
+          "en": "I'm so hungry. There may not be any leftovers.",
+          "zh": "我太饿了。可能根本不会有剩菜。"
         }
       ]
     },
