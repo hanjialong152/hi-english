@@ -184,7 +184,13 @@ def push_study_data_immediate():
     返回是否推送成功（失败则由防抖兜底 + 退出强刷覆盖）。"""
     study_path = os.path.join(DATA_DIR, 'study_data.json')
     with github_push_lock:
-        return github_api_put('data/study_data.json', load_json(study_path), timeout=6)
+        # 重试2次（首次+重试），每次12秒超时，覆盖 GitHub API 偶发超时
+        for attempt in range(3):
+            result = github_api_put('data/study_data.json', load_json(study_path), timeout=12)
+            if result:
+                return True
+            print(f'[Sync] 写穿第{attempt+1}次失败，{"重试" if attempt < 2 else "放弃"}', flush=True)
+        return False
 
 
 def _merge_stage(existing, incoming):
@@ -395,18 +401,37 @@ def save_json(filepath, data):
     schedule_sync(filepath, data)
 
 def init_data_files():
-    """初始化数据文件：启动时先从 GitHub data-sync 分支拉取最新数据"""
-    # 先从 GitHub 拉取数据（覆盖本地初始文件）
+    """初始化数据文件：启动时从 GitHub data-sync 分支拉取最新数据，与本地合并（本地优先）。
+    
+    关键变更（2026-07-11 修复）：之前是直接覆盖，导致 Render 重启后
+    用 GitHub 旧/空数据覆盖了客户端刚推送的进度。现在改为合并策略：
+    - study_data.json: 按用户逐个合并（learned/mastered取并集、checkIns取最大秒数）
+    - users.json/admin.json/groups.json: 远程覆盖（服务端配置以远程为准）
+    """
     if GITHUB_TOKEN:
         print('[Sync] 从 GitHub data-sync 分支拉取最新数据...', flush=True)
         for filename in ['users.json', 'study_data.json', 'admin.json', 'groups.json', 'messages.json', 'dingtalk.json', 'beta.json']:
             rel_path = f'data/{filename}'
             remote_data = github_api_get(rel_path)
+            local_path = os.path.join(DATA_DIR, filename)
             if remote_data is not None:
-                local_path = os.path.join(DATA_DIR, filename)
-                with open(local_path, 'w', encoding='utf-8') as f:
-                    json.dump(remote_data, f, ensure_ascii=False, indent=2)
-                print(f'[Sync] 已拉取 {filename} ({len(str(remote_data))} bytes)', flush=True)
+                # study_data.json 必须合并而非覆盖——防止用 GitHub 旧快照抹掉客户端刚推送的进度
+                if filename == 'study_data.json' and os.path.exists(local_path):
+                    local_data = load_json(local_path) or {}
+                    # 按用户逐个合并：learned/mastered 并集、数值取最大、checkIns 合并
+                    for uid, remote_sd in (remote_data or {}).items():
+                        local_sd = local_data.get(uid) or {}
+                        merged_sd = merge_study_data(local_sd, remote_sd)
+                        merged_sd = unify_checkins(merged_sd)
+                        local_data[uid] = merged_sd
+                    # 保留本地有但远程没有的用户（不能丢）
+                    with open(local_path, 'w', encoding='utf-8') as f:
+                        json.dump(local_data, f, ensure_ascii=False, indent=2)
+                    print(f'[Sync] 已合并 {filename} ({len(local_data)} users, preserved local progress)', flush=True)
+                else:
+                    with open(local_path, 'w', encoding='utf-8') as f:
+                        json.dump(remote_data, f, ensure_ascii=False, indent=2)
+                    print(f'[Sync] 已拉取 {filename} ({len(str(remote_data))} bytes)', flush=True)
             else:
                 print(f'[Sync] {filename} 远程不存在，使用本地默认值', flush=True)
 
