@@ -79,13 +79,22 @@ supabase = None
 if SUPABASE_URL and SUPABASE_KEY:
     try:
         from supabase import create_client
-        supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-        print('[Supabase] 已连接:', SUPABASE_URL, flush=True)
+        _client = create_client(SUPABASE_URL, SUPABASE_KEY)
+        # 连通性探针：create_client 不会真正建连，若域名无法解析（DNS 失败）或
+        # 项目被暂停/删除，所有读写都会失败。此处做一次真实查询，失败则降级为 None，
+        # 让全部读写走 GitHub data-sync 兜底（避免每次请求都做 3 次失败的 DNS 重试卡顿）。
+        try:
+            _client.table('study_data').select('empid').limit(1).execute()
+            supabase = _client
+            print('[Supabase] 已连接:', SUPABASE_URL, flush=True)
+        except Exception as probe_err:
+            supabase = None
+            print('[Supabase] 连通性探针失败，降级为 GitHub data-sync 兜底:', repr(probe_err)[:200], flush=True)
     except Exception as e:
         supabase = None
-        print('[Supabase] 初始化失败（将降级本地文件）:', e, flush=True)
+        print('[Supabase] 初始化失败（将降级 GitHub data-sync 兜底）:', e, flush=True)
 else:
-    print('[Supabase] 未配置 SUPABASE_URL/SUPABASE_KEY，使用本地文件存储（开发模式）', flush=True)
+    print('[Supabase] 未配置 SUPABASE_URL/SUPABASE_KEY，使用 GitHub data-sync 存储（可靠兜底）', flush=True)
 
 
 def sb_upsert_study(empid, data, retry=2):
@@ -538,6 +547,15 @@ def init_data_files():  # v-restart-trigger-20260711
                 with open(os.path.join(DATA_DIR, 'study_data.json'), 'w', encoding='utf-8') as f:
                     json.dump(all_sd, f, ensure_ascii=False, indent=2)
                 print(f'[Supabase] 已加载 {len(all_sd)} 个学员学习数据', flush=True)
+            elif GITHUB_TOKEN:
+                # Supabase 为空/失败 → 回退 GitHub data-sync 加载学习数据
+                gh_sd = github_api_get('data/study_data.json')
+                if gh_sd:
+                    with open(os.path.join(DATA_DIR, 'study_data.json'), 'w', encoding='utf-8') as f:
+                        json.dump(gh_sd, f, ensure_ascii=False, indent=2)
+                    print(f'[GitHub回退] 已加载 {len(gh_sd)} 个学员学习数据', flush=True)
+                else:
+                    print('[Supabase] study_data 为空且 GitHub 无数据，保留本地现有缓存', flush=True)
             else:
                 print('[Supabase] study_data 为空或读取失败，保留本地现有缓存', flush=True)
         except Exception as e:
@@ -981,7 +999,12 @@ def handle_get_study_data():
     # 优先从 Supabase 实时读取（管理后台/跨终端一致的唯一真相源）
     data = sb_get_study(empid)
     if data is None:
-        # 降级：读本地缓存
+        # 降级1：读 GitHub data-sync 缓存
+        gh_data = github_api_get('data/study_data.json')
+        if gh_data and empid in gh_data:
+            data = gh_data.get(empid)
+    if data is None:
+        # 降级2：读本地缓存
         study_data = load_json(os.path.join(DATA_DIR, 'study_data.json'))
         data = study_data.get(empid)
     if not data:
@@ -993,6 +1016,8 @@ def handle_get_study_data():
 def handle_all_study_data():
     """学员端排行榜专用：返回全体学员学习数据（实时从 Supabase 读取，保证全员一致）。"""
     study_data = sb_get_all_study()
+    if not study_data and GITHUB_TOKEN:
+        study_data = github_api_get('data/study_data.json') or {}
     if not study_data:
         study_data = load_json(os.path.join(DATA_DIR, 'study_data.json'))
     return jsonify({'success': True, 'studyData': study_data})
@@ -1013,17 +1038,30 @@ def handle_save_study_data():
         all_data[empid] = merged
         # 本地原子写 + 标脏 + 防抖兜底
         save_json(study_path, all_data)
-    # 写穿（write-through）：实时 UPSERT 到 Supabase（按 empid 单行），
+    # 写穿（write-through）：实时 UPSERT 到 Supabase（按 empid 单行）。
+    # 若 Supabase 不可达（如 DNS 失败/项目暂停），自动回退 GitHub data-sync（Render 可稳定连接），
     # 确保本请求返回即已持久化，Render 部署/休眠/清缓存都不丢。
     err_detail = None
+    persisted = False
     try:
         persisted = sb_upsert_study(empid, merged)
     except Exception as e:
         persisted = False
         err_detail = str(e)
         print(f'[Supabase] study-data 写入异常: {e}', flush=True)
-    if not persisted and err_detail is None:
-        err_detail = 'supabase client is None (未连接)' if not supabase else 'upsert returned falsy'
+    if not persisted:
+        # Supabase 失败 → 回退 GitHub（可靠兜底）
+        try:
+            with github_push_lock:
+                gh_ok = github_api_put('data/study_data.json', all_data)
+            if gh_ok:
+                persisted = True
+                print(f'[GitHub回退] study_data {empid} 已写入 GitHub', flush=True)
+            else:
+                err_detail = (err_detail or '') + '; GitHub回退也失败'
+        except Exception as e2:
+            err_detail = (err_detail or '') + f'; GitHub回退异常:{e2}'
+            print(f'[GitHub回退] study_data 失败: {e2}', flush=True)
     return jsonify({'success': True, 'persisted': bool(persisted), 'sb_debug': err_detail, 'sb_connected': bool(supabase)})
 
 
