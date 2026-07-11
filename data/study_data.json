@@ -149,6 +149,9 @@
         "7": {
           "ex2": 35.0,
           "phrase": 35.0
+        },
+        "9": {
+          "phrase": 25
         }
       },
       "spellIndex": 1,
@@ -241,7 +244,7 @@
       },
       {
         "date": "2026-07-11",
-        "seconds": 462,
+        "seconds": 463,
         "completed": false
       }
     ]
