@@ -698,6 +698,18 @@ const HiEnglish = {
       };
       localStorage.setItem('hi_english_study', JSON.stringify(all));
     }
+    // 自愈：去重 learned/mastered 数组（修复 ID 类型不一致导致的重复累积）
+    var sd = all[empid];
+    ['basic', 'business'].forEach(function(stage) {
+      if (sd[stage]) {
+        if (sd[stage].learned && sd[stage].learned.length > 1) {
+          sd[stage].learned = Array.from(new Set(sd[stage].learned.map(function(x) { return String(x); })));
+        }
+        if (sd[stage].mastered && sd[stage].mastered.length > 1) {
+          sd[stage].mastered = Array.from(new Set(sd[stage].mastered.map(function(x) { return String(x); })));
+        }
+      }
+    });
     return all[empid];
   },
 

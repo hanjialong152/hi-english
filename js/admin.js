@@ -63,6 +63,10 @@ function calcUserScores(empid) {
 // ===== Dashboard =====
 var reminderPage = 1;
 var reminderPageSize = 10;
+
+// 分组管理分页
+var groupPage = 1;
+var groupPageSize = 5;
 var reminderList = [];
 var reminderSelected = {};
 
@@ -101,7 +105,7 @@ function renderReminderTable() {
   var pg = document.getElementById('reminder-pagination');
   if (pg) {
     if (total === 0) {
-      pg.innerHTML = '<div style="font-size:13px;color:var(--text-sub);">共 0 人</div>';
+      pg.innerHTML = '<div style="font-size:13px;color:var(--text-sub);">共 0 条</div>';
     } else {
       var pgSel = [10, 20, 50, 100].map(function(n) { return '<option value="' + n + '"' + (n === pageSize ? ' selected' : '') + '>' + n + '</option>'; }).join('');
       pg.innerHTML =
@@ -240,13 +244,13 @@ function renderDashboard() {
       '<p style="font-size:13px;color:var(--text-sub);margin-bottom:12px;">以下学员本周打卡不足（不足3天），已按打卡天数从少到多排列。勾选后点击「催学提醒」推送站内信与通知栏（如已配置钉钉则同步推送到群）：</p>' +
       '<div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap;">' +
         '<button class="btn btn-outline" style="padding:6px 12px;font-size:13px;" onclick="toggleReminderSelectAll()">全选 / 取消全选</button>' +
-        '<span style="font-size:13px;color:var(--text-sub);">已选 <b id="reminder-sel-count">0</b> 人 / 共 ' + inactiveStudents.length + ' 人</span>' +
+        '<span style="font-size:13px;color:var(--text-sub);">已选 <b id="reminder-sel-count">0</b> 条 / 共 ' + inactiveStudents.length + ' 条</span>' +
         '<span style="margin-left:auto;"></span>' +
         '<button class="btn btn-danger" style="padding:8px 14px;font-size:14px;" onclick="sendStudyReminder()">📲 催学提醒</button>' +
         '<button class="btn btn-outline" style="padding:8px 14px;font-size:14px;" onclick="showDingTalkConfig()">🔔 钉钉推送设置</button>' +
       '</div>' +
       '<div style="overflow-x:auto;"><table class="data-table"><thead><tr>' +
-        '<th style="width:44px;text-align:center;">选择</th><th>姓名</th><th>工号</th><th>本周打卡</th>' +
+        '<th style="width:44px;text-align:center;">选择</th><th>姓名</th><th>账号</th><th>本周打卡</th>' +
       '</tr></thead><tbody id="reminder-tbody"></tbody></table></div>' +
       '<div id="reminder-pagination" style="margin-top:10px;"></div>' +
       '<div id="dingtalk-config-area" style="display:none;margin-top:16px;padding:12px;background:var(--primary-light);border-radius:8px;">' +
@@ -557,7 +561,7 @@ function renderStudentTable() {
         '<button class="btn btn-outline" style="padding:6px 12px;font-size:13px;" ' + (studentPage >= totalPages ? 'disabled' : '') + ' onclick="studentPage=Math.min(' + totalPages + ',studentPage+1);renderStudentTable()">下一页</button>' +
       '</div>';
   } else {
-    pgHtml = '<div style="font-size:13px;color:var(--text-sub);">共 0 人</div>';
+    pgHtml = '<div style="font-size:13px;color:var(--text-sub);">共 0 条</div>';
   }
   document.getElementById('student-pagination').innerHTML = pgHtml;
 }
@@ -926,14 +930,49 @@ function renderGroupStats() {
     };
   }).sort(function(a, b) { return b.score - a.score; });
 
-  var html = groupStats.map(function(item) {
+  // 分页
+  var total = groupStats.length;
+  if (groupPage < 1 || groupPage > Math.ceil(total / groupPageSize)) groupPage = 1;
+  var startIdx = (groupPage - 1) * groupPageSize;
+  var endIdx = Math.min(startIdx + groupPageSize, total);
+  var pagedStats = groupStats.slice(startIdx, endIdx);
+
+  var html = pagedStats.map(function(item) {
     return '<tr><td>' + item.name + '</td><td>' + item.count + '</td><td>' + item.checkinRate + '%</td><td>' + item.weeklyAvg + '</td><td>' + item.monthlyAvg + '</td><td><strong>' + item.score + '</strong></td></tr>';
   }).join('');
+
+  // 分页控件
+  var pgHtml = '';
+  if (total > 0) {
+    var totalPages = Math.ceil(total / groupPageSize);
+    pgHtml =
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px;flex-wrap:wrap;gap:8px;">' +
+        '<div style="display:flex;align-items:center;gap:6px;">' +
+          '<span style="font-size:13px;color:var(--text-sub);">每页</span>' +
+          '<select onchange="groupPageSize=parseInt(this.value);groupPage=1;renderGroupStats();" style="padding:4px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px;">' +
+            '<option' + (groupPageSize===5?' selected':'') + '>5</option>' +
+            '<option' + (groupPageSize===10?' selected':'') + '>10</option>' +
+            '<option' + (groupPageSize===20?' selected':'') + '>20</option>' +
+            '<option' + (groupPageSize===50?' selected':'') + '>50</option>' +
+          '</select>' +
+          '<span style="font-size:13px;color:var(--text-sub);">条</span>' +
+        '</div>' +
+        '<div style="display:flex;align-items:center;gap:10px;">' +
+          '<button class="btn btn-outline" style="padding:4px 12px;font-size:12px;" onclick="if(groupPage>1){groupPage--;renderGroupStats();}" ' + (groupPage<=1?'disabled':'') + '>上一页</button>' +
+          '<span style="font-size:13px;color:var(--text-sub);">第 ' + groupPage + '/' + totalPages + ' 页</span>' +
+          '<button class="btn btn-outline" style="padding:4px 12px;font-size:12px;" onclick="if(groupPage<totalPages){groupPage++;renderGroupStats();}" ' + (groupPage>=totalPages?'disabled':'') + '>下一页</button>' +
+          '<span style="margin-left:auto;">显示第 ' + (startIdx+1) + '-' + endIdx + ' 条 / 共 ' + total + ' 条</span>' +
+        '</div>' +
+      '</div>';
+  } else {
+    pgHtml = '<div style="font-size:13px;color:var(--text-sub);">共 0 条</div>';
+  }
 
   document.getElementById('a-group-stats').innerHTML =
     '<table class="data-table"><thead><tr><th>组别</th><th>人数</th><th>平均打卡率</th><th>平均周测分</th><th>平均月测分</th><th>总成绩</th></tr></thead><tbody>' +
     (html || '<tr><td colspan="6" style="text-align:center;color:var(--text-sub);">暂无数据</td></tr>') +
-    '</tbody></table>';
+    '</tbody></table>' +
+    pgHtml;
 }
 
 function addGroup() {

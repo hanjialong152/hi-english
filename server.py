@@ -459,7 +459,7 @@ def push_dingtalk_card(webhook, title, content, rows, time_str, link_url='https:
         '**⏰ 提醒时间**\n\n'
         + time_str + '\n\n'
         '**👥 提醒对象**（共 ' + str(n) + ' 人，按打卡天数从少到多）\n\n'
-        '| 姓名 | 工号 | 打卡天数 |\n'
+        '| 姓名 | 账号 | 打卡天数 |\n'
         '| ------ | ------ | ------ |\n'
         + (table_rows if table_rows else '| - | - | - |\n')
         + '\n'
@@ -977,7 +977,9 @@ def handle_send_message():
                 rows.append((name, eid, days))
             # 按打卡天数升序（0、1、2…），最该催的排在前面
             rows.sort(key=lambda r: r[2])
-            time_str = time.strftime('%Y-%m-%d %H:%M')
+            # 北京时间 (UTC+8)
+            bj_now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=8)))
+            time_str = bj_now.strftime('%Y-%m-%d %H:%M')
             threading.Thread(target=push_dingtalk_card,
                              args=(webhook, title, content, rows, time_str),
                              daemon=True).start()

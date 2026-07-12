@@ -1751,16 +1751,17 @@ function nextWord() {
   var today = HiEnglish.today();
   if (currentStage === 'basic') {
     var prevWordId = words[currentIndex - 1] ? words[currentIndex - 1].id : null;
-    if (prevWordId && !stageData.learned.includes(prevWordId)) {
-      stageData.learned.push(prevWordId);
+    // 用 String() 兼容 ID 类型不一致（number vs string）
+    if (prevWordId && !stageData.learned.some(function(x) { return String(x) === String(prevWordId); })) {
+      stageData.learned.push(String(prevWordId));
     }
-    if (prevWordId) stageData.learnedDates[prevWordId] = today;
+    if (prevWordId) stageData.learnedDates[String(prevWordId)] = today;
   } else {
     var prevLessonId = lessons[currentIndex - 1] ? lessons[currentIndex - 1].id : null;
-    if (prevLessonId && !stageData.learned.includes(prevLessonId)) {
-      stageData.learned.push(prevLessonId);
+    if (prevLessonId && !stageData.learned.some(function(x) { return String(x) === String(prevLessonId); })) {
+      stageData.learned.push(String(prevLessonId));
     }
-    if (prevLessonId) stageData.learnedDates[prevLessonId] = today;
+    if (prevLessonId) stageData.learnedDates[String(prevLessonId)] = today;
   }
   saveStudyData();
   if (currentStage === 'basic') renderWordLearnCard();
@@ -2188,10 +2189,13 @@ function renderWordList(filter) {
   var stageData = studyData[currentStage];
   var container = document.getElementById('s-wordlist-content');
 
-  // Stats overview
-  var learnedCount = stageData.learned.length;
-  var masteredCount = stageData.mastered.length;
-  var learningCount = learnedCount - masteredCount;
+  // Stats overview — 用 Set 去重，避免 ID 类型不一致导致的重复计数
+  var learnedSet = new Set(stageData.learned.map(function(x) { return String(x); }));
+  var masteredSet = new Set(stageData.mastered.map(function(x) { return String(x); }));
+  var learnedCount = learnedSet.size;
+  var masteredCount = masteredSet.size;
+  // "学习中" = 已学但未掌握（从已学集合中去掉已掌握）
+  var learningCount = Math.max(0, learnedCount - masteredCount);
   var totalWords = currentStage === 'basic' ? words.length : lessons.length;
   var progressPercent = totalWords > 0 ? Math.floor((learnedCount / totalWords) * 100) : 0;
 
@@ -2304,8 +2308,11 @@ async function renderReport() {
   var allCheckIns = studyData.checkIns || [];
   var totalDays = allCheckIns.length;
   var completedDays = allCheckIns.filter(function(c){return c.completed;}).length;
-  var masteredCount = stageData.mastered.length;
-  var learnedCount = stageData.learned.length;
+  // 用 Set 去重统计（修复 ID 类型不一致导致的重复计数）
+  var masteredSet = new Set(stageData.mastered.map(function(x) { return String(x); }));
+  var learnedSet = new Set(stageData.learned.map(function(x) { return String(x); }));
+  var masteredCount = masteredSet.size;
+  var learnedCount = learnedSet.size;
   var totalItems = currentStage === 'basic' ? words.length : lessons.length;
   var progressPercent = totalItems > 0 ? Math.floor((learnedCount / totalItems) * 100) : 0;
   var totalSeconds = allCheckIns.reduce(function(s, c){return s + (c.seconds || 0);}, 0);
