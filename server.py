@@ -440,22 +440,29 @@ def _dingtalk_post(webhook, payload):
         return False
 
 
-def push_dingtalk_card(webhook, title, content, names, time_str, link_url='https://hi-english.onrender.com/student.html'):
+def push_dingtalk_card(webhook, title, content, rows, time_str, link_url='https://hi-english.onrender.com/student.html'):
     """服务端推送美观的钉钉催学卡片（actionCard，带跳转按钮）。
+    rows: 列表，元素为 (name, empid, days)，已按 days 升序排列。
     注意：钉钉机器人需将安全设置为"自定义关键词"，关键词包含"催学提醒"或"Hi English"。
     卡片标题与正文均含"催学提醒"，可通过关键词校验。失败时自动降级为纯文本。"""
     if not webhook:
         return False
-    n = len(names) if names else 0
-    names_str = '、'.join(names) if names else '全体学员'
-    # actionCard 正文使用 markdown 排版，配合 emoji 与配色提升观感
+    n = len(rows) if rows else 0
+    # actionCard 正文使用 markdown 表格展示（钉钉支持 markdown 表格）
+    table_rows = ''.join(
+        '| ' + name + ' | ' + eid + ' | ' + str(days) + ' 天 |\n'
+        for (name, eid, days) in (rows or [])
+    )
     md = (
         '#### <font color=#FF6A00>📚 催学提醒</font>\n\n'
         '> 你有一条新的学习任务待完成，请及时打卡 📖\n\n'
         '**⏰ 提醒时间**\n\n'
         + time_str + '\n\n'
-        '**👥 提醒对象**（共 ' + str(n) + ' 人）\n\n'
-        + names_str + '\n\n'
+        '**👥 提醒对象**（共 ' + str(n) + ' 人，按打卡天数从少到多）\n\n'
+        '| 姓名 | 工号 | 打卡天数 |\n'
+        '| ------ | ------ | ------ |\n'
+        + (table_rows if table_rows else '| - | - | - |\n')
+        + '\n'
         '**📝 提醒内容**\n\n'
         + (content or '请尽快完成每日学习打卡～') + '\n\n'
         '> 💪 坚持每天 15 分钟，英语水平稳步提升！\n\n'
@@ -473,9 +480,13 @@ def push_dingtalk_card(webhook, title, content, names, time_str, link_url='https
     }
     ok = _dingtalk_post(webhook, payload)
     if not ok:
-        # 降级为纯文本，保证消息可达
+        # 降级为纯文本，保证消息可达（同样以表格形式展示，清晰可读）
+        plain_rows = '\n'.join(
+            '- ' + name + '（' + eid + '） 打卡 ' + str(days) + ' 天'
+            for (name, eid, days) in (rows or [])
+        )
         fallback = ('【Hi English 催学提醒】\n\n时间：' + time_str +
-                    '\n提醒对象(' + str(n) + '人)：' + names_str +
+                    '\n提醒对象(' + str(n) + '人，按打卡天数从少到多)：\n' + (plain_rows or '全体学员') +
                     '\n\n' + (content or '') + '\n\n— Hi English 学习平台')
         ok = _dingtalk_post(webhook, {'msgtype': 'text', 'text': {'content': fallback}})
     return ok
@@ -948,16 +959,27 @@ def handle_send_message():
         webhook = cfg.get('webhook', '') if isinstance(cfg, dict) else ''
         if webhook:
             users = load_json(os.path.join(DATA_DIR, 'users.json'))
-            names = []
+            study_data_all = load_json(os.path.join(DATA_DIR, 'study_data.json'))
+            if not isinstance(study_data_all, dict):
+                study_data_all = {}
+            rows = []
             for empid in targets:
                 eid = str(empid).strip()
                 if not eid:
                     continue
                 u = users.get(eid) if isinstance(users, dict) else None
-                names.append((u.get('name', '') + '(' + eid + ')') if u else eid)
+                name = u.get('name', '') if u else eid
+                sd = study_data_all.get(eid)
+                days = 0
+                if isinstance(sd, dict):
+                    checkins = sd.get('checkIns') or []
+                    days = sum(1 for c in checkins if isinstance(c, dict) and c.get('completed'))
+                rows.append((name, eid, days))
+            # 按打卡天数升序（0、1、2…），最该催的排在前面
+            rows.sort(key=lambda r: r[2])
             time_str = time.strftime('%Y-%m-%d %H:%M')
             threading.Thread(target=push_dingtalk_card,
-                             args=(webhook, title, content, names, time_str),
+                             args=(webhook, title, content, rows, time_str),
                              daemon=True).start()
 
     return jsonify({'success': True, 'count': count, 'time': server_time})

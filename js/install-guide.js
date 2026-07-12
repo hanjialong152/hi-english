@@ -46,6 +46,21 @@
     return !!deferredPrompt && (P.isAndroid || P.isChrome || P.isEdge);
   }
 
+  // 已安装为 PWA（独立运行）则不弹安装引导：
+  //  - iOS Safari 添加到主屏幕后 navigator.standalone === true
+  //  - 安卓 Chrome/Edge、桌面 Chrome/Edge 安装后 display-mode 为 standalone/minimal-ui/fullscreen
+  function isInstalled() {
+    try {
+      if (navigator.standalone === true) return true;
+      if (window.matchMedia) {
+        if (window.matchMedia('(display-mode: standalone)').matches) return true;
+        if (window.matchMedia('(display-mode: minimal-ui)').matches) return true;
+        if (window.matchMedia('(display-mode: fullscreen)').matches) return true;
+      }
+    } catch (e) {}
+    return false;
+  }
+
   function doNativeInstall() {
     if (canNativeInstall()) {
       deferredPrompt.prompt();
@@ -205,6 +220,8 @@
   }
 
   function showDownloadGuide() {
+    // 已安装为 PWA 的独立应用时不弹安装引导（避免重复打扰）
+    if (isInstalled()) return;
     ensureCss();
     var resolved = resolveTabs();
     var mask = document.getElementById('install-modal-mask');

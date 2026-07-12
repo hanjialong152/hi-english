@@ -61,6 +61,78 @@ function calcUserScores(empid) {
 }
 
 // ===== Dashboard =====
+var reminderPage = 1;
+var reminderPageSize = 10;
+var reminderList = [];
+var reminderSelected = {};
+
+// 仅重渲染催学提醒表格与分页（不重算整个看板，避免勾选状态与分页丢失）
+function renderReminderTable() {
+  var list = reminderList || [];
+  var total = list.length;
+  var pageSize = reminderPageSize;
+  var totalPages = Math.max(1, Math.ceil(total / pageSize));
+  if (reminderPage > totalPages) reminderPage = totalPages;
+  if (reminderPage < 1) reminderPage = 1;
+  var startIdx = (reminderPage - 1) * pageSize;
+  var pageArr = list.slice(startIdx, startIdx + pageSize);
+  var endIdx = startIdx + pageArr.length;
+
+  // 首屏默认全部勾选
+  pageArr.forEach(function(p) { if (reminderSelected[p.empid] === undefined) reminderSelected[p.empid] = true; });
+
+  var tbody = document.getElementById('reminder-tbody');
+  if (tbody) {
+    tbody.innerHTML = pageArr.map(function(p) {
+      var checked = reminderSelected[p.empid] ? 'checked' : '';
+      return '<tr>' +
+        '<td style="text-align:center;"><input type="checkbox" data-reminder-empid="' + p.empid + '" ' + checked + ' onchange="onReminderCheck(this,\'' + p.empid + '\')"></td>' +
+        '<td>' + p.name + '</td>' +
+        '<td>' + p.empid + '</td>' +
+        '<td>' + p.completedDays + ' 天</td>' +
+      '</tr>';
+    }).join('') || '<tr><td colspan="4" style="text-align:center;color:var(--text-sub);padding:20px;">暂无需提醒的学员</td></tr>';
+  }
+
+  var selCount = list.filter(function(p) { return reminderSelected[p.empid]; }).length;
+  var selEl = document.getElementById('reminder-sel-count');
+  if (selEl) selEl.textContent = selCount;
+
+  var pg = document.getElementById('reminder-pagination');
+  if (pg) {
+    if (total === 0) {
+      pg.innerHTML = '<div style="font-size:13px;color:var(--text-sub);">共 0 人</div>';
+    } else {
+      var pgSel = [10, 20, 50, 100].map(function(n) { return '<option value="' + n + '"' + (n === pageSize ? ' selected' : '') + '>' + n + '</option>'; }).join('');
+      pg.innerHTML =
+        '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:13px;color:var(--text-sub);">' +
+          '<span>每页</span>' +
+          '<select id="reminder-pagesize" style="padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px;" onchange="reminderPage=1;reminderPageSize=parseInt(this.value,10);renderReminderTable()">' + pgSel + '</select>' +
+          '<span>条</span>' +
+          '<span style="margin-left:auto;">显示第 ' + (startIdx + 1) + '-' + endIdx + ' 条 / 共 ' + total + ' 人</span>' +
+          '<button class="btn btn-outline" style="padding:6px 12px;font-size:13px;" ' + (reminderPage <= 1 ? 'disabled' : '') + ' onclick="reminderPage=Math.max(1,reminderPage-1);renderReminderTable()">上一页</button>' +
+          '<span>第 ' + reminderPage + ' / ' + totalPages + ' 页</span>' +
+          '<button class="btn btn-outline" style="padding:6px 12px;font-size:13px;" ' + (reminderPage >= totalPages ? 'disabled' : '') + ' onclick="reminderPage=Math.min(' + totalPages + ',reminderPage+1);renderReminderTable()">下一页</button>' +
+        '</div>';
+    }
+  }
+}
+
+function onReminderCheck(cb, empid) {
+  reminderSelected[empid] = cb.checked;
+  var list = reminderList || [];
+  var selCount = list.filter(function(p) { return reminderSelected[p.empid]; }).length;
+  var selEl = document.getElementById('reminder-sel-count');
+  if (selEl) selEl.textContent = selCount;
+}
+
+function toggleReminderSelectAll() {
+  var list = reminderList || [];
+  var allSelected = list.length > 0 && list.every(function(p) { return reminderSelected[p.empid]; });
+  list.forEach(function(p) { reminderSelected[p.empid] = !allSelected; });
+  renderReminderTable();
+}
+
 function renderDashboard() {
   var users = HiEnglish.getUsers();
   var userArr = Object.values(users);
@@ -153,23 +225,30 @@ function renderDashboard() {
     '<div style="display:flex;justify-content:flex-end;margin-bottom:8px;"><button class="btn btn-outline" onclick="exportTeamRanking()">📥 导出团队排行榜</button></div>' +
     '<div style="overflow-x:auto;"><table class="data-table"><thead><tr><th>排名</th><th>团队名称</th><th>人数</th><th>平均打卡率</th><th>平均周测分</th><th>平均月测分</th><th>总成绩</th></tr></thead><tbody>' + (groupHTML || '<tr><td colspan="7" style="text-align:center;color:var(--text-sub);">暂无数据</td></tr>') + '</tbody></table></div>';
 
-  // Reminders
+  // Reminders — 按打卡天数升序（0、1、2…），可勾选 + 分页（默认10/页）
   var inactiveStudents = personalScores.filter(function(p) {
     return p.completedDays < 3 && p.status === 'active';
   });
-  var reminderHTML = inactiveStudents.map(function(p) {
-    return '<span class="group-chip">' + p.name + ' (' + p.empid + ') - 打卡' + p.completedDays + '天</span>';
-  }).join('');
+  inactiveStudents.sort(function(a, b) { return a.completedDays - b.completedDays; });
+  reminderList = inactiveStudents;
+  if (reminderList.length === 0) reminderPage = 1;
+  else if (reminderPage > Math.ceil(reminderList.length / reminderPageSize)) reminderPage = 1;
 
   document.getElementById('a-dashboard-reminders').innerHTML =
     '<div class="section-title">📌 催学提醒</div>' +
     '<div class="card">' +
-      '<p style="font-size:13px;color:var(--text-sub);margin-bottom:12px;">以下学员本周打卡不足（不足3天），点击后系统将自动推送催学提醒至学员端站内信和手机通知栏：</p>' +
-      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">' + (reminderHTML || '<span style="color:var(--text-sub);">暂无需提醒的学员</span>') + '</div>' +
-      '<div style="display:flex;gap:8px;flex-wrap:wrap;">' +
-        '<button class="btn btn-danger" onclick="sendStudyReminder()">📲 催学提醒</button>' +
-        '<button class="btn btn-outline" onclick="showDingTalkConfig()">🔔 钉钉推送设置</button>' +
+      '<p style="font-size:13px;color:var(--text-sub);margin-bottom:12px;">以下学员本周打卡不足（不足3天），已按打卡天数从少到多排列。勾选后点击「催学提醒」推送站内信与通知栏（如已配置钉钉则同步推送到群）：</p>' +
+      '<div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap;">' +
+        '<button class="btn btn-outline" style="padding:6px 12px;font-size:13px;" onclick="toggleReminderSelectAll()">全选 / 取消全选</button>' +
+        '<span style="font-size:13px;color:var(--text-sub);">已选 <b id="reminder-sel-count">0</b> 人 / 共 ' + inactiveStudents.length + ' 人</span>' +
+        '<span style="margin-left:auto;"></span>' +
+        '<button class="btn btn-danger" style="padding:8px 14px;font-size:14px;" onclick="sendStudyReminder()">📲 催学提醒</button>' +
+        '<button class="btn btn-outline" style="padding:8px 14px;font-size:14px;" onclick="showDingTalkConfig()">🔔 钉钉推送设置</button>' +
       '</div>' +
+      '<div style="overflow-x:auto;"><table class="data-table"><thead><tr>' +
+        '<th style="width:44px;text-align:center;">选择</th><th>姓名</th><th>工号</th><th>本周打卡</th>' +
+      '</tr></thead><tbody id="reminder-tbody"></tbody></table></div>' +
+      '<div id="reminder-pagination" style="margin-top:10px;"></div>' +
       '<div id="dingtalk-config-area" style="display:none;margin-top:16px;padding:12px;background:var(--primary-light);border-radius:8px;">' +
         '<div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--primary);">钉钉群机器人推送配置</div>' +
         '<div style="font-size:12px;color:var(--text-sub);margin-bottom:8px;">填写钉钉群机器人的Webhook地址，催学提醒将同时推送到钉钉群。不填则仅推送站内信和通知栏。</div>' +
@@ -180,6 +259,7 @@ function renderDashboard() {
         '<div style="font-size:11px;color:var(--text-sub);margin-top:6px;">获取方式：钉钉群 → 群设置 → 智能群助手 → 添加机器人 → 自定义 → 复制Webhook地址</div>' +
       '</div>' +
     '</div>';
+  renderReminderTable();
 
   // 众测模式全局开关
   var betaEl = document.getElementById('a-beta-switch');
@@ -269,31 +349,31 @@ function unlockBusiness(empid) {
 
 // ===== Study Reminder =====
 function sendStudyReminder() {
-  var users = HiEnglish.getUsers();
-  var userArr = Object.values(users);
-  var inactiveStudents = [];
-  
-  userArr.forEach(function(u) {
-    if (u.status !== 'active') return;
-    var s = calcUserScores(u.empid);
-    if (s.completedDays < 3) {
-      inactiveStudents.push(u);
-    }
-  });
-  
-  if (inactiveStudents.length === 0) {
-    showToast('暂无需提醒的学员，所有学员本周打卡均已达标');
+  // 优先使用看板中已渲染的催学列表（已按打卡天数升序），否则自行计算兜底
+  var list = (reminderList && reminderList.length) ? reminderList : (function() {
+    var users = HiEnglish.getUsers();
+    return Object.values(users).map(function(u) {
+      if (u.status !== 'active') return null;
+      var s = calcUserScores(u.empid);
+      return (s.completedDays < 3) ? Object.assign({ empid: u.empid, name: u.name, group: u.group, status: u.status }, s) : null;
+    }).filter(Boolean).sort(function(a, b) { return a.completedDays - b.completedDays; });
+  })();
+
+  // 仅发送勾选的学员
+  var selected = list.filter(function(p) { return reminderSelected[p.empid]; });
+  if (selected.length === 0) {
+    showToast('请先勾选要催学的学员');
     return;
   }
-  
-  var names = inactiveStudents.map(function(s) { return s.name + '(' + s.empid + ')'; }).join('、');
-  if (!confirm('将向以下 ' + inactiveStudents.length + ' 名学员发送催学提醒：\n\n' + names + '\n\n提醒将通过站内信和手机通知栏推送到学员端。确认发送？')) return;
-  
+
+  var names = selected.map(function(s) { return s.name + '(' + s.empid + ')'; }).join('、');
+  if (!confirm('将向已勾选的 ' + selected.length + ' 名学员发送催学提醒：\n\n' + names + '\n\n提醒将通过站内信和手机通知栏推送到学员端。确认发送？')) return;
+
   var now = new Date();
   var timeStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0') + ' ' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
   var msgTitle = '催学提醒';
   var msgContent = '您好，您本周学习打卡不足3天，请尽快完成每日跟读学习。坚持每天15分钟，英语水平稳步提升！如有问题请联系培训管理员。';
-  var targets = inactiveStudents.map(function(s) { return s.empid; });
+  var targets = selected.map(function(s) { return s.empid; });
 
   // 发送到服务端（服务端盖真实时间戳，学员端跨设备即刻收到 + 通知栏 + 钉钉由服务端推送）
   HiEnglish.sendMessageToServer(targets, msgTitle, msgContent, 'reminder').then(function(ok) {
@@ -386,27 +466,38 @@ function sendDingTalkReminder(webhook, students, timeStr) {
 }
 
 // ===== Student Management =====
+var studentPage = 1;
+var studentPageSize = 10;
+var studentToolbarBuilt = false;
+
 function renderStudentTable() {
   var users = HiEnglish.getUsers();
   var search = document.getElementById('search-input') ? document.getElementById('search-input').value : '';
   var groupFilter = document.getElementById('filter-group') ? document.getElementById('filter-group').value : '';
-
   var groups = HiEnglish.getGroups();
-  var groupOptions = '<option value="">全部组别</option>' + groups.map(function(g) { return '<option>' + g + '</option>'; }).join('');
 
-  document.getElementById('a-students-toolbar').innerHTML =
-    '<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">' +
-      '<input type="password" autocomplete="new-password" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;" tabindex="-1" aria-hidden="true">' +
-      '<input type="text" id="search-input" name="search-query" autocomplete="off" placeholder="搜索账号或姓名..." value="' + (search || '') + '" style="flex:1;min-width:200px;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:14px;" oninput="renderStudentTable()">' +
-      '<select id="filter-group" style="padding:10px;border:1px solid var(--border);border-radius:8px;font-size:14px;" onchange="renderStudentTable()">' + groupOptions + '</select>' +
-      '<button class="btn btn-primary" onclick="showAddStudentModal()">+ 添加学员</button>' +
-      '<button class="btn btn-outline" onclick="showBatchImportModal()">📥 批量导入</button>' +
-      '<button class="btn btn-outline" onclick="exportStudentData()">📥 导出学员数据</button>' +
-    '</div>';
-
-  if (groupFilter) {
-    var sel = document.getElementById('filter-group');
-    if (sel) sel.value = groupFilter;
+  // 工具栏仅构建一次，避免每次重渲染导致搜索框失焦（仍在搜索/筛选时正常触发分页重置）
+  var toolbar = document.getElementById('a-students-toolbar');
+  if (!studentToolbarBuilt) {
+    var groupOptions = '<option value="">全部组别</option>' + groups.map(function(g) { return '<option>' + g + '</option>'; }).join('');
+    toolbar.innerHTML =
+      '<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">' +
+        '<input type="password" autocomplete="new-password" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;" tabindex="-1" aria-hidden="true">' +
+        '<input type="text" id="search-input" name="search-query" autocomplete="off" placeholder="搜索账号或姓名..." value="' + (search || '') + '" style="flex:1;min-width:200px;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:14px;" oninput="studentPage=1;renderStudentTable()">' +
+        '<select id="filter-group" style="padding:10px;border:1px solid var(--border);border-radius:8px;font-size:14px;" onchange="studentPage=1;renderStudentTable()">' + groupOptions + '</select>' +
+        '<button class="btn btn-primary" onclick="showAddStudentModal()">+ 添加学员</button>' +
+        '<button class="btn btn-outline" onclick="showBatchImportModal()">📥 批量导入</button>' +
+        '<button class="btn btn-outline" onclick="exportStudentData()">📥 导出学员数据</button>' +
+      '</div>';
+    studentToolbarBuilt = true;
+  } else {
+    // 刷新组别下拉项（保留当前选中值）
+    var fsel = document.getElementById('filter-group');
+    if (fsel) {
+      var cur = fsel.value;
+      fsel.innerHTML = '<option value="">全部组别</option>' + groups.map(function(g) { return '<option>' + g + '</option>'; }).join('');
+      fsel.value = cur;
+    }
   }
 
   var userArr = Object.values(users);
@@ -417,8 +508,18 @@ function renderStudentTable() {
     userArr = userArr.filter(function(u) { return u.group === groupFilter; });
   }
 
+  // 分页
+  var total = userArr.length;
+  var pageSize = studentPageSize;
+  var totalPages = Math.max(1, Math.ceil(total / pageSize));
+  if (studentPage > totalPages) studentPage = totalPages;
+  if (studentPage < 1) studentPage = 1;
+  var startIdx = (studentPage - 1) * pageSize;
+  var pageArr = userArr.slice(startIdx, startIdx + pageSize);
+  var endIdx = startIdx + pageArr.length;
+
   var tbody = document.getElementById('student-tbody');
-  tbody.innerHTML = userArr.map(function(u) {
+  tbody.innerHTML = pageArr.map(function(u) {
     var s = calcUserScores(u.empid);
     return '<tr>' +
       '<td>' + u.empid + '</td>' +
@@ -440,6 +541,25 @@ function renderStudentTable() {
       '</td>' +
     '</tr>';
   }).join('') || '<tr><td colspan="11" style="text-align:center;color:var(--text-sub);padding:20px;">暂无学员数据</td></tr>';
+
+  // 分页控件（每页 10/20/50/100，显示当页/总数）
+  var pgSel = [10, 20, 50, 100].map(function(n) { return '<option value="' + n + '"' + (n === pageSize ? ' selected' : '') + '>' + n + '</option>'; }).join('');
+  var pgHtml;
+  if (total > 0) {
+    pgHtml =
+      '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:13px;color:var(--text-sub);">' +
+        '<span>每页</span>' +
+        '<select id="student-pagesize" style="padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px;" onchange="studentPage=1;studentPageSize=parseInt(this.value,10);renderStudentTable()">' + pgSel + '</select>' +
+        '<span>条</span>' +
+        '<span style="margin-left:auto;">显示第 ' + (startIdx + 1) + '-' + endIdx + ' 条 / 共 ' + total + ' 人</span>' +
+        '<button class="btn btn-outline" style="padding:6px 12px;font-size:13px;" ' + (studentPage <= 1 ? 'disabled' : '') + ' onclick="studentPage=Math.max(1,studentPage-1);renderStudentTable()">上一页</button>' +
+        '<span>第 ' + studentPage + ' / ' + totalPages + ' 页</span>' +
+        '<button class="btn btn-outline" style="padding:6px 12px;font-size:13px;" ' + (studentPage >= totalPages ? 'disabled' : '') + ' onclick="studentPage=Math.min(' + totalPages + ',studentPage+1);renderStudentTable()">下一页</button>' +
+      '</div>';
+  } else {
+    pgHtml = '<div style="font-size:13px;color:var(--text-sub);">共 0 人</div>';
+  }
+  document.getElementById('student-pagination').innerHTML = pgHtml;
 }
 
 function showAddStudentModal() {

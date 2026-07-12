@@ -668,9 +668,9 @@ function renderWordLearnCard() {
   var scores = stageData.speakScores[word.id] || {};
   var masteredCount = stageData.mastered.length;
 
-  // Check-in progress bar — 使用统一打卡数据
-  var today = HiEnglish.today();
-  var todayCheckIn = (studyData.checkIns || []).find(function(c){return c.date === today;});
+  // Check-in progress bar — 使用统一打卡数据（补卡时按 makeupDate 计算，显示层与计时器日期一致）
+  var targetDate = makeupDate || HiEnglish.today();
+  var todayCheckIn = (studyData.checkIns || []).find(function(c){return c.date === targetDate;});
   var checkSecs = todayCheckIn ? todayCheckIn.seconds : 0;
   var checkProgress = Math.min(100, Math.floor((checkSecs / 900) * 100));
   var circumference = 188.5;
@@ -681,7 +681,7 @@ function renderWordLearnCard() {
   var checkinHTML = makeupTip +
     '<div class="checkin-progress" style="margin:8px 12px;">' +
       '<div class="progress-info">' +
-        '<span class="progress-label">今日打卡进度</span>' +
+        '<span class="progress-label">' + (makeupDate ? '补卡进度（' + makeupDate + '）' : '今日打卡进度') + '</span>' +
         '<span class="progress-text">' + (todayCheckIn && todayCheckIn.completed ? '✅ 已完成' : '播放音频或朗读才计时') + '</span>' +
         '<span class="progress-sub">超过15分钟后进度不再增加</span>' +
       '</div>' +
@@ -796,9 +796,9 @@ function renderLessonLearnCard() {
   var stageData = studyData.business;
   var makeupTip = makeupDate ? '<div class="alert-box alert-info" style="margin:8px 12px;">📌 正在为 ' + makeupDate + ' 补卡，完成15分钟学习后补卡成功</div>' : '';
 
-  // Check-in progress bar — 使用统一打卡数据
-  var today = HiEnglish.today();
-  var todayCheckIn = (studyData.checkIns || []).find(function(c){return c.date === today;});
+  // Check-in progress bar — 使用统一打卡数据（补卡时按 makeupDate 计算，显示层与计时器日期一致）
+  var targetDate = makeupDate || HiEnglish.today();
+  var todayCheckIn = (studyData.checkIns || []).find(function(c){return c.date === targetDate;});
   var checkSecs = todayCheckIn ? todayCheckIn.seconds : 0;
   var checkProgress = Math.min(100, Math.floor((checkSecs / 900) * 100));
   var circumference = 188.5;
@@ -807,7 +807,7 @@ function renderLessonLearnCard() {
   var checkinHTML = makeupTip +
     '<div class="checkin-progress" style="margin:8px 12px;">' +
       '<div class="progress-info">' +
-        '<span class="progress-label">今日打卡进度</span>' +
+        '<span class="progress-label">' + (makeupDate ? '补卡进度（' + makeupDate + '）' : '今日打卡进度') + '</span>' +
         '<span class="progress-text">' + (todayCheckIn && todayCheckIn.completed ? '✅ 已完成' : '播放音频或朗读才计时') + '</span>' +
         '<span class="progress-sub">超过15分钟后进度不再增加</span>' +
       '</div>' +
@@ -1977,16 +1977,17 @@ function getWeeklyTestPool() {
   var startDateStr = formatDateStr(lastSaturday);
   var endDateStr = formatDateStr(thisFriday);
 
-  // Filter learned items by date range
+  // Filter learned items by date range — ID 类型兼容（learnedDates 的 key 可能为 string）
   var pool = [];
   learnedIds.forEach(function(id) {
-    var learnedDate = learnedDates[id];
+    var sid = String(id);
+    var learnedDate = learnedDates[sid];
     if (learnedDate && learnedDate >= startDateStr && learnedDate <= endDateStr) {
       if (currentStage === 'basic') {
-        var word = words.find(function(w) { return String(w.id) === String(id); });
+        var word = words.find(function(w) { return String(w.id) === sid; });
         if (word) pool.push(word);
       } else {
-        var lesson = lessons.find(function(l) { return l.id === id; });
+        var lesson = lessons.find(function(l) { return String(l.id) === sid; });
         if (lesson) pool.push(lesson);
       }
     }
@@ -1995,10 +1996,11 @@ function getWeeklyTestPool() {
   // Fallback: if no date-tracked items, use position-based (backward compat)
   if (pool.length === 0 && learnedIds.length > 0) {
     pool = learnedIds.map(function(id) {
+      var sid = String(id);
       if (currentStage === 'basic') {
-        return words.find(function(w) { return String(w.id) === String(id); });
+        return words.find(function(w) { return String(w.id) === sid; });
       } else {
-        return lessons.find(function(l) { return l.id === id; });
+        return lessons.find(function(l) { return String(l.id) === sid; });
       }
     }).filter(Boolean);
   }
@@ -2021,16 +2023,17 @@ function getMonthlyTestPool() {
   var startDateStr = formatDateStr(lastMonthStart);
   var endDateStr = formatDateStr(lastMonthEnd);
 
-  // Filter learned items by date range
+  // Filter learned items by date range — ID 类型兼容（learnedDates 的 key 可能为 string）
   var pool = [];
   learnedIds.forEach(function(id) {
-    var learnedDate = learnedDates[id];
+    var sid = String(id);
+    var learnedDate = learnedDates[sid];
     if (learnedDate && learnedDate >= startDateStr && learnedDate <= endDateStr) {
       if (currentStage === 'basic') {
-        var word = words.find(function(w) { return String(w.id) === String(id); });
+        var word = words.find(function(w) { return String(w.id) === sid; });
         if (word) pool.push(word);
       } else {
-        var lesson = lessons.find(function(l) { return l.id === id; });
+        var lesson = lessons.find(function(l) { return String(l.id) === sid; });
         if (lesson) pool.push(lesson);
       }
     }
@@ -2039,10 +2042,11 @@ function getMonthlyTestPool() {
   // Fallback: if no date-tracked items, use position-based (backward compat)
   if (pool.length === 0 && learnedIds.length > 0) {
     pool = learnedIds.map(function(id) {
+      var sid = String(id);
       if (currentStage === 'basic') {
-        return words.find(function(w) { return String(w.id) === String(id); });
+        return words.find(function(w) { return String(w.id) === sid; });
       } else {
-        return lessons.find(function(l) { return l.id === id; });
+        return lessons.find(function(l) { return String(l.id) === sid; });
       }
     }).filter(Boolean);
   }
@@ -2211,16 +2215,19 @@ function renderWordList(filter) {
     '</div>';
 
   // Search
-  var searchHTML = '<div style="padding:0 12px 8px;position:relative;"><input type="password" autocomplete="new-password" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;" tabindex="-1" aria-hidden="true"><input type="text" class="wl-search" name="wl-search-query" autocomplete="off" placeholder="搜索单词或中文..." value="' + wlSearch + '" oninput="onWlSearch(this.value)"></div>';
+  var wlPlaceholder = currentStage === 'basic' ? '搜索单词或中文...' : '搜索微课名称或中文...';
+  var searchHTML = '<div style="padding:0 12px 8px;position:relative;"><input type="password" autocomplete="new-password" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;" tabindex="-1" aria-hidden="true"><input type="text" class="wl-search" name="wl-search-query" autocomplete="off" placeholder="' + wlPlaceholder + '" value="' + wlSearch + '" oninput="onWlSearch(this.value)"></div>';
 
-  // Filter words
+  // Filter words — ID 类型兼容（服务端同步后可能为 string，本地为 number）
+  var inLearned = function(id) { return stageData.learned.some(function(x){ return String(x) === String(id); }); };
+  var inMastered = function(id) { return stageData.mastered.some(function(x){ return String(x) === String(id); }); };
   var displayItems = currentStage === 'basic' ? words : lessons;
   if (wlFilter === 'learned') {
-    displayItems = displayItems.filter(function(w) { return stageData.learned.includes(w.id) && !stageData.mastered.includes(w.id); });
+    displayItems = displayItems.filter(function(w) { return inLearned(w.id) && !inMastered(w.id); });
   } else if (wlFilter === 'mastered') {
-    displayItems = displayItems.filter(function(w) { return stageData.mastered.includes(w.id); });
+    displayItems = displayItems.filter(function(w) { return inMastered(w.id); });
   } else if (wlFilter === 'unlearned') {
-    displayItems = displayItems.filter(function(w) { return !stageData.learned.includes(w.id); });
+    displayItems = displayItems.filter(function(w) { return !inLearned(w.id); });
   }
 
   if (wlSearch) {
@@ -2237,8 +2244,8 @@ function renderWordList(filter) {
   // Render ALL items (no limit)
   var statusText = {mastered: '已掌握', learned: '学习中', unlearned: '未学'};
   var listHTML = displayItems.map(function(w) {
-    var isMastered = stageData.mastered.includes(w.id);
-    var isLearned = stageData.learned.includes(w.id);
+    var isMastered = inMastered(w.id);
+    var isLearned = inLearned(w.id);
     var status = isMastered ? 'mastered' : (isLearned ? 'learned' : 'unlearned');
     if (currentStage === 'basic') {
       return '<div class="word-list-item">' +
