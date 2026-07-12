@@ -113,7 +113,7 @@ function renderReminderTable() {
           '<span>每页</span>' +
           '<select id="reminder-pagesize" style="padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px;" onchange="reminderPage=1;reminderPageSize=parseInt(this.value,10);renderReminderTable()">' + pgSel + '</select>' +
           '<span>条</span>' +
-          '<span style="margin-left:auto;">显示第 ' + (startIdx + 1) + '-' + endIdx + ' 条 / 共 ' + total + ' 人</span>' +
+          '<span style="margin-left:auto;">显示第 ' + (startIdx + 1) + '-' + endIdx + ' 条 / 共 ' + total + ' 条</span>' +
           '<button class="btn btn-outline" style="padding:6px 12px;font-size:13px;" ' + (reminderPage <= 1 ? 'disabled' : '') + ' onclick="reminderPage=Math.max(1,reminderPage-1);renderReminderTable()">上一页</button>' +
           '<span>第 ' + reminderPage + ' / ' + totalPages + ' 页</span>' +
           '<button class="btn btn-outline" style="padding:6px 12px;font-size:13px;" ' + (reminderPage >= totalPages ? 'disabled' : '') + ' onclick="reminderPage=Math.min(' + totalPages + ',reminderPage+1);renderReminderTable()">下一页</button>' +
@@ -555,7 +555,7 @@ function renderStudentTable() {
         '<span>每页</span>' +
         '<select id="student-pagesize" style="padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px;" onchange="studentPage=1;studentPageSize=parseInt(this.value,10);renderStudentTable()">' + pgSel + '</select>' +
         '<span>条</span>' +
-        '<span style="margin-left:auto;">显示第 ' + (startIdx + 1) + '-' + endIdx + ' 条 / 共 ' + total + ' 人</span>' +
+        '<span style="margin-left:auto;">显示第 ' + (startIdx + 1) + '-' + endIdx + ' 条 / 共 ' + total + ' 条</span>' +
         '<button class="btn btn-outline" style="padding:6px 12px;font-size:13px;" ' + (studentPage <= 1 ? 'disabled' : '') + ' onclick="studentPage=Math.max(1,studentPage-1);renderStudentTable()">上一页</button>' +
         '<span>第 ' + studentPage + ' / ' + totalPages + ' 页</span>' +
         '<button class="btn btn-outline" style="padding:6px 12px;font-size:13px;" ' + (studentPage >= totalPages ? 'disabled' : '') + ' onclick="studentPage=Math.min(' + totalPages + ',studentPage+1);renderStudentTable()">下一页</button>' +
@@ -958,10 +958,10 @@ function renderGroupStats() {
           '<span style="font-size:13px;color:var(--text-sub);">条</span>' +
         '</div>' +
         '<div style="display:flex;align-items:center;gap:10px;">' +
+          '<span style="margin-left:auto;">显示第 ' + (startIdx+1) + '-' + endIdx + ' 条 / 共 ' + total + ' 条</span>' +
           '<button class="btn btn-outline" style="padding:4px 12px;font-size:12px;" onclick="if(groupPage>1){groupPage--;renderGroupStats();}" ' + (groupPage<=1?'disabled':'') + '>上一页</button>' +
           '<span style="font-size:13px;color:var(--text-sub);">第 ' + groupPage + '/' + totalPages + ' 页</span>' +
           '<button class="btn btn-outline" style="padding:4px 12px;font-size:12px;" onclick="if(groupPage<totalPages){groupPage++;renderGroupStats();}" ' + (groupPage>=totalPages?'disabled':'') + '>下一页</button>' +
-          '<span style="margin-left:auto;">显示第 ' + (startIdx+1) + '-' + endIdx + ' 条 / 共 ' + total + ' 条</span>' +
         '</div>' +
       '</div>';
   } else {

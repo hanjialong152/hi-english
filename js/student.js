@@ -2367,7 +2367,8 @@ async function renderReport() {
   var personalRankHTML = personalScores.slice(0, 10).map(function(item, i) {
     var cls = i === 0 ? 'top1' : (i === 1 ? 'top2' : (i === 2 ? 'top3' : ''));
     var selfCls = item.empid === user.empid ? ' self' : '';
-    return '<div class="rank-item' + selfCls + '"><span class="rank-num ' + cls + '">' + (i + 1) + '</span><span class="rank-name">' + item.name + ' · ' + (item.group || '') + '</span><span class="rank-score">' + item.score + '.0</span></div>';
+    var fmtScore = Number.isInteger(item.score) ? String(item.score) : item.score.toFixed(1).replace(/\.0$/, '');
+    return '<div class="rank-item' + selfCls + '"><span class="rank-num ' + cls + '">' + (i + 1) + '</span><span class="rank-name">' + item.name + ' · ' + (item.group || '') + '</span><span class="rank-score">' + fmtScore + '</span></div>';
   }).join('');
 
   // Group rankings
@@ -2384,7 +2385,8 @@ async function renderReport() {
   var groupRankHTML = groupList.slice(0, 10).map(function(item, i) {
     var cls = i === 0 ? 'top1' : (i === 1 ? 'top2' : (i === 2 ? 'top3' : ''));
     var selfCls = item.name === user.group ? ' self' : '';
-    return '<div class="rank-item' + selfCls + '"><span class="rank-num ' + cls + '">' + (i + 1) + '</span><span class="rank-name">' + item.name + (item.name === user.group ? '（我组）' : '') + '</span><span class="rank-score">' + item.avg + '</span></div>';
+    var fmtAvg = Number.isInteger(item.avg) ? String(item.avg) : item.avg.toFixed(1).replace(/\.0$/, '');
+    return '<div class="rank-item' + selfCls + '"><span class="rank-num ' + cls + '">' + (i + 1) + '</span><span class="rank-name">' + item.name + (item.name === user.group ? '（我组）' : '') + '</span><span class="rank-score">' + fmtAvg + '</span></div>';
   }).join('');
 
   var scoreBreakdownHTML =
