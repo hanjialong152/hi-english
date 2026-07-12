@@ -693,15 +693,17 @@ const HiEnglish = {
     if (!all[empid]) {
       all[empid] = {
         checkIns: [],
-        basic: { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: [], weeklyTests: [], monthlyTests: [], totalSeconds: 0 },
-        business: { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: [], weeklyTests: [], monthlyTests: [], totalSeconds: 0, unlocked: false }
+        basic: { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: [], weeklyTests: [], monthlyTests: [], totalSeconds: 0, audioDone: {}, audioDoneDate: {} },
+        business: { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: [], weeklyTests: [], monthlyTests: [], totalSeconds: 0, unlocked: false, audioDone: {}, audioDoneDate: {} }
       };
       localStorage.setItem('hi_english_study', JSON.stringify(all));
     }
-    // 自愈：去重 learned/mastered 数组（修复 ID 类型不一致导致的重复累积）
+    // 自愈：去重 learned/mastered 数组（修复 ID 类型不一致导致的重复累积）；确保 audioDone 字段存在
     var sd = all[empid];
     ['basic', 'business'].forEach(function(stage) {
       if (sd[stage]) {
+        if (!sd[stage].audioDone) sd[stage].audioDone = {};
+        if (!sd[stage].audioDoneDate) sd[stage].audioDoneDate = {};
         if (sd[stage].learned && sd[stage].learned.length > 1) {
           sd[stage].learned = Array.from(new Set(sd[stage].learned.map(function(x) { return String(x); })));
         }

@@ -525,8 +525,9 @@ function renderHome() {
 
   var stageData = studyData[currentStage];
   var totalItems = currentStage === 'basic' ? words.length : lessons.length;
-  var learnedCount = stageData.learned.length;
-  var masteredCount = stageData.mastered.length;
+  // 已学=真实听过音频（audioDone），与学习清单/报告页一致；readIndex 仍用于顺序进度定位
+  var learnedCount = getLearnedCount(currentStage);
+  var masteredCount = getMasteredCount(currentStage);
   var progressPercent = totalItems > 0 ? Math.floor((stageData.readIndex / totalItems) * 100) : 0;
 
   // Progress card
@@ -537,7 +538,7 @@ function renderHome() {
     '</div>' +
     '<div class="progress-bar"><div class="fill" style="width:' + progressPercent + '%;"></div></div>' +
     '<div class="stat-grid" style="margin-top:12px;">' +
-      '<div class="stat-card"><div class="stat-val">' + stageData.readIndex + '</div><div class="stat-key">已学</div></div>' +
+      '<div class="stat-card"><div class="stat-val">' + learnedCount + '</div><div class="stat-key">已学</div></div>' +
       '<div class="stat-card"><div class="stat-val">' + masteredCount + '</div><div class="stat-key">已掌握</div></div>' +
       '<div class="stat-card"><div class="stat-val">' + (studyData.checkIns || []).filter(function(c){return c.completed;}).length + '</div><div class="stat-key">学习天数</div></div>' +
     '</div>';
@@ -629,15 +630,118 @@ function playBasicAudio(type, id, text) {
   var url;
   // 商务英语句子调用时 type='b_1_0'（已含文件名），id 位置实为文本内容
   var isBiz = type.indexOf('b_') === 0;
-  if (type === 'w') url = 'audio/w_' + id + '.mp3' + AUDIO_VER;
-  else if (type === 'p') url = 'audio/p_' + id + '.mp3' + AUDIO_VER;
-  else if (isBiz) url = 'audio/' + type + '.mp3' + AUDIO_VER;
-  else url = 'audio/e_' + id + '_' + type.slice(1) + '.mp3' + AUDIO_VER; // type = 'e1'/'e2'/'e3'
+  // 解析 track 信息：用于记录"哪个词/课的哪个音频已听"（单词 w 不计入已学）
+  var trackStage, trackItemId, trackKey;
+  if (isBiz) {
+    var parts = type.split('_'); // ['b', lessonId, sentIdx]
+    trackStage = 'business';
+    trackItemId = parts[1];
+    trackKey = type; // 'b_1_0'
+    url = 'audio/' + type + '.mp3' + AUDIO_VER;
+  } else {
+    trackStage = 'basic';
+    trackItemId = id;   // word.id
+    trackKey = type;    // 'w' / 'p' / 'e1' / 'e2' / 'e3'
+    if (type === 'w') url = 'audio/w_' + id + '.mp3' + AUDIO_VER;
+    else if (type === 'p') url = 'audio/p_' + id + '.mp3' + AUDIO_VER;
+    else url = 'audio/e_' + id + '_' + type.slice(1) + '.mp3' + AUDIO_VER;
+  }
   // 商务音频调用只传了2个参数，id 位置实为文本，作为 TTS 兜底
   var fallbackText = text || (isBiz ? id : null);
+  // 单词 w 不计入已学，仅词组 p + 例句 e1/e2/e3 + 商务句子 b_* 计入
+  var shouldTrack = (trackStage === 'business') || (trackKey !== 'w');
   HiEnglish.playAudioOrSpeak(url, fallbackText, {
-    onend: function() { setTimeout(function() { isAudioActive = false; }, 500); },
+    onend: function() {
+      setTimeout(function() { isAudioActive = false; }, 500);
+      if (shouldTrack) markAudioPlayed(trackStage, String(trackItemId), trackKey);
+    },
     onerror: function() { isAudioActive = false; }
+  });
+}
+
+// ===== 已学定义：真实听过音频才算（词组+全部例句 或 商务全部句子） =====
+// 注意：历史 learned[] 仅作留痕，不用于"已学"统计（避免未听音频却算已学）
+
+// 返回某词/课"必须听完"的音频 key 列表（单词 w 不计入）
+function requiredAudioKeys(id, stage) {
+  if (stage === 'basic') {
+    var word = words.find(function(w) { return String(w.id) === String(id); });
+    if (!word) return [];
+    var keys = ['p'];
+    if (word.s1_en) keys.push('e1');
+    if (word.s2_en) keys.push('e2');
+    if (word.s3_en) keys.push('e3');
+    return keys;
+  } else {
+    var lesson = lessons.find(function(l) { return String(l.id) === String(id); });
+    if (!lesson || !lesson.sentences) return [];
+    var n = lesson.sentences.length;
+    var keys2 = [];
+    for (var i = 0; i < n; i++) keys2.push('b_' + id + '_' + i);
+    return keys2;
+  }
+}
+
+// 该词/课所有必需音频是否都已听过
+function isAudioLearned(id, stage) {
+  var ad = (studyData[stage].audioDone || {})[String(id)] || {};
+  var req = requiredAudioKeys(id, stage);
+  return req.length > 0 && req.every(function(k) { return ad[k]; });
+}
+
+// 已学数（遍历词库/课库，统计已听完必需音频的条数）
+function getLearnedCount(stage) {
+  var pool = stage === 'basic' ? words : lessons;
+  var n = 0;
+  pool.forEach(function(it) { if (isAudioLearned(it.id, stage)) n++; });
+  return n;
+}
+
+// 已掌握数（去重）
+function getMasteredCount(stage) {
+  var m = studyData[stage].mastered || [];
+  return new Set(m.map(function(x) { return String(x); })).size;
+}
+
+// 学习中 = 已学 - 已掌握
+function getLearningCount(stage) {
+  return Math.max(0, getLearnedCount(stage) - getMasteredCount(stage));
+}
+
+// 记录某音频已播放（onend 触发）；完成全部必需音频时记录完成日期；局部刷新 UI
+function markAudioPlayed(stage, itemId, key) {
+  var sd = studyData[stage];
+  if (!sd.audioDone) sd.audioDone = {};
+  if (!sd.audioDone[itemId]) sd.audioDone[itemId] = {};
+  var prevDone = isAudioLearned(itemId, stage);
+  sd.audioDone[itemId][key] = true;
+  if (!prevDone && isAudioLearned(itemId, stage)) {
+    if (!sd.audioDoneDate) sd.audioDoneDate = {};
+    sd.audioDoneDate[itemId] = HiEnglish.today();
+  }
+  saveStudyData();
+  updateAudioStatusUI(stage, itemId);
+}
+
+// 局部更新学习卡上的"已听 x/y"状态行 + 已听喇叭置灰（不打断正在播放的音频）
+function updateAudioStatusUI(stage, itemId) {
+  if (currentStage !== stage) return;
+  var curId = (stage === 'basic') ? (words[currentIndex] && words[currentIndex].id) : (lessons[currentIndex] && lessons[currentIndex].id);
+  if (String(curId) !== String(itemId)) return;
+  var ad = (studyData[stage].audioDone || {})[String(itemId)] || {};
+  var req = requiredAudioKeys(itemId, stage);
+  var done = req.filter(function(k) { return ad[k]; }).length;
+  var statusEl = document.getElementById('audio-status-' + stage);
+  if (statusEl) {
+    if (done >= req.length) {
+      statusEl.innerHTML = '<span style="color:#52C41A;font-weight:600;">✅ 已学</span>';
+    } else {
+      statusEl.innerHTML = '<span style="color:var(--text-sub);">🔊 已听 ' + done + '/' + req.length + '</span>';
+    }
+  }
+  req.forEach(function(k) {
+    var btn = document.getElementById('audio-btn-' + stage + '-' + k);
+    if (btn && ad[k]) btn.style.opacity = '0.5';
   });
 }
 
@@ -666,7 +770,7 @@ function renderWordLearnCard() {
   var word = words[currentIndex];
   var stageData = studyData.basic;
   var scores = stageData.speakScores[word.id] || {};
-  var masteredCount = stageData.mastered.length;
+  var masteredCount = getMasteredCount('basic');
 
   // Check-in progress bar — 使用统一打卡数据（补卡时按 makeupDate 计算，显示层与计时器日期一致）
   var targetDate = makeupDate || HiEnglish.today();
@@ -715,7 +819,7 @@ function renderWordLearnCard() {
   // Phrases - no parenthetical content, with speaker
   var phraseHTML =
     '<div class="learn-section">' +
-      '<h4>📌 常见词组 <button onclick="playBasicAudio(\'p\',\'' + word.id + '\',\'' + escapeQuotes(word.phrase_en) + '\')" style="float:right;border:none;background:none;font-size:16px;cursor:pointer;">🔊</button></h4>' +
+      '<h4>📌 常见词组 <button id="audio-btn-basic-p" onclick="playBasicAudio(\'p\',\'' + word.id + '\',\'' + escapeQuotes(word.phrase_en) + '\')" style="float:right;border:none;background:none;font-size:16px;cursor:pointer;">🔊</button></h4>' +
       '<div style="font-size:15px;">' +
         '<div style="margin-bottom:4px;">' + word.phrase_en + '</div>' +
         '<div style="font-size:13px;color:var(--text-sub);">' + word.phrase_cn + '</div>' +
@@ -729,21 +833,21 @@ function renderWordLearnCard() {
       '<div style="margin-bottom:12px;">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;">' +
           '<span style="font-size:14px;">' + word.s1_en + '</span>' +
-          '<button onclick="playBasicAudio(\'e1\',\'' + word.id + '\',\'' + escapeQuotes(word.s1_en) + '\')" style="border:none;background:none;font-size:16px;cursor:pointer;">🔊</button>' +
+          '<button id="audio-btn-basic-e1" onclick="playBasicAudio(\'e1\',\'' + word.id + '\',\'' + escapeQuotes(word.s1_en) + '\')" style="border:none;background:none;font-size:16px;cursor:pointer;">🔊</button>' +
         '</div>' +
         '<div style="font-size:13px;color:var(--text-sub);">' + word.s1_cn + '</div>' +
       '</div>' +
       '<div style="margin-bottom:12px;">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;">' +
           '<span style="font-size:14px;">' + word.s2_en + '</span>' +
-          '<button onclick="playBasicAudio(\'e2\',\'' + word.id + '\',\'' + escapeQuotes(word.s2_en) + '\')" style="border:none;background:none;font-size:16px;cursor:pointer;">🔊</button>' +
+          '<button id="audio-btn-basic-e2" onclick="playBasicAudio(\'e2\',\'' + word.id + '\',\'' + escapeQuotes(word.s2_en) + '\')" style="border:none;background:none;font-size:16px;cursor:pointer;">🔊</button>' +
         '</div>' +
         '<div style="font-size:13px;color:var(--text-sub);">' + word.s2_cn + '</div>' +
       '</div>' +
       '<div>' +
         '<div style="display:flex;justify-content:space-between;align-items:center;">' +
           '<span style="font-size:14px;">' + word.s3_en + '</span>' +
-          '<button onclick="playBasicAudio(\'e3\',\'' + word.id + '\',\'' + escapeQuotes(word.s3_en) + '\')" style="border:none;background:none;font-size:16px;cursor:pointer;">🔊</button>' +
+          '<button id="audio-btn-basic-e3" onclick="playBasicAudio(\'e3\',\'' + word.id + '\',\'' + escapeQuotes(word.s3_en) + '\')" style="border:none;background:none;font-size:16px;cursor:pointer;">🔊</button>' +
         '</div>' +
         '<div style="font-size:13px;color:var(--text-sub);">' + word.s3_cn + '</div>' +
       '</div>' +
@@ -780,7 +884,13 @@ function renderWordLearnCard() {
       '<button class="btn btn-primary" style="flex:1;" onclick="nextWord()">下一个 ›</button>' +
     '</div>';
 
-  document.getElementById('s-learn-content').innerHTML = checkinHTML + headerHTML + phraseHTML + exHTML + speakBtnsHTML + navHTML;
+  var adNow = (studyData.basic.audioDone || {})[String(word.id)] || {};
+  var reqNow = requiredAudioKeys(word.id, 'basic');
+  var doneNow = reqNow.filter(function(k){ return adNow[k]; }).length;
+  var statusTextNow = doneNow >= reqNow.length ? '<span style="color:#52C41A;font-weight:600;">✅ 已学</span>' : '<span style="color:var(--text-sub);">🔊 已听 ' + doneNow + '/' + reqNow.length + '</span>';
+  var statusHTML = '<div style="padding:0 12px 8px;text-align:right;font-size:13px;" id="audio-status-basic">' + statusTextNow + '</div>';
+
+  document.getElementById('s-learn-content').innerHTML = checkinHTML + headerHTML + phraseHTML + exHTML + statusHTML + speakBtnsHTML + navHTML;
   _setupRecEventDelegation();
 }
 
@@ -824,7 +934,7 @@ function renderLessonLearnCard() {
     '<div class="learn-header">' +
       '<div style="display:flex;justify-content:space-between;align-items:center;">' +
         '<span style="font-size:13px;color:var(--text-sub);">第 ' + (currentIndex + 1) + ' / ' + total + ' 课</span>' +
-        '<span style="font-size:13px;color:var(--primary);">已掌握 ' + stageData.mastered.length + ' 课</span>' +
+        '<span style="font-size:13px;color:var(--primary);">已掌握 ' + getMasteredCount('business') + ' 课</span>' +
       '</div>' +
       '<div class="progress-bar"><div class="fill" style="width:' + progressPercent + '%;"></div></div>' +
       '<div class="learn-word" style="font-size:22px;">' + lesson.title + '</div>' +
@@ -834,11 +944,17 @@ function renderLessonLearnCard() {
   // Sentences with audio playback (mp3优先，TTS兜底)
   var sentencesHTML = lesson.sentences.map(function(s, i) {
     return '<div class="learn-section">' +
-      '<h4>' + (s.speaker === 'A' ? '👤 A' : '👤 B') + ' <button onclick="playBasicAudio(\'b_' + lesson.id + '_' + i + '\',\'' + escapeQuotes(s.en) + '\')" style="float:right;border:none;background:none;font-size:16px;cursor:pointer;">🔊</button></h4>' +
+      '<h4>' + (s.speaker === 'A' ? '👤 A' : '👤 B') + ' <button id="audio-btn-business-b_' + lesson.id + '_' + i + '" onclick="playBasicAudio(\'b_' + lesson.id + '_' + i + '\',\'' + escapeQuotes(s.en) + '\')" style="float:right;border:none;background:none;font-size:16px;cursor:pointer;">🔊</button></h4>' +
       '<div style="font-size:15px;margin-bottom:4px;">' + s.en + '</div>' +
       '<div style="font-size:13px;color:var(--text-sub);">' + s.zh + '</div>' +
     '</div>';
   }).join('');
+
+  var adNowB = (studyData.business.audioDone || {})[String(lesson.id)] || {};
+  var reqNowB = requiredAudioKeys(lesson.id, 'business');
+  var doneNowB = reqNowB.filter(function(k){ return adNowB[k]; }).length;
+  var statusTextB = doneNowB >= reqNowB.length ? '<span style="color:#52C41A;font-weight:600;">✅ 已学</span>' : '<span style="color:var(--text-sub);">🔊 已听 ' + doneNowB + '/' + reqNowB.length + '</span>';
+  var statusHTML = '<div style="padding:0 12px 8px;text-align:right;font-size:13px;" id="audio-status-business">' + statusTextB + '</div>';
 
   // Speak practice section — one recording button per sentence
   var lessonScores = stageData.speakScores[lesson.id] || {};
@@ -870,7 +986,7 @@ function renderLessonLearnCard() {
       '<button class="btn btn-primary" style="flex:1;" onclick="nextWord()">下一课 ›</button>' +
     '</div>';
 
-  document.getElementById('s-learn-content').innerHTML = checkinHTML + headerHTML + sentencesHTML + speakPracticeHTML + navHTML;
+  document.getElementById('s-learn-content').innerHTML = checkinHTML + headerHTML + sentencesHTML + statusHTML + speakPracticeHTML + navHTML;
   _setupRecEventDelegation();
 }
 
@@ -1737,6 +1853,9 @@ function _setupRecEventDelegation() {
 function prevWord() {
   if (currentIndex > 0) {
     currentIndex--;
+    // 精确停留：往回翻也记住最后停留页（定位页下次从这一页开始）
+    studyData[currentStage].readIndex = currentIndex;
+    saveStudyData();
     if (currentStage === 'basic') renderWordLearnCard();
     else renderLessonLearnCard();
   }
@@ -1745,9 +1864,8 @@ function prevWord() {
 function nextWord() {
   var stageData = studyData[currentStage];
   currentIndex++;
-  if (currentIndex > stageData.readIndex) {
-    stageData.readIndex = currentIndex;
-  }
+  // 精确停留：无论前进后退都记住最后停留页（定位页下次从这一页开始）
+  stageData.readIndex = currentIndex;
   var today = HiEnglish.today();
   if (currentStage === 'basic') {
     var prevWordId = words[currentIndex - 1] ? words[currentIndex - 1].id : null;
@@ -1952,8 +2070,9 @@ function prepareTest(type) {
 // Get last Saturday to this Friday's learned items
 function getWeeklyTestPool() {
   var stageData = studyData[currentStage];
-  var learnedDates = stageData.learnedDates || {};
-  var learnedIds = stageData.learned || [];
+  // 题池与"已学"同源：仅取真实听完整必需音频的词/课，按 audioDoneDate 做日期过滤
+  var learnedDates = stageData.audioDoneDate || {};
+  var learnedIds = Object.keys(stageData.audioDone || {}).filter(function(id){ return isAudioLearned(id, currentStage); });
 
   // Calculate last Saturday and this Friday
   var now = new Date();
@@ -2012,8 +2131,9 @@ function getWeeklyTestPool() {
 // Get last month 1st to last day's learned items
 function getMonthlyTestPool() {
   var stageData = studyData[currentStage];
-  var learnedDates = stageData.learnedDates || {};
-  var learnedIds = stageData.learned || [];
+  // 题池与"已学"同源：仅取真实听完整必需音频的词/课，按 audioDoneDate 做日期过滤
+  var learnedDates = stageData.audioDoneDate || {};
+  var learnedIds = Object.keys(stageData.audioDone || {}).filter(function(id){ return isAudioLearned(id, currentStage); });
 
   // Calculate last month start (1st) and end (last day)
   var now = new Date();
@@ -2189,13 +2309,10 @@ function renderWordList(filter) {
   var stageData = studyData[currentStage];
   var container = document.getElementById('s-wordlist-content');
 
-  // Stats overview — 用 Set 去重，避免 ID 类型不一致导致的重复计数
-  var learnedSet = new Set(stageData.learned.map(function(x) { return String(x); }));
-  var masteredSet = new Set(stageData.mastered.map(function(x) { return String(x); }));
-  var learnedCount = learnedSet.size;
-  var masteredCount = masteredSet.size;
-  // "学习中" = 已学但未掌握（从已学集合中去掉已掌握）
-  var learningCount = Math.max(0, learnedCount - masteredCount);
+  // Stats overview — 已学=真实听过音频（audioDone），与首页/报告页一致
+  var learnedCount = getLearnedCount(currentStage);
+  var masteredCount = getMasteredCount(currentStage);
+  var learningCount = getLearningCount(currentStage);
   var totalWords = currentStage === 'basic' ? words.length : lessons.length;
   var progressPercent = totalWords > 0 ? Math.floor((learnedCount / totalWords) * 100) : 0;
 
@@ -2222,8 +2339,8 @@ function renderWordList(filter) {
   var wlPlaceholder = currentStage === 'basic' ? '搜索单词或中文...' : '搜索微课名称或中文...';
   var searchHTML = '<div style="padding:0 12px 8px;position:relative;"><input type="password" autocomplete="new-password" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;" tabindex="-1" aria-hidden="true"><input type="text" class="wl-search" name="wl-search-query" autocomplete="off" placeholder="' + wlPlaceholder + '" value="' + wlSearch + '" oninput="onWlSearch(this.value)"></div>';
 
-  // Filter words — ID 类型兼容（服务端同步后可能为 string，本地为 number）
-  var inLearned = function(id) { return stageData.learned.some(function(x){ return String(x) === String(id); }); };
+  // Filter words — 已学=真实听过音频（audioDone）；ID 类型兼容
+  var inLearned = function(id) { return isAudioLearned(id, currentStage); };
   var inMastered = function(id) { return stageData.mastered.some(function(x){ return String(x) === String(id); }); };
   var displayItems = currentStage === 'basic' ? words : lessons;
   if (wlFilter === 'learned') {
@@ -2308,11 +2425,9 @@ async function renderReport() {
   var allCheckIns = studyData.checkIns || [];
   var totalDays = allCheckIns.length;
   var completedDays = allCheckIns.filter(function(c){return c.completed;}).length;
-  // 用 Set 去重统计（修复 ID 类型不一致导致的重复计数）
-  var masteredSet = new Set(stageData.mastered.map(function(x) { return String(x); }));
-  var learnedSet = new Set(stageData.learned.map(function(x) { return String(x); }));
-  var masteredCount = masteredSet.size;
-  var learnedCount = learnedSet.size;
+  // 已学=真实听过音频（audioDone），与首页/学习清单一致
+  var masteredCount = getMasteredCount(currentStage);
+  var learnedCount = getLearnedCount(currentStage);
   var totalItems = currentStage === 'basic' ? words.length : lessons.length;
   var progressPercent = totalItems > 0 ? Math.floor((learnedCount / totalItems) * 100) : 0;
   var totalSeconds = allCheckIns.reduce(function(s, c){return s + (c.seconds || 0);}, 0);
