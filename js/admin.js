@@ -13,6 +13,9 @@ async function init() {
   await HiEnglish.syncUsersFromServer();
   await HiEnglish.syncGroupsFromServer();
   await HiEnglish.syncStudyDataFromServer();
+  // 加载词库/课库，供"已学"统计（audioDone）使用，与学员端同源
+  try { await HiEnglish.loadWords(); } catch(e) {}
+  try { await HiEnglish.loadLessons(); } catch(e) {}
   renderDashboard();
   renderStudentTable();
   renderGroupList();
@@ -32,17 +35,51 @@ function aNav(page, el) {
 
 // ===== Helper: calculate scores for a user =====
 var BIZ_TOTAL_LESSONS = 116; // 商务英语总课数（与 data/business_lessons.json totalLessons 一致）
+
+// 计算某学员某阶段"已学"数（基于 audioDone，与学员端完全一致）：
+// 基础词=词组+全部例句喇叭点过才算；商务课=每句喇叭点过才算。单词音频不计入。
+function calcAudioLearnedCount(empid, stage) {
+  var allStudyData = JSON.parse(localStorage.getItem('hi_english_study') || '{}');
+  var sd = allStudyData[empid];
+  if (!sd || !sd[stage]) return 0;
+  var audioDone = sd[stage].audioDone || {};
+  var words = (stage === 'basic') ? (HiEnglish.words850 || []) : [];
+  var lessons = (stage === 'business') ? ((HiEnglish.lessons116 && HiEnglish.lessons116.lessons) || []) : [];
+  var n = 0;
+  if (stage === 'basic') {
+    words.forEach(function(w) {
+      var id = String(w.id);
+      var req = ['p'];
+      if (w.s1_en) req.push('e1');
+      if (w.s2_en) req.push('e2');
+      if (w.s3_en) req.push('e3');
+      var ad = audioDone[id] || {};
+      if (req.length > 0 && req.every(function(k){ return ad[k]; })) n++;
+    });
+  } else {
+    lessons.forEach(function(l) {
+      var id = String(l.id);
+      var sent = l.sentences || [];
+      var req = [];
+      for (var i = 0; i < sent.length; i++) req.push('b_' + id + '_' + i);
+      var ad = audioDone[id] || {};
+      if (req.length > 0 && req.every(function(k){ return ad[k]; })) n++;
+    });
+  }
+  return n;
+}
+
 function calcUserScores(empid) {
   var allStudyData = JSON.parse(localStorage.getItem('hi_english_study') || '{}');
   var sd = allStudyData[empid] || {basic: {mastered: [], weeklyTests: [], monthlyTests: []}, checkIns: []};
   var mastered = sd.basic && sd.basic.mastered ? sd.basic.mastered.length : 0;
-  // 商务英语进度（只读展示，不写入任何数据）
-  var bizLearned = sd.business && sd.business.learned ? sd.business.learned.length : 0;
+  // 已学=真实听过音频（audioDone），与学员端一致；readIndex 仅作顺序定位，不再用于进度展示
+  var basicAudioLearned = calcAudioLearnedCount(empid, 'basic');
+  var bizAudioLearned = calcAudioLearnedCount(empid, 'business');
   var bizMastered = sd.business && sd.business.mastered ? sd.business.mastered.length : 0;
   // 使用统一打卡数据（与学员端一致）
   var checkIns = sd.checkIns || [];
   var completedDays = checkIns.filter(function(c) { return c.completed; }).length;
-  var readIndex = sd.basic && sd.basic.readIndex ? sd.basic.readIndex : 0;
   var checkinRate = checkIns.length > 0 ? Math.round((completedDays / checkIns.length) * 100) : 0;
   // 个人总成绩 = 打卡占比×100×30% + 当月周测均分×30% + 当月月测均分×40%
   // 合并 basic+business 两阶段周测/月测，共用 common.js 统一函数，与学员端完全一致
@@ -53,10 +90,10 @@ function calcUserScores(empid) {
   var monthlyAvg = _sc.monthlyAvg;
 
   return {
-    mastered: mastered, readIndex: readIndex, completedDays: completedDays,
+    mastered: mastered, readIndex: basicAudioLearned, completedDays: completedDays,
     weeklyAvg: weeklyAvg, monthlyAvg: monthlyAvg, score: score, checkinRate: checkinRate,
-    bizLearned: bizLearned, bizMastered: bizMastered,
-    basicComplete: readIndex >= 850, businessUnlocked: sd.business && sd.business.unlocked
+    bizLearned: bizAudioLearned, bizMastered: bizMastered,
+    basicComplete: basicAudioLearned >= 850, businessUnlocked: sd.business && sd.business.unlocked
   };
 }
 

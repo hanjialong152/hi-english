@@ -528,13 +528,13 @@ function renderHome() {
   // 已学=真实听过音频（audioDone），与学习清单/报告页一致；readIndex 仍用于顺序进度定位
   var learnedCount = getLearnedCount(currentStage);
   var masteredCount = getMasteredCount(currentStage);
-  var progressPercent = totalItems > 0 ? Math.floor((stageData.readIndex / totalItems) * 100) : 0;
+  var progressPercent = totalItems > 0 ? Math.floor((learnedCount / totalItems) * 100) : 0;
 
   // Progress card
   document.getElementById('s-progress-card').innerHTML =
     '<div style="display:flex;justify-content:space-between;align-items:center;">' +
       '<span style="font-size:14px;font-weight:600;">学习进度</span>' +
-      '<span style="font-size:13px;color:var(--text-sub);">' + stageData.readIndex + ' / ' + totalItems + (currentStage === 'basic' ? ' 词' : ' 课') + '</span>' +
+      '<span style="font-size:13px;color:var(--text-sub);">' + learnedCount + ' / ' + totalItems + (currentStage === 'basic' ? ' 词' : ' 课') + '</span>' +
     '</div>' +
     '<div class="progress-bar"><div class="fill" style="width:' + progressPercent + '%;"></div></div>' +
     '<div class="stat-grid" style="margin-top:12px;">' +
@@ -892,6 +892,8 @@ function renderWordLearnCard() {
 
   document.getElementById('s-learn-content').innerHTML = checkinHTML + headerHTML + phraseHTML + exHTML + statusHTML + speakBtnsHTML + navHTML;
   _setupRecEventDelegation();
+  // 渲染后按 audioDone 把已点过的喇叭保持浅色（翻页后重渲染也能保留）
+  updateAudioStatusUI(currentStage, String(word.id));
 }
 
 function renderLessonLearnCard() {
@@ -988,6 +990,8 @@ function renderLessonLearnCard() {
 
   document.getElementById('s-learn-content').innerHTML = checkinHTML + headerHTML + sentencesHTML + statusHTML + speakPracticeHTML + navHTML;
   _setupRecEventDelegation();
+  // 渲染后按 audioDone 把已点过的喇叭保持浅色（翻页后重渲染也能保留）
+  updateAudioStatusUI(currentStage, String(lesson.id));
 }
 
 // ===== Speak practice helpers =====
