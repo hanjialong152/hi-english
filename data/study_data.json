@@ -1219,10 +1219,14 @@
       "totalSeconds": 0
     },
     "business": {
-      "readIndex": 0,
+      "readIndex": 1,
       "spellIndex": 0,
-      "learned": [],
-      "learnedDates": {},
+      "learned": [
+        "1"
+      ],
+      "learnedDates": {
+        "1": "2026-07-13"
+      },
       "mastered": [],
       "speakScores": {},
       "weeklyTests": [],
