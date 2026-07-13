@@ -16,8 +16,8 @@
     "password_hash": "f2c10d858064905a603f154a127f03d6366cc20b7e04c15a131fb463014c12e9",
     "salt": "a3220c0c5ef9ff55",
     "created_at": 1782400169193,
-    "last_login": 1783926844263,
-    "login_count": 127,
+    "last_login": 1783933376276,
+    "login_count": 128,
     "must_change_password": true
   },
   "345316": {
@@ -229,5 +229,18 @@
     "password_hash": "0ff7add3c1a03a6202df0b81113eee66dea4124068e7bdad4f087c48b64857df",
     "salt": "12a440070b48a5b2",
     "created_at": 1783476965555
+  },
+  "225979": {
+    "empid": "225979",
+    "name": "赵孟",
+    "group": "",
+    "status": "active",
+    "password_hash": "63a7ee4f8e71e2106662baa376059fda72321831932171a228a0a27b85909c79",
+    "salt": "d3ea91edc5b03074",
+    "created_at": 1783933375831,
+    "created_by": "admin",
+    "last_login": 0,
+    "login_count": 0,
+    "must_change_password": false
   }
 }
