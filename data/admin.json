@@ -4,8 +4,8 @@
     "password_hash": "f4ad787d261202c79841d929f5b450a73dc4264116c20162ad4440188f55b1c4",
     "salt": "fe384cc5fb2b419d",
     "created_at": 1782399731318,
-    "session_token": "5d380af903ac0739040e0249e99a0449",
-    "last_login": 1783974351527,
+    "session_token": "c6498017e278164145b8a8d6f9621fca",
+    "last_login": 1783978416183,
     "last_password_change": 1783610841250
   }
 }
