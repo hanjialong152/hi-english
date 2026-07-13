@@ -1229,6 +1229,7 @@
       "monthlyTests": [],
       "totalSeconds": 0,
       "unlocked": false
-    }
+    },
+    "checkIns": []
   }
 }
