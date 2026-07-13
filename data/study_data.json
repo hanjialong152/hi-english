@@ -390,7 +390,7 @@
         "5"
       ],
       "monthlyTests": [],
-      "readIndex": 29,
+      "readIndex": 28,
       "speakScores": {
         "4": {
           "s0": 86.0,
@@ -532,7 +532,7 @@
       },
       {
         "date": "2026-07-14",
-        "seconds": 39,
+        "seconds": 40,
         "completed": false
       }
     ]
