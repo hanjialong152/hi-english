@@ -314,7 +314,9 @@ def _merge_stage(existing, incoming):
         b = set(str(x) for x in (incoming.get(key) or []))
         out[key] = sorted(a | b, key=lambda v: (len(v), v))
     # 数值类字段：取最大值
-    for key in ('readIndex', 'spellIndex', 'totalSeconds'):
+    # readIndex：以客户端最近一次推送为准（记住最后停留页），不取最大值，避免往回翻被"最远页"覆盖
+    out['readIndex'] = int(incoming.get('readIndex') or existing.get('readIndex') or 0)
+    for key in ('spellIndex', 'totalSeconds'):
         out[key] = max(int(existing.get(key) or 0), int(incoming.get(key) or 0))
     # learnedDates：合并，冲突时取较新（字典序更大的 YYYY-MM-DD）日期
     ld = dict(existing.get('learnedDates') or {})

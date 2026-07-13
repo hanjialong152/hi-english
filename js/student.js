@@ -2354,8 +2354,9 @@ function renderWordList(filter) {
   var filterHTML =
     '<div class="wl-filter">' +
       '<button class="wl-filter-btn ' + (wlFilter === 'all' ? 'active' : '') + '" onclick="renderWordList(\'all\')">全部</button>' +
+      '<button class="wl-filter-btn ' + (wlFilter === 'learned' ? 'active' : '') + '" onclick="renderWordList(\'learned\')">已学</button>' +
       '<button class="wl-filter-btn ' + (wlFilter === 'mastered' ? 'active' : '') + '" onclick="renderWordList(\'mastered\')">已掌握</button>' +
-      '<button class="wl-filter-btn ' + (wlFilter === 'learned' ? 'active' : '') + '" onclick="renderWordList(\'learned\')">学习中</button>' +
+      '<button class="wl-filter-btn ' + (wlFilter === 'learning' ? 'active' : '') + '" onclick="renderWordList(\'learning\')">学习中</button>' +
       '<button class="wl-filter-btn ' + (wlFilter === 'unlearned' ? 'active' : '') + '" onclick="renderWordList(\'unlearned\')">未学</button>' +
     '</div>';
 
@@ -2366,9 +2367,12 @@ function renderWordList(filter) {
   // Filter words — 统一用 classifyItem 四态分类，确保卡片数与清单数一致、未学不含已掌握/已学
   var displayItems = currentStage === 'basic' ? words : lessons;
   if (wlFilter === 'learned') {
-    displayItems = displayItems.filter(function(w) { return classifyItem(w.id, currentStage) === 'learning'; });
+    // 已学：音频全部听完（isAudioLearned），含"双达标"（音频+跟读都过）——与卡片"已学"口径一致
+    displayItems = displayItems.filter(function(w) { return isAudioLearned(w.id, currentStage); });
   } else if (wlFilter === 'mastered') {
     displayItems = displayItems.filter(function(w) { return classifyItem(w.id, currentStage) === 'mastered'; });
+  } else if (wlFilter === 'learning') {
+    displayItems = displayItems.filter(function(w) { return classifyItem(w.id, currentStage) === 'learning'; });
   } else if (wlFilter === 'unlearned') {
     displayItems = displayItems.filter(function(w) { return classifyItem(w.id, currentStage) === 'unlearned'; });
   }

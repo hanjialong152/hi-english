@@ -1,14 +1,14 @@
 // ===================================================
-// Hi English - Service Worker v26 (PWA安装支持)
+// Hi English - Service Worker v27 (PWA安装支持)
 // ===================================================
-// v26: 9项bug修复(已学同步/四态分类/报表格式/分组颜色/空值展示)；bump 核心缓存强制刷新 JS
+// v27: 学习清单加"已学"按钮+重排+已学筛选含双达标；readIndex合并改"最后停留页"优先；bump 核心缓存强制刷新 JS
 // v25: 已学逻辑改为"真实听过音频才算" + 定位页精确停留；bump 核心缓存强制刷新 JS
 // v24: 音频缓存版本提升，强制刷新重新生成的发音MP3
 // v22: 移动端通知栏推送（showNotification + notificationclick）
 // v21: 修复分组数据持久化 + 搜索栏禁止浏览器自动填充
 
-var CACHE_VERSION = 'hi-english-v44';
-var CORE_CACHE = 'hi-english-core-v44';
+var CACHE_VERSION = 'hi-english-v45';
+var CORE_CACHE = 'hi-english-core-v45';
 var AUDIO_CACHE = 'hi-english-audio-v31';
 
 var CORE_FILES = [

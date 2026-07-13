@@ -65,7 +65,10 @@ const HiEnglish = {
       ['learned','mastered'].forEach(function(k){
         o[k] = Array.from(strset(e[k]).union(strset(i[k]))).sort();
       });
-      ['readIndex','spellIndex','totalSeconds'].forEach(function(k){
+      // readIndex：本地真相优先（不取最大值），记住最后停留页，避免往回翻被"最远页"覆盖
+      o.readIndex = (typeof e.readIndex === 'number' && e.readIndex > 0) ? e.readIndex
+                   : (parseInt(i.readIndex||0,10) || 0);
+      ['spellIndex','totalSeconds'].forEach(function(k){
         o[k] = Math.max(parseInt(e[k]||0,10), parseInt(i[k]||0,10));
       });
       var ld = Object.assign({}, e.learnedDates||{});
