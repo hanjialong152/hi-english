@@ -1205,7 +1205,13 @@
       "totalSeconds": 0,
       "unlocked": false
     },
-    "checkIns": []
+    "checkIns": [
+      {
+        "date": "2026-07-13",
+        "seconds": 0,
+        "completed": false
+      }
+    ]
   },
   "115174": {
     "basic": {
