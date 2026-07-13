@@ -1219,17 +1219,19 @@
       "totalSeconds": 0
     },
     "business": {
-      "readIndex": 3,
+      "readIndex": 4,
       "spellIndex": 0,
       "learned": [
         "1",
         "2",
-        "3"
+        "3",
+        "4"
       ],
       "learnedDates": {
         "1": "2026-07-13",
         "2": "2026-07-13",
-        "3": "2026-07-13"
+        "3": "2026-07-13",
+        "4": "2026-07-13"
       },
       "mastered": [],
       "speakScores": {},
