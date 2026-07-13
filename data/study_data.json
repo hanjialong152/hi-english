@@ -1180,5 +1180,30 @@
   },
   "__probe__": {
     "checkIns": []
+  },
+  "225979": {
+    "basic": {
+      "readIndex": 0,
+      "spellIndex": 0,
+      "learned": [],
+      "learnedDates": {},
+      "mastered": [],
+      "speakScores": {},
+      "weeklyTests": [],
+      "monthlyTests": [],
+      "totalSeconds": 0
+    },
+    "business": {
+      "readIndex": 0,
+      "spellIndex": 0,
+      "learned": [],
+      "learnedDates": {},
+      "mastered": [],
+      "speakScores": {},
+      "weeklyTests": [],
+      "monthlyTests": [],
+      "totalSeconds": 0,
+      "unlocked": false
+    }
   }
 }
