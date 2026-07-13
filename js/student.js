@@ -689,6 +689,23 @@ function isAudioLearned(id, stage) {
   return req.length > 0 && req.every(function(k) { return ad[k]; });
 }
 
+// 是否点过≥1个喇叭（学习中判定：点了≥1个但没播完）。与 isAudioLearned 区分：这里只要有任意一条音频被点播过即算。
+function isAudioStarted(id, stage) {
+  var ad = (studyData[stage].audioDone || {})[String(id)] || {};
+  return Object.keys(ad).some(function(k) { return ad[k]; });
+}
+
+// 统一四态分类（互斥，优先级：已掌握 > 已学(听完) > 学习中(点过≥1) > 未学）
+// 解决 Bug③：①"未学"不再混入"已掌握"；②"学习中"卡片数与清单数完全一致。
+function classifyItem(id, stage) {
+  var sd = studyData[stage];
+  var isMastered = (sd.mastered || []).some(function(x) { return String(x) === String(id); });
+  if (isMastered) return 'mastered';
+  if (isAudioLearned(id, stage)) return 'learned';   // 已学（听完音频），不用管是否已掌握
+  if (isAudioStarted(id, stage)) return 'learning';  // 学习中（点过≥1个喇叭但没播完）
+  return 'unlearned';                                // 未学（其余）
+}
+
 // 已学数（遍历词库/课库，统计已听完必需音频的条数）
 function getLearnedCount(stage) {
   var pool = stage === 'basic' ? words : lessons;
@@ -703,9 +720,12 @@ function getMasteredCount(stage) {
   return new Set(m.map(function(x) { return String(x); })).size;
 }
 
-// 学习中 = 已学 - 已掌握
+// 学习中 = 点过≥1个喇叭但未听完且未掌握（与"学习中"筛选项口径完全一致，避免卡片数≠清单数）
 function getLearningCount(stage) {
-  return Math.max(0, getLearnedCount(stage) - getMasteredCount(stage));
+  var pool = stage === 'basic' ? words : lessons;
+  var n = 0;
+  pool.forEach(function(it) { if (classifyItem(it.id, stage) === 'learning') n++; });
+  return n;
 }
 
 // 记录某音频已播放（onend 触发）；完成全部必需音频时记录完成日期；局部刷新 UI
@@ -2343,16 +2363,14 @@ function renderWordList(filter) {
   var wlPlaceholder = currentStage === 'basic' ? '搜索单词或中文...' : '搜索微课名称或中文...';
   var searchHTML = '<div style="padding:0 12px 8px;position:relative;"><input type="password" autocomplete="new-password" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;" tabindex="-1" aria-hidden="true"><input type="text" class="wl-search" name="wl-search-query" autocomplete="off" placeholder="' + wlPlaceholder + '" value="' + wlSearch + '" oninput="onWlSearch(this.value)"></div>';
 
-  // Filter words — 已学=真实听过音频（audioDone）；ID 类型兼容
-  var inLearned = function(id) { return isAudioLearned(id, currentStage); };
-  var inMastered = function(id) { return stageData.mastered.some(function(x){ return String(x) === String(id); }); };
+  // Filter words — 统一用 classifyItem 四态分类，确保卡片数与清单数一致、未学不含已掌握/已学
   var displayItems = currentStage === 'basic' ? words : lessons;
   if (wlFilter === 'learned') {
-    displayItems = displayItems.filter(function(w) { return inLearned(w.id) && !inMastered(w.id); });
+    displayItems = displayItems.filter(function(w) { return classifyItem(w.id, currentStage) === 'learning'; });
   } else if (wlFilter === 'mastered') {
-    displayItems = displayItems.filter(function(w) { return inMastered(w.id); });
+    displayItems = displayItems.filter(function(w) { return classifyItem(w.id, currentStage) === 'mastered'; });
   } else if (wlFilter === 'unlearned') {
-    displayItems = displayItems.filter(function(w) { return !inLearned(w.id); });
+    displayItems = displayItems.filter(function(w) { return classifyItem(w.id, currentStage) === 'unlearned'; });
   }
 
   if (wlSearch) {
@@ -2367,11 +2385,9 @@ function renderWordList(filter) {
   }
 
   // Render ALL items (no limit)
-  var statusText = {mastered: '已掌握', learned: '学习中', unlearned: '未学'};
+  var statusText = {mastered: '已掌握', learned: '已学', learning: '学习中', unlearned: '未学'};
   var listHTML = displayItems.map(function(w) {
-    var isMastered = inMastered(w.id);
-    var isLearned = inLearned(w.id);
-    var status = isMastered ? 'mastered' : (isLearned ? 'learned' : 'unlearned');
+    var status = classifyItem(w.id, currentStage);
     if (currentStage === 'basic') {
       return '<div class="word-list-item">' +
         '<div class="wl-num ' + status + '">' + w.id + '</div>' +

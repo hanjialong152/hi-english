@@ -93,7 +93,10 @@ function calcUserScores(empid) {
     mastered: mastered, readIndex: basicAudioLearned, completedDays: completedDays,
     weeklyAvg: weeklyAvg, monthlyAvg: monthlyAvg, score: score, checkinRate: checkinRate,
     bizLearned: bizAudioLearned, bizMastered: bizMastered,
-    basicComplete: basicAudioLearned >= 850, businessUnlocked: sd.business && sd.business.unlocked
+    basicLearned: basicAudioLearned,
+    basicComplete: basicAudioLearned >= 850,
+    businessComplete: bizAudioLearned >= BIZ_TOTAL_LESSONS,
+    businessUnlocked: sd.business && sd.business.unlocked
   };
 }
 
@@ -995,7 +998,7 @@ function renderGroupStats() {
           '<span style="font-size:13px;color:var(--text-sub);">条</span>' +
         '</div>' +
         '<div style="display:flex;align-items:center;gap:10px;">' +
-          '<span style="margin-left:auto;">显示第 ' + (startIdx+1) + '-' + endIdx + ' 条 / 共 ' + total + ' 条</span>' +
+          '<span style="margin-left:auto;font-size:13px;color:var(--text-sub);">显示第 ' + (startIdx+1) + '-' + endIdx + ' 条 / 共 ' + total + ' 条</span>' +
           '<button class="btn btn-outline" style="padding:4px 12px;font-size:12px;" onclick="if(groupPage>1){groupPage--;renderGroupStats();}" ' + (groupPage<=1?'disabled':'') + '>上一页</button>' +
           '<span style="font-size:13px;color:var(--text-sub);">第 ' + groupPage + '/' + totalPages + ' 页</span>' +
           '<button class="btn btn-outline" style="padding:4px 12px;font-size:12px;" onclick="if(groupPage<totalPages){groupPage++;renderGroupStats();}" ' + (groupPage>=totalPages?'disabled':'') + '>下一页</button>' +
@@ -1097,7 +1100,7 @@ function exportPersonalRanking() {
   var users = HiEnglish.getUsers();
   var rows = Object.values(users).map(function(u) {
     var s = calcUserScores(u.empid);
-    return [u.empid, u.name, u.group, s.completedDays, s.weeklyAvg, s.monthlyAvg || '-', s.score];
+    return [u.empid, u.name, u.group, s.completedDays, s.weeklyAvg, s.monthlyAvg || 0, s.score];
   }).sort(function(a, b) { return b[6] - a[6]; });
   rows.forEach(function(r, i) { r.unshift(i + 1); });
   HiEnglish.exportExcel('个人学习排行榜.xls', ['排名', '账号', '姓名', '组别', '打卡天数', '周测成绩', '月测成绩', '总成绩'], rows, '个人排行榜');
@@ -1137,7 +1140,7 @@ function exportStudentData() {
   var users = HiEnglish.getUsers();
   var rows = Object.values(users).map(function(u) {
     var s = calcUserScores(u.empid);
-    return [u.empid, u.name, u.group, s.readIndex + '/850', (s.bizLearned > 0 ? s.bizLearned + '/' + BIZ_TOTAL_LESSONS : '-'), s.mastered, (s.bizMastered > 0 ? s.bizMastered : '-'), s.completedDays, s.score, u.status === 'active' ? '启用' : '禁用'];
+    return [u.empid, u.name, u.group, s.readIndex + '/850', s.bizLearned + '/' + BIZ_TOTAL_LESSONS, s.mastered, s.bizMastered, s.completedDays, s.score, u.status === 'active' ? '启用' : '禁用'];
   });
   HiEnglish.exportExcel('学员数据.xls', ['账号', '姓名', '组别', '基础进度', '商务进度', '基础掌握', '商务掌握', '打卡天数', '平均分', '状态'], rows, '学员数据');
   showToast('学员数据已导出');
@@ -1175,10 +1178,10 @@ function exportAllReport() {
   var users = HiEnglish.getUsers();
   var rows = Object.values(users).map(function(u) {
     var s = calcUserScores(u.empid);
-    var stageStatus = s.basicComplete ? '基础词汇已完成' : '基础词汇进行中(' + s.readIndex + '/850)';
-    if (s.bizLearned > 0) stageStatus += ' + 商务英语(' + s.bizLearned + '/' + BIZ_TOTAL_LESSONS + ', 掌握' + s.bizMastered + ')';
-    else if (s.businessUnlocked) stageStatus += ' + 商务英语(未开始)';
-    return [u.empid, u.name, u.group, stageStatus, s.checkinRate + '%', s.weeklyAvg, s.monthlyAvg || '-', s.score];
+    var stageStatus = '基础词汇已完成(' + s.basicLearned + '/850)';
+    if (s.businessUnlocked) stageStatus += ' + 商务英语已完成(' + s.bizLearned + '/' + BIZ_TOTAL_LESSONS + ')';
+    else stageStatus += ' + 商务英语未解锁';
+    return [u.empid, u.name, u.group, stageStatus, s.checkinRate + '%', s.weeklyAvg, s.monthlyAvg || 0, s.score];
   });
   HiEnglish.exportExcel('全员学习报告.xls', ['账号', '姓名', '组别', '学习阶段完成情况', '月度打卡完成率', '周测成绩', '月测成绩', '累计总成绩'], rows, '全员学习报告');
   showToast('全员学习报告已导出');
@@ -1193,6 +1196,7 @@ function exportTeamReport() {
     var count = groupUsers.length;
     var totalCheckin = 0, totalWeekly = 0, weeklyCount = 0, totalMonthly = 0, monthlyCount = 0, totalScore = 0;
     var basicCompleteCount = 0;
+    var businessCompleteCount = 0;
     var businessUnlockedCount = 0;
     groupUsers.forEach(function(u) {
       var s = calcUserScores(u.empid);
@@ -1201,10 +1205,10 @@ function exportTeamReport() {
       if (s.monthlyAvg > 0) { totalMonthly += s.monthlyAvg; monthlyCount++; }
       totalScore += s.score;
       if (s.basicComplete) basicCompleteCount++;
+      if (s.businessComplete) businessCompleteCount++;
       if (s.businessUnlocked) businessUnlockedCount++;
     });
-    var stageStatus = '基础词汇完成 ' + basicCompleteCount + '/' + count;
-    if (businessUnlockedCount > 0) stageStatus += '，商务英语解锁 ' + businessUnlockedCount + '/' + count;
+    var stageStatus = '基础词汇完成数(' + basicCompleteCount + '/' + count + ') + 商务英语完成数(' + businessCompleteCount + '/' + count + ')';
     return [
       g, stageStatus,
       count > 0 ? Math.round(totalCheckin / count) + '%' : '0%',

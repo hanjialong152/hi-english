@@ -92,6 +92,22 @@ const HiEnglish = {
         });
       });
       o.speakScores = ss;
+      // audioDone（结构 {词id:{p:true,e1:true,...}}）：深层合并，任意一侧为 true 即保留 true（听过就记着）
+      var ad = {};
+      [e.audioDone||{}, i.audioDone||{}].forEach(function(src){
+        Object.keys(src).forEach(function(k){
+          ad[k] = ad[k] || {};
+          var sub = src[k] || {};
+          Object.keys(sub).forEach(function(subk){ if (sub[subk]) ad[k][subk] = true; });
+        });
+      });
+      o.audioDone = ad;
+      // audioDoneDate（结构 {词id:日期}）：取较新日期
+      var add = Object.assign({}, e.audioDoneDate||{});
+      Object.keys(i.audioDoneDate||{}).forEach(function(k){
+        if (!(k in add) || String(i.audioDoneDate[k]||'') > String(add[k]||'')) add[k] = i.audioDoneDate[k];
+      });
+      o.audioDoneDate = add;
       ['weeklyTests','monthlyTests'].forEach(function(k){
         var seen = {}, m = [];
         [e[k]||[], i[k]||[]].forEach(function(arr){ (arr||[]).forEach(function(it){

@@ -343,6 +343,21 @@ def _merge_stage(existing, incoming):
             for ex, sc in (exs or {}).items():
                 ss[w][ex] = max(float(ss[w].get(ex, 0) or 0), float(sc or 0))
     out['speakScores'] = ss
+    # audioDone（结构 {词id:{p:true,e1:true,...}}）：深层合并，任意一侧为 true 即保留 true（听过就记着）
+    ad = {}
+    for src in (existing.get('audioDone') or {}, incoming.get('audioDone') or {}):
+        for k, sub in (src or {}).items():
+            ad.setdefault(k, {})
+            for subk, val in (sub or {}).items():
+                if val:
+                    ad[k][subk] = True
+    out['audioDone'] = ad
+    # audioDoneDate（结构 {词id:日期}）：取较新日期
+    add = dict(existing.get('audioDoneDate') or {})
+    for k, v in (incoming.get('audioDoneDate') or {}).items():
+        if k not in add or (str(v or '') > str(add[k] or '')):
+            add[k] = v
+    out['audioDoneDate'] = add
     # weeklyTests / monthlyTests：并集去重（按内容）
     for key in ('weeklyTests', 'monthlyTests'):
         seen = set()
