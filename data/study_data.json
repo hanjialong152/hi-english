@@ -301,7 +301,18 @@
       },
       "spellIndex": 1,
       "totalSeconds": 0,
-      "weeklyTests": []
+      "weeklyTests": [],
+      "audioDone": {
+        "1": {
+          "p": true,
+          "e1": true,
+          "e2": true,
+          "e3": true
+        }
+      },
+      "audioDoneDate": {
+        "1": "2026-07-13"
+      }
     },
     "business": {
       "learned": [
@@ -456,7 +467,27 @@
       "spellIndex": 1,
       "totalSeconds": 0,
       "unlocked": true,
-      "weeklyTests": []
+      "weeklyTests": [],
+      "audioDone": {
+        "32": {
+          "b_32_0": true,
+          "b_32_1": true,
+          "b_32_2": true,
+          "b_32_4": true,
+          "b_32_5": true,
+          "b_32_6": true,
+          "b_32_8": true,
+          "b_32_7": true,
+          "b_32_9": true,
+          "b_32_3": true
+        },
+        "33": {
+          "b_33_0": true
+        }
+      },
+      "audioDoneDate": {
+        "32": "2026-07-13"
+      }
     },
     "checkIns": [
       {
