@@ -1297,7 +1297,7 @@
   "115174": {
     "basic": {
       "readIndex": 0,
-      "spellIndex": 0,
+      "spellIndex": 2,
       "learned": [],
       "learnedDates": {},
       "mastered": [],
@@ -1342,7 +1342,7 @@
       },
       {
         "date": "2026-07-14",
-        "seconds": 1,
+        "seconds": 2,
         "completed": false
       }
     ]
