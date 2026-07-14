@@ -353,7 +353,8 @@
         },
         "9": {
           "p": true,
-          "e1": true
+          "e1": true,
+          "e2": true
         }
       },
       "audioDoneDate": {
@@ -669,7 +670,7 @@
       },
       {
         "date": "2026-07-14",
-        "seconds": 385,
+        "seconds": 386,
         "completed": false
       }
     ]
