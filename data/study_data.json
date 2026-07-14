@@ -420,6 +420,9 @@
           "e1": true,
           "e2": true,
           "e3": true
+        },
+        "19": {
+          "e3": true
         }
       },
       "audioDoneDate": {
@@ -745,7 +748,7 @@
       },
       {
         "date": "2026-07-14",
-        "seconds": 686,
+        "seconds": 687,
         "completed": false
       }
     ]
