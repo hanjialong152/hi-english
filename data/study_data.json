@@ -340,7 +340,8 @@
           "e3": true
         },
         "6": {
-          "p": true
+          "p": true,
+          "e1": true
         }
       },
       "audioDoneDate": {
