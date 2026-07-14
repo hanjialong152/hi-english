@@ -359,7 +359,8 @@
         },
         "10": {
           "e1": true,
-          "e3": true
+          "e3": true,
+          "e2": true
         }
       },
       "audioDoneDate": {
