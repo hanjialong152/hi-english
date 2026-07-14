@@ -347,7 +347,8 @@
         },
         "7": {
           "p": true,
-          "e1": true
+          "e1": true,
+          "e2": true
         }
       },
       "audioDoneDate": {
