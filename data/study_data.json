@@ -254,7 +254,7 @@
         "4"
       ],
       "monthlyTests": [],
-      "readIndex": 11,
+      "readIndex": 12,
       "speakScores": {
         "1": {
           "ex1": 89.0,
@@ -693,7 +693,7 @@
       },
       {
         "date": "2026-07-14",
-        "seconds": 530,
+        "seconds": 531,
         "completed": false
       }
     ]
