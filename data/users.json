@@ -233,15 +233,11 @@
   "225979": {
     "empid": "225979",
     "name": "赵孟",
-    "group": "",
+    "group": "B组",
     "status": "active",
     "password_hash": "63a7ee4f8e71e2106662baa376059fda72321831932171a228a0a27b85909c79",
     "salt": "d3ea91edc5b03074",
-    "created_at": 1783933375831,
-    "created_by": "admin",
-    "last_login": 1783934964187,
-    "login_count": 3,
-    "must_change_password": false
+    "created_at": 1783933375831
   },
   "115174": {
     "empid": "115174",
