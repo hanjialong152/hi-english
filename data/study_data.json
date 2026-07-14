@@ -582,7 +582,8 @@
           "b_7_7": true
         },
         "1": {
-          "b_1_0": true
+          "b_1_0": true,
+          "b_1_1": true
         }
       },
       "audioDoneDate": {
