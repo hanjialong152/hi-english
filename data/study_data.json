@@ -761,8 +761,8 @@
       },
       {
         "date": "2026-07-14",
-        "seconds": 899,
-        "completed": false
+        "seconds": 900,
+        "completed": true
       }
     ]
   },
