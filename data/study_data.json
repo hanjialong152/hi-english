@@ -1304,7 +1304,9 @@
       "speakScores": {},
       "weeklyTests": [],
       "monthlyTests": [],
-      "totalSeconds": 0
+      "totalSeconds": 0,
+      "audioDone": {},
+      "audioDoneDate": {}
     },
     "business": {
       "readIndex": 5,
@@ -1328,12 +1330,19 @@
       "weeklyTests": [],
       "monthlyTests": [],
       "totalSeconds": 0,
-      "unlocked": true
+      "unlocked": true,
+      "audioDone": {},
+      "audioDoneDate": {}
     },
     "checkIns": [
       {
         "date": "2026-07-13",
         "seconds": 26,
+        "completed": false
+      },
+      {
+        "date": "2026-07-14",
+        "seconds": 0,
         "completed": false
       }
     ]
