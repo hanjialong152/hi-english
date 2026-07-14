@@ -246,14 +246,10 @@
   "115174": {
     "empid": "115174",
     "name": "梁红敏",
-    "group": "",
+    "group": "B组",
     "status": "active",
     "password_hash": "9945a5f27f7707584540a14fdd0503fea6a5e86feb46b989813faea4c1190653",
     "salt": "8d07226ba0624d8e",
-    "created_at": 1783933395562,
-    "created_by": "admin",
-    "last_login": 1783989505307,
-    "login_count": 4,
-    "must_change_password": false
+    "created_at": 1783933395562
   }
 }
