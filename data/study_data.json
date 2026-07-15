@@ -976,7 +976,11 @@
       "totalSeconds": 0,
       "unlocked": true,
       "weeklyTests": [],
-      "audioDone": {},
+      "audioDone": {
+        "2": {
+          "b_2_0": true
+        }
+      },
       "audioDoneDate": {}
     },
     "checkIns": [
