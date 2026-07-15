@@ -466,9 +466,11 @@ def push_dingtalk_card(webhook, title, content, rows, time_str, link_url='https:
         return False
     n = len(rows) if rows else 0
     # actionCard 正文使用 markdown 表格展示（钉钉支持 markdown 表格）
-    table_rows = ''.join(
-        '| ' + name + ' | ' + eid + ' | ' + str(days) + ' 天 |\n'
-        for (name, eid, days) in (rows or [])
+    # 2026-07-15 手机端钉钉对 Markdown 表格解析很差，显示为乱码，
+    # 故改用编号列表，电脑/手机两端都能清晰阅读。
+    list_rows = '\n'.join(
+        str(i + 1) + '. ' + name + '（' + eid + '） 打卡 ' + str(days) + ' 天'
+        for i, (name, eid, days) in enumerate(rows or [])
     )
     md = (
         '#### <font color=#FF6A00>📚 催学提醒</font>\n\n'
@@ -476,10 +478,8 @@ def push_dingtalk_card(webhook, title, content, rows, time_str, link_url='https:
         '**⏰ 提醒时间**\n\n'
         + time_str + '\n\n'
         '**👥 提醒对象**（共 ' + str(n) + ' 人，按打卡天数从少到多）\n\n'
-        '| 姓名 | 账号 | 打卡天数 |\n'
-        '| ------ | ------ | ------ |\n'
-        + (table_rows if table_rows else '| - | - | - |\n')
-        + '\n'
+        + (list_rows if list_rows else '1. 全体学员')
+        + '\n\n'
         '**📝 提醒内容**\n\n'
         + (content or '请尽快完成每日学习打卡～') + '\n\n'
         '> 💪 坚持每天 15 分钟，英语水平稳步提升！\n\n'

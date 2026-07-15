@@ -549,11 +549,34 @@ function renderHome() {
   // Learning modes — 使用统一打卡数据
   var today = HiEnglish.today();
   var todayCheckIn = (studyData.checkIns || []).find(function(c){return c.date === today;});
-  var needsCheckIn = !todayCheckIn || !todayCheckIn.completed;
+  var todayCompleted = todayCheckIn && todayCheckIn.completed;
+  var hasMissingThisWeek = false;
+  if (todayCompleted) {
+    var todayDate = new Date();
+    var dayOfWeek = todayDate.getDay(); // 0=Sun..6=Sat
+    var diffToSat = (dayOfWeek + 1) % 7; // 今天到上周六的天数（周六=0，周日=1，周一=2..）
+    var saturday = new Date(todayDate);
+    saturday.setDate(todayDate.getDate() - diffToSat);
+    saturday.setHours(0, 0, 0, 0);
+    var saturdayStr = formatDateStr(saturday);
+    // 检查上周六到今天（不含今天）之间是否还有未完成的打卡
+    for (var d = 0; d < diffToSat; d++) {
+      var checkDate = new Date(saturday);
+      checkDate.setDate(saturday.getDate() + d);
+      var checkDateStr = formatDateStr(checkDate);
+      if (checkDateStr >= today) break; // 不包含今天及未来
+      var c = (studyData.checkIns || []).find(function(x){return x.date === checkDateStr;});
+      if (!c || !c.completed) {
+        hasMissingThisWeek = true;
+        break;
+      }
+    }
+  }
+  var showMakeupBadge = todayCompleted && hasMissingThisWeek;
 
   document.getElementById('s-learn-modes').innerHTML =
     '<div class="mode-card" onclick="goLearn()" style="position:relative;">' +
-      (needsCheckIn ? '<span class="badge-dot" onclick="event.stopPropagation();showCalendar()">补卡</span>' : '') +
+      (showMakeupBadge ? '<span class="badge-dot" onclick="event.stopPropagation();showCalendar()">补卡</span>' : '') +
       '<div class="mode-icon">📖</div>' +
       '<div class="mode-name">跟读学习</div>' +
       '<div class="mode-sub daily">每日必学</div>' +
@@ -1002,6 +1025,13 @@ function renderLessonLearnCard() {
 
   speakPracticeHTML += '</div>';
 
+  // 商务微课跟读学习提示：全部句子≥80分才算掌握
+  var bizSpeakHint = getLessonSpeakHint(lessonScores, lesson.sentences);
+  speakPracticeHTML +=
+    '<div style="margin:0 12px 12px;padding:12px;background:var(--bg);border-radius:8px;font-size:13px;color:var(--text);text-align:center;">' +
+      bizSpeakHint +
+    '</div>';
+
   var navHTML =
     '<div style="display:flex;gap:8px;padding:12px;">' +
       '<button class="btn btn-outline" style="flex:1;" onclick="prevWord()">‹ 上一课</button>' +
@@ -1036,14 +1066,24 @@ function getSpeakContent(word, target) {
   return map[target] || map.phrase;
 }
 
+function getLessonSpeakHint(scores, sentences) {
+  if (!scores || !sentences || sentences.length === 0) return '所有句子暂未全部达80分，请继续完成';
+  var allPassed = sentences.every(function(s, i) {
+    var sc = scores['s' + i];
+    return sc && sc >= 80;
+  });
+  if (allPassed) return '✅ 全部通过，微课已掌握';
+  return '所有句子暂未全部达80分，请继续完成';
+}
+
 function getSpeakHint(p, e1, e2, e3) {
   var missing = [];
   if (!p || p < 80) missing.push('词组');
   if (!e1 || e1 < 80) missing.push('例句1');
   if (!e2 || e2 < 80) missing.push('例句2');
   if (!e3 || e3 < 80) missing.push('例句3');
-  if (missing.length === 0) return '✅ 全部通过！单词已掌握';
-  return missing.join('、') + '未达80分，请继续完成';
+  if (missing.length === 0) return '✅ 全部通过，单词已掌握';
+  return '所有' + missing.join('、') + '未达80分，请继续完成';
 }
 
 function setSpeakTarget(btn, target, wordId) {
@@ -1936,7 +1976,8 @@ function showSpellPage() {
         '<button onclick="speakWithTimer(\'' + escapeQuotes(word.word) + '\')" style="border:none;background:none;font-size:48px;cursor:pointer;">🔊</button>' +
         '<div style="font-size:13px;color:var(--text-sub);margin-top:8px;">点击播放发音</div>' +
         '<div style="margin-top:20px;">' +
-          '<div style="font-size:18px;margin-bottom:8px;">' + (word.pos || '') + ' ' + (word.cn || '') + '</div>' +
+          '<div style="font-size:12px;color:var(--text-sub);margin-bottom:6px;">' + (word.pos || '') + '</div>' +
+          '<div style="font-size:18px;margin-bottom:8px;color:var(--text);">' + (word.cn || '') + '</div>' +
           '<input type="text" id="spell-input" placeholder="请输入英文单词" style="width:100%;padding:12px;border:2px solid var(--border);border-radius:8px;font-size:18px;text-align:center;outline:none;" onfocus="this.style.borderColor=\'var(--primary)\'" onblur="this.style.borderColor=\'var(--border)\'" onkeydown="if(event.key===\'Enter\')submitSpell()">' +
         '</div>' +
         '<div id="spell-result"></div>' +
@@ -1945,7 +1986,8 @@ function showSpellPage() {
       '<div class="alert-box alert-info">ℹ️ 拼写练习进度独立于跟读学习，各有自己的学习节奏</div>' +
       '<div style="display:flex;gap:8px;padding:12px;">' +
         '<button class="btn btn-outline" style="flex:1;" onclick="backHome()">返回首页</button>' +
-        '<button class="btn btn-outline" style="flex:1;" onclick="nextSpell()">跳过 ›</button>' +
+        '<button class="btn btn-outline" style="flex:1;" onclick="prevSpell()" ' + (currentIndex === 0 ? 'disabled' : '') + '>‹ 上一个</button>' +
+        '<button class="btn btn-outline" style="flex:1;" onclick="nextSpell()">下一个 ›</button>' +
       '</div>';
     setTimeout(function() { document.getElementById('spell-input').focus(); }, 100);
   } else {
@@ -2025,7 +2067,8 @@ function renderBusinessSpellPage() {
     '<div class="alert-box alert-info">ℹ️ 拼写练习进度独立于跟读学习，各有自己的学习节奏</div>' +
     '<div style="display:flex;gap:8px;padding:12px;">' +
       '<button class="btn btn-outline" style="flex:1;" onclick="backHome()">返回首页</button>' +
-      '<button class="btn btn-outline" style="flex:1;" onclick="nextSpell()">跳过 ›</button>' +
+      '<button class="btn btn-outline" style="flex:1;" onclick="prevSpell()" ' + (currentIndex === 0 ? 'disabled' : '') + '>‹ 上一个</button>' +
+      '<button class="btn btn-outline" style="flex:1;" onclick="nextSpell()">下一个 ›</button>' +
     '</div>';
   setTimeout(function() { document.getElementById('spell-input').focus(); }, 100);
 }
@@ -2060,6 +2103,13 @@ function nextSpell() {
   if (currentIndex > stageData.spellIndex) stageData.spellIndex = currentIndex;
   saveStudyData();
   showSpellPage();
+}
+
+function prevSpell() {
+  if (currentIndex > 0) {
+    currentIndex--;
+    showSpellPage();
+  }
 }
 
 // ===== Tests =====
@@ -2392,6 +2442,17 @@ function renderWordList(filter) {
   var statusText = {mastered: '已掌握', learned: '已学', learning: '学习中', unlearned: '未学'};
   var listHTML = displayItems.map(function(w) {
     var status = classifyItem(w.id, currentStage);
+    // 双达标（音频+跟读都过）同时显示“已学”和“已掌握”两个标签
+    var isMastered = status === 'mastered';
+    var isLearned = isAudioLearned(w.id, currentStage);
+    var statusTagsHTML = '';
+    if (isMastered) {
+      statusTagsHTML = '<div class="wl-status-wrap"><span class="wl-status learned">' + statusText.learned + '</span><span class="wl-status mastered">' + statusText.mastered + '</span></div>';
+    } else if (isLearned) {
+      statusTagsHTML = '<span class="wl-status learned">' + statusText.learned + '</span>';
+    } else {
+      statusTagsHTML = '<span class="wl-status ' + status + '">' + statusText[status] + '</span>';
+    }
     if (currentStage === 'basic') {
       return '<div class="word-list-item">' +
         '<div class="wl-num ' + status + '">' + w.id + '</div>' +
@@ -2399,7 +2460,7 @@ function renderWordList(filter) {
           '<div class="wl-word">' + w.word + ' <span class="wl-ipa">' + (w.ipa || '') + '</span></div>' +
           '<div class="wl-zh">' + (w.cn || '') + '</div>' +
         '</div>' +
-        '<span class="wl-status ' + status + '">' + statusText[status] + '</span>' +
+        statusTagsHTML +
       '</div>';
     } else {
       return '<div class="word-list-item">' +
@@ -2408,7 +2469,7 @@ function renderWordList(filter) {
           '<div class="wl-word">' + w.title + '</div>' +
           '<div class="wl-zh">' + (w.titleCn || '') + '</div>' +
         '</div>' +
-        '<span class="wl-status ' + status + '">' + statusText[status] + '</span>' +
+        statusTagsHTML +
       '</div>';
     }
   }).join('');
