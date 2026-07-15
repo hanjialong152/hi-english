@@ -942,7 +942,8 @@
       "weeklyTests": [],
       "audioDone": {
         "7": {
-          "p": true
+          "p": true,
+          "e1": true
         }
       },
       "audioDoneDate": {}
@@ -988,7 +989,7 @@
       },
       {
         "date": "2026-07-15",
-        "seconds": 12,
+        "seconds": 13,
         "completed": false
       }
     ]
