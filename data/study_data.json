@@ -943,7 +943,8 @@
       "audioDone": {
         "7": {
           "p": true,
-          "e1": true
+          "e1": true,
+          "e2": true
         }
       },
       "audioDoneDate": {}
@@ -989,7 +990,7 @@
       },
       {
         "date": "2026-07-15",
-        "seconds": 17,
+        "seconds": 18,
         "completed": false
       }
     ]
