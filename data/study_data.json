@@ -763,6 +763,11 @@
         "date": "2026-07-14",
         "seconds": 900,
         "completed": true
+      },
+      {
+        "date": "2026-07-15",
+        "seconds": 0,
+        "completed": false
       }
     ]
   },
