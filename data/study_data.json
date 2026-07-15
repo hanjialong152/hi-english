@@ -307,7 +307,7 @@
           "phrase": 74.0
         },
         "6": {
-          "phrase": 38.0
+          "phrase": 54.0
         },
         "7": {
           "ex2": 35.0,
@@ -774,7 +774,7 @@
       },
       {
         "date": "2026-07-15",
-        "seconds": 321,
+        "seconds": 322,
         "completed": false
       }
     ]
