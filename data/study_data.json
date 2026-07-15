@@ -983,7 +983,8 @@
           "b_2_2": true,
           "b_2_3": true,
           "b_2_4": true,
-          "b_2_6": true
+          "b_2_6": true,
+          "b_2_7": true
         }
       },
       "audioDoneDate": {}
@@ -1011,7 +1012,7 @@
       },
       {
         "date": "2026-07-15",
-        "seconds": 42,
+        "seconds": 43,
         "completed": false
       }
     ]
