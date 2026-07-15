@@ -940,7 +940,11 @@
       "spellIndex": 6,
       "totalSeconds": 0,
       "weeklyTests": [],
-      "audioDone": {},
+      "audioDone": {
+        "7": {
+          "p": true
+        }
+      },
       "audioDoneDate": {}
     },
     "business": {
@@ -984,7 +988,7 @@
       },
       {
         "date": "2026-07-15",
-        "seconds": 3,
+        "seconds": 4,
         "completed": false
       }
     ]
