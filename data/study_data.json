@@ -944,10 +944,13 @@
         "7": {
           "p": true,
           "e1": true,
-          "e2": true
+          "e2": true,
+          "e3": true
         }
       },
-      "audioDoneDate": {}
+      "audioDoneDate": {
+        "7": "2026-07-15"
+      }
     },
     "business": {
       "learned": [
@@ -990,7 +993,7 @@
       },
       {
         "date": "2026-07-15",
-        "seconds": 23,
+        "seconds": 24,
         "completed": false
       }
     ]
