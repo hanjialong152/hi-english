@@ -617,7 +617,7 @@
           "s5": 74.0
         }
       },
-      "spellIndex": 1,
+      "spellIndex": 2,
       "totalSeconds": 0,
       "unlocked": true,
       "weeklyTests": [],
@@ -779,7 +779,7 @@
       },
       {
         "date": "2026-07-16",
-        "seconds": 43,
+        "seconds": 44,
         "completed": false
       }
     ]
