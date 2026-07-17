@@ -1222,8 +1222,35 @@ function exportTeamReport() {
 }
 
 // 20: Detailed report - Excel with date/day/week/month filter
+function formatDateLocal(date) {
+  return date.getFullYear() + '-' +
+         String(date.getMonth() + 1).padStart(2, '0') + '-' +
+         String(date.getDate()).padStart(2, '0');
+}
+
+// 根据筛选维度自动设置起始/结束日期
+function updateReportDateRange() {
+  var dim = document.getElementById('report-dim').value;
+  var now = new Date();
+  var today = formatDateLocal(now);
+  var start = new Date(now);
+  if (dim === '按日') {
+    document.getElementById('report-start').value = today;
+    document.getElementById('report-end').value = today;
+  } else if (dim === '按周') {
+    start.setDate(now.getDate() - 7);
+    document.getElementById('report-start').value = formatDateLocal(start);
+    document.getElementById('report-end').value = today;
+  } else if (dim === '按月') {
+    start.setDate(now.getDate() - 30);
+    document.getElementById('report-start').value = formatDateLocal(start);
+    document.getElementById('report-end').value = today;
+  }
+}
+
 function showDetailedReportModal() {
   fillGroupSelect('report-group');
+  updateReportDateRange(); // 打开弹窗时按当前维度自动填充日期
   document.getElementById('detail-report-modal').classList.add('show');
 }
 

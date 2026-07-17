@@ -733,6 +733,8 @@ def handle_login():
         return jsonify({'success': False, 'error': '该工号未注册，请联系管理员'}), 401
     if not verify_password(password, user['password_hash'], user['salt']):
         return jsonify({'success': False, 'error': '密码错误'}), 401
+    if user.get('status', 'active') != 'active':
+        return jsonify({'success': False, 'error': '账号已被禁用，如需启用请联系管理员'}), 403
     with data_lock:
         user['last_login'] = int(time.time() * 1000)
         user['login_count'] = user.get('login_count', 0) + 1

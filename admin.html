@@ -37,7 +37,7 @@ body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Mi
 .data-table th { background:var(--primary-light); color:var(--text-light); padding:10px 8px; text-align:left; font-weight:600; white-space:nowrap; }
 .data-table td { padding:10px 8px; border-top:1px solid var(--border); }
 .data-table tr:hover { background:var(--primary-light); }
-.status-tag { font-size:11px; padding:2px 8px; border-radius:4px; }
+.status-tag { font-size:11px; padding:2px 8px; border-radius:4px; white-space:nowrap; display:inline-block; min-width:36px; text-align:center; }
 .status-tag.active { background:var(--success-light); color:var(--success); }
 .status-tag.disabled { background:var(--danger-light); color:var(--danger); }
 
@@ -382,7 +382,7 @@ body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Mi
     </div>
     <div class="form-group">
       <label>筛选维度</label>
-      <select id="report-dim">
+      <select id="report-dim" onchange="updateReportDateRange()">
         <option>按日</option>
         <option>按周</option>
         <option>按月</option>

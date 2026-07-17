@@ -29,6 +29,10 @@ const HiEnglish = {
       });
       var data = await resp.json();
       if (data.success) {
+        // 服务端校验通过后，再校验账号是否被禁用（防止禁用账号进入学员端）
+        if (data.user.status !== 'active') {
+          return { success: false, message: '账号已被禁用，如需启用请联系管理员' };
+        }
         // 将服务端用户信息同步到 localStorage（供离线使用）
         var users = this.getUsers();
         users[account] = {

@@ -12,6 +12,7 @@ var testScores = {};
 var learnMode = 'read';
 var speakTarget = 'phrase';
 var makeupDate = null;
+var selectedMakeupDate = null; // 日历弹窗中选中的可补卡日期
 var isAudioActive = false;
 // Test sub-items for current test word
 var testSubItems = [];
@@ -550,29 +551,27 @@ function renderHome() {
   var today = HiEnglish.today();
   var todayCheckIn = (studyData.checkIns || []).find(function(c){return c.date === today;});
   var todayCompleted = todayCheckIn && todayCheckIn.completed;
+  // 补卡入口：只要上周六到今天（不含今天）之间有未完成的打卡就显示，与今天是否完成无关
   var hasMissingThisWeek = false;
-  if (todayCompleted) {
-    var todayDate = new Date();
-    var dayOfWeek = todayDate.getDay(); // 0=Sun..6=Sat
-    var diffToSat = (dayOfWeek + 1) % 7; // 今天到上周六的天数（周六=0，周日=1，周一=2..）
-    var saturday = new Date(todayDate);
-    saturday.setDate(todayDate.getDate() - diffToSat);
-    saturday.setHours(0, 0, 0, 0);
-    var saturdayStr = formatDateStr(saturday);
-    // 检查上周六到今天（不含今天）之间是否还有未完成的打卡
-    for (var d = 0; d < diffToSat; d++) {
-      var checkDate = new Date(saturday);
-      checkDate.setDate(saturday.getDate() + d);
-      var checkDateStr = formatDateStr(checkDate);
-      if (checkDateStr >= today) break; // 不包含今天及未来
-      var c = (studyData.checkIns || []).find(function(x){return x.date === checkDateStr;});
-      if (!c || !c.completed) {
-        hasMissingThisWeek = true;
-        break;
-      }
+  var todayDate = new Date();
+  var dayOfWeek = todayDate.getDay(); // 0=Sun..6=Sat
+  var diffToSat = (dayOfWeek + 1) % 7; // 今天到上周六的天数（周六=0，周日=1，周一=2..）
+  var saturday = new Date(todayDate);
+  saturday.setDate(todayDate.getDate() - diffToSat);
+  saturday.setHours(0, 0, 0, 0);
+  // 检查上周六到今天（不含今天）之间是否还有未完成的打卡
+  for (var d = 0; d < diffToSat; d++) {
+    var checkDate = new Date(saturday);
+    checkDate.setDate(saturday.getDate() + d);
+    var checkDateStr = formatDateStr(checkDate);
+    if (checkDateStr >= today) break; // 不包含今天及未来
+    var c = (studyData.checkIns || []).find(function(x){return x.date === checkDateStr;});
+    if (!c || !c.completed) {
+      hasMissingThisWeek = true;
+      break;
     }
   }
-  var showMakeupBadge = todayCompleted && hasMissingThisWeek;
+  var showMakeupBadge = hasMissingThisWeek;
 
   document.getElementById('s-learn-modes').innerHTML =
     '<div class="mode-card" onclick="goLearn()" style="position:relative;">' +
@@ -2751,6 +2750,9 @@ function showCalendar() {
   }
 
   var html = '';
+  selectedMakeupDate = null; // 重置选中状态
+  var calGoBtn = document.getElementById('cal-go-btn');
+  if (calGoBtn) calGoBtn.textContent = '去打卡';
   var heads = ['日','一','二','三','四','五','六'];
   heads.forEach(function(h) { html += '<div class="cal-head">' + h + '</div>'; });
 
@@ -2769,7 +2771,7 @@ function showCalendar() {
       var pClasses = 'cal-day prev-month';
       if (!prevCheckIn || !prevCheckIn.completed) {
         pClasses += ' undone';
-        html += '<div class="' + pClasses + '" style="cursor:pointer;text-decoration:underline;opacity:0.6;" onclick="startMakeup(\'' + prevDateStr + '\')">' + prevDay + '</div>';
+        html += '<div class="' + pClasses + '" style="cursor:pointer;text-decoration:underline;opacity:0.6;" onclick="selectMakeupDate(\'' + prevDateStr + '\')">' + prevDay + '</div>';
       } else {
         pClasses += ' done';
         html += '<div class="' + pClasses + '" style="opacity:0.6;">' + prevDay + '</div>';
@@ -2795,7 +2797,7 @@ function showCalendar() {
         classes += ' undone';
         if (isInThisWeek) {
           // Only this week (Sat-Fri) past dates can be made up
-          html += '<div class="' + classes + '" style="cursor:pointer;text-decoration:underline;" onclick="startMakeup(\'' + dateStr + '\')">' + d + '</div>';
+          html += '<div class="' + classes + '" style="cursor:pointer;text-decoration:underline;" onclick="selectMakeupDate(\'' + dateStr + '\')">' + d + '</div>';
         } else {
           html += '<div class="' + classes + '" onclick="showToast(\'该日期不在本周（上周六至本周五），无法补卡\')">' + d + '</div>';
         }
@@ -2826,8 +2828,29 @@ function startMakeup(dateStr) {
   goLearn();
 }
 
+// 选中可补卡日期：记录并改写底部按钮文案
+function selectMakeupDate(dateStr) {
+  selectedMakeupDate = dateStr;
+  var btn = document.getElementById('cal-go-btn');
+  if (btn) {
+    // dateStr 形如 2026-07-15 → 显示 7月15日
+    var md = dateStr.slice(5).split('-');
+    btn.textContent = '去补卡（' + Number(md[0]) + '月' + Number(md[1]) + '日）';
+  }
+}
+
+// 日历底部按钮：有选中日期则补卡，否则去今日打卡
+function onCalendarGoBtn() {
+  if (selectedMakeupDate) {
+    startMakeup(selectedMakeupDate);
+  } else {
+    goLearnFromCalendar();
+  }
+}
+
 function closeCalendar() {
   document.getElementById('calendar-modal').classList.remove('show');
+  selectedMakeupDate = null;
 }
 
 function goLearnFromCalendar() {

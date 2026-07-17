@@ -7,9 +7,10 @@
 // v24: 音频缓存版本提升，强制刷新重新生成的发音MP3
 // v22: 移动端通知栏推送（showNotification + notificationclick）
 // v21: 修复分组数据持久化 + 搜索栏禁止浏览器自动填充
+// v47: 4项Bug修复（补卡入口/禁用拦截/状态标签/报表日期联动）强制刷新缓存
 
-var CACHE_VERSION = 'hi-english-v46';
-var CORE_CACHE = 'hi-english-core-v46';
+var CACHE_VERSION = 'hi-english-v47';
+var CORE_CACHE = 'hi-english-core-v47';
 var AUDIO_CACHE = 'hi-english-audio-v31';
 
 var CORE_FILES = [
