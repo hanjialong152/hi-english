@@ -1611,5 +1611,35 @@
         "completed": false
       }
     ]
+  },
+  "033815": {
+    "checkIns": [],
+    "basic": {
+      "readIndex": 0,
+      "spellIndex": 0,
+      "learned": [],
+      "learnedDates": {},
+      "mastered": [],
+      "speakScores": [],
+      "weeklyTests": [],
+      "monthlyTests": [],
+      "totalSeconds": 0,
+      "audioDone": {},
+      "audioDoneDate": {}
+    },
+    "business": {
+      "readIndex": 0,
+      "spellIndex": 0,
+      "learned": [],
+      "learnedDates": {},
+      "mastered": [],
+      "speakScores": [],
+      "weeklyTests": [],
+      "monthlyTests": [],
+      "totalSeconds": 0,
+      "unlocked": false,
+      "audioDone": {},
+      "audioDoneDate": {}
+    }
   }
 }
