@@ -13,6 +13,7 @@ var learnMode = 'read';
 var speakTarget = 'phrase';
 var makeupDate = null;
 var selectedMakeupDate = null; // 日历弹窗中选中的可补卡日期
+var calendarTodayStr = null;    // 日历弹窗中"今天"的日期串，用于取消选中时恢复边框
 var isAudioActive = false;
 // Test sub-items for current test word
 var testSubItems = [];
@@ -2806,13 +2807,14 @@ function showCalendar() {
         html += '<div class="' + classes + '">' + d + '</div>';
       }
     } else {
-      // Today — normal check-in, no makeup
+      // Today — normal check-in, no makeup. 可点击：取消已选中的补卡日期
       if (checkIn && checkIn.completed) {
         classes += ' done';
       } else {
         classes += ' today undone';
       }
-      html += '<div class="' + classes + '">' + d + '</div>';
+      calendarTodayStr = dateStr;
+      html += '<div class="' + classes + '" style="cursor:pointer;" onclick="selectTodayFromCalendar()">' + d + '</div>';
     }
   }
 
@@ -2840,13 +2842,40 @@ function selectMakeupDate(dateStr) {
     }
     var target = grid.querySelector('.cal-day[data-date="' + dateStr + '"]');
     if (target) target.classList.add('selected');
+    // 取消"今天"格子的边框，避免与选中框视觉冲突
+    if (calendarTodayStr) {
+      var tcell = grid.querySelector('.cal-day[data-date="' + calendarTodayStr + '"]');
+      if (tcell) tcell.classList.remove('today');
+    }
   }
   var btn = document.getElementById('cal-go-btn');
   if (btn) {
-    // dateStr 形如 2026-07-15 → 显示 7月15日（日期部分小一号，避免手机换行）
+    // dateStr 形如 2026-07-15 → 两行：主文案"去补卡" + 第二行小一号日期
     var md = dateStr.slice(5).split('-');
-    btn.innerHTML = '去补卡（<span style="font-size:0.82em;">' + Number(md[0]) + '月' + Number(md[1]) + '日</span>）';
+    btn.innerHTML = '去补卡<br><span style="font-size:0.78em;font-weight:normal;opacity:0.9;">' + Number(md[0]) + '月' + Number(md[1]) + '日</span>';
   }
+}
+
+// 点击"今天"格子：取消已选中的补卡日期，回到今日打卡状态
+function selectTodayFromCalendar() {
+  selectedMakeupDate = null;
+  var grid = document.getElementById('calendar-grid');
+  if (grid) {
+    var cells = grid.querySelectorAll('.cal-day');
+    for (var i = 0; i < cells.length; i++) {
+      cells[i].classList.remove('selected');
+    }
+    // 恢复"今天"格子的边框
+    if (calendarTodayStr) {
+      var tcell = grid.querySelector('.cal-day[data-date="' + calendarTodayStr + '"]');
+      if (tcell) {
+        tcell.classList.remove('selected');
+        tcell.classList.add('today');
+      }
+    }
+  }
+  var btn = document.getElementById('cal-go-btn');
+  if (btn) btn.textContent = '去打卡';
 }
 
 // 日历底部按钮：有选中日期则补卡，否则去今日打卡
