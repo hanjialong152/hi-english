@@ -262,5 +262,18 @@
     "last_login": 1784256476591,
     "login_count": 1,
     "must_change_password": false
+  },
+  "230959": {
+    "empid": "230959",
+    "name": "陈丛",
+    "group": "B组",
+    "status": "active",
+    "password_hash": "d3b9b2b5d417d9b910d964a9d2febcb977f2c8bfa98806bb02fc7db9a2333166",
+    "salt": "afddf0d5163aeb0d",
+    "created_at": 1784288052815,
+    "created_by": "admin",
+    "last_login": 0,
+    "login_count": 0,
+    "must_change_password": false
   }
 }
