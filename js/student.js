@@ -2771,7 +2771,7 @@ function showCalendar() {
       var pClasses = 'cal-day prev-month';
       if (!prevCheckIn || !prevCheckIn.completed) {
         pClasses += ' undone';
-        html += '<div class="' + pClasses + '" style="cursor:pointer;text-decoration:underline;opacity:0.6;" onclick="selectMakeupDate(\'' + prevDateStr + '\')">' + prevDay + '</div>';
+        html += '<div class="' + pClasses + '" data-date="' + prevDateStr + '" style="cursor:pointer;text-decoration:underline;opacity:0.6;" onclick="selectMakeupDate(\'' + prevDateStr + '\')">' + prevDay + '</div>';
       } else {
         pClasses += ' done';
         html += '<div class="' + pClasses + '" style="opacity:0.6;">' + prevDay + '</div>';
@@ -2797,7 +2797,7 @@ function showCalendar() {
         classes += ' undone';
         if (isInThisWeek) {
           // Only this week (Sat-Fri) past dates can be made up
-          html += '<div class="' + classes + '" style="cursor:pointer;text-decoration:underline;" onclick="selectMakeupDate(\'' + dateStr + '\')">' + d + '</div>';
+          html += '<div class="' + classes + '" data-date="' + dateStr + '" style="cursor:pointer;text-decoration:underline;" onclick="selectMakeupDate(\'' + dateStr + '\')">' + d + '</div>';
         } else {
           html += '<div class="' + classes + '" onclick="showToast(\'该日期不在本周（上周六至本周五），无法补卡\')">' + d + '</div>';
         }
@@ -2828,14 +2828,24 @@ function startMakeup(dateStr) {
   goLearn();
 }
 
-// 选中可补卡日期：记录并改写底部按钮文案
+// 选中可补卡日期：记录、移动选中框、改写底部按钮文案
 function selectMakeupDate(dateStr) {
   selectedMakeupDate = dateStr;
+  // 移动蓝色选中框到被点击的日期格子
+  var grid = document.getElementById('calendar-grid');
+  if (grid) {
+    var cells = grid.querySelectorAll('.cal-day');
+    for (var i = 0; i < cells.length; i++) {
+      cells[i].classList.remove('selected');
+    }
+    var target = grid.querySelector('.cal-day[data-date="' + dateStr + '"]');
+    if (target) target.classList.add('selected');
+  }
   var btn = document.getElementById('cal-go-btn');
   if (btn) {
-    // dateStr 形如 2026-07-15 → 显示 7月15日
+    // dateStr 形如 2026-07-15 → 显示 7月15日（日期部分小一号，避免手机换行）
     var md = dateStr.slice(5).split('-');
-    btn.textContent = '去补卡（' + Number(md[0]) + '月' + Number(md[1]) + '日）';
+    btn.innerHTML = '去补卡（<span style="font-size:0.82em;">' + Number(md[0]) + '月' + Number(md[1]) + '日</span>）';
   }
 }
 
