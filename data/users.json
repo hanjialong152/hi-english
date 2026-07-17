@@ -259,8 +259,8 @@
     "salt": "dcc21bd611b003a0",
     "created_at": 1784251470298,
     "created_by": "admin",
-    "last_login": 0,
-    "login_count": 0,
+    "last_login": 1784256476591,
+    "login_count": 1,
     "must_change_password": false
   }
 }
