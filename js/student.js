@@ -2754,6 +2754,8 @@ function showCalendar() {
   selectedMakeupDate = null; // 重置选中状态
   var calGoBtn = document.getElementById('cal-go-btn');
   if (calGoBtn) calGoBtn.textContent = '去打卡';
+  var calGridEl = document.getElementById('calendar-grid');
+  if (calGridEl) calGridEl.classList.remove('has-selection'); // 清除"已选补卡"弱化today边框状态
   var heads = ['日','一','二','三','四','五','六'];
   heads.forEach(function(h) { html += '<div class="cal-head">' + h + '</div>'; });
 
@@ -2814,7 +2816,7 @@ function showCalendar() {
         classes += ' today undone';
       }
       calendarTodayStr = dateStr;
-      html += '<div class="' + classes + '" style="cursor:pointer;" onclick="selectTodayFromCalendar()">' + d + '</div>';
+      html += '<div class="' + classes + '" data-date="' + dateStr + '" style="cursor:pointer;" onclick="selectTodayFromCalendar()">' + d + '</div>';
     }
   }
 
@@ -2842,11 +2844,8 @@ function selectMakeupDate(dateStr) {
     }
     var target = grid.querySelector('.cal-day[data-date="' + dateStr + '"]');
     if (target) target.classList.add('selected');
-    // 取消"今天"格子的边框，避免与选中框视觉冲突
-    if (calendarTodayStr) {
-      var tcell = grid.querySelector('.cal-day[data-date="' + calendarTodayStr + '"]');
-      if (tcell) tcell.classList.remove('today');
-    }
+    // 进入"已选补卡日期"状态：今天边框弱化为淡蓝虚线，避免与选中框混淆
+    grid.classList.add('has-selection');
   }
   var btn = document.getElementById('cal-go-btn');
   if (btn) {
@@ -2865,14 +2864,8 @@ function selectTodayFromCalendar() {
     for (var i = 0; i < cells.length; i++) {
       cells[i].classList.remove('selected');
     }
-    // 恢复"今天"格子的边框
-    if (calendarTodayStr) {
-      var tcell = grid.querySelector('.cal-day[data-date="' + calendarTodayStr + '"]');
-      if (tcell) {
-        tcell.classList.remove('selected');
-        tcell.classList.add('today');
-      }
-    }
+    // 取消"已选补卡"状态，今天边框恢复为正常 today 标记
+    grid.classList.remove('has-selection');
   }
   var btn = document.getElementById('cal-go-btn');
   if (btn) btn.textContent = '去打卡';

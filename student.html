@@ -161,7 +161,8 @@ body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Mi
 .calendar-grid .cal-day.done { background:var(--success-light); color:var(--success); font-weight:600; }
 .calendar-grid .cal-day.undone { background:var(--danger-light); color:var(--danger); font-weight:600; }
 .calendar-grid .cal-day.today { border:2px solid var(--primary); }
-.calendar-grid .cal-day.selected { border:2px solid var(--primary); background:var(--primary-light); box-shadow:0 0 0 2px var(--primary) inset; }
+.calendar-grid .cal-day.selected { border:2px solid var(--primary); background:var(--primary); color:#fff; }
+.calendar-grid.has-selection .cal-day.today:not(.selected) { border:1px dashed rgba(74,144,217,0.45); }
 #cal-go-btn { line-height:1.25; padding:10px 12px; white-space:normal; }
 .calendar-grid .cal-day.empty { visibility:hidden; }
 .calendar-grid .cal-day.future { color:var(--text-sub); opacity:0.4; }
