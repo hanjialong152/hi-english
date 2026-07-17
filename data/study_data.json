@@ -274,7 +274,7 @@
         "4"
       ],
       "monthlyTests": [],
-      "readIndex": 4,
+      "readIndex": 8,
       "speakScores": {
         "1": {
           "ex1": 89.0,
@@ -1646,6 +1646,31 @@
       "unlocked": true,
       "audioDone": {},
       "audioDoneDate": {}
+    }
+  },
+  "230959": {
+    "basic": {
+      "readIndex": 0,
+      "spellIndex": 0,
+      "learned": [],
+      "learnedDates": {},
+      "mastered": [],
+      "speakScores": {},
+      "weeklyTests": [],
+      "monthlyTests": [],
+      "totalSeconds": 0
+    },
+    "business": {
+      "readIndex": 0,
+      "spellIndex": 0,
+      "learned": [],
+      "learnedDates": {},
+      "mastered": [],
+      "speakScores": {},
+      "weeklyTests": [],
+      "monthlyTests": [],
+      "totalSeconds": 0,
+      "unlocked": false
     }
   }
 }
