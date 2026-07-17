@@ -1613,14 +1613,20 @@
     ]
   },
   "033815": {
-    "checkIns": [],
+    "checkIns": [
+      {
+        "date": "2026-07-17",
+        "seconds": 0,
+        "completed": false
+      }
+    ],
     "basic": {
       "readIndex": 0,
       "spellIndex": 0,
       "learned": [],
       "learnedDates": {},
       "mastered": [],
-      "speakScores": [],
+      "speakScores": {},
       "weeklyTests": [],
       "monthlyTests": [],
       "totalSeconds": 0,
@@ -1633,11 +1639,11 @@
       "learned": [],
       "learnedDates": {},
       "mastered": [],
-      "speakScores": [],
+      "speakScores": {},
       "weeklyTests": [],
       "monthlyTests": [],
       "totalSeconds": 0,
-      "unlocked": false,
+      "unlocked": true,
       "audioDone": {},
       "audioDoneDate": {}
     }
