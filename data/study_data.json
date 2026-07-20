@@ -2490,5 +2490,18 @@
       "mastered": []
     },
     "checkIns": []
+  },
+  "stress_081": {
+    "basic": {
+      "learned": [
+        "w81"
+      ],
+      "mastered": []
+    },
+    "business": {
+      "learned": [],
+      "mastered": []
+    },
+    "checkIns": []
   }
 }
