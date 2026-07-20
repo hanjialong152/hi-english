@@ -1801,5 +1801,18 @@
       "mastered": []
     },
     "checkIns": []
+  },
+  "stress_057": {
+    "basic": {
+      "learned": [
+        "w57"
+      ],
+      "mastered": []
+    },
+    "business": {
+      "learned": [],
+      "mastered": []
+    },
+    "checkIns": []
   }
 }
