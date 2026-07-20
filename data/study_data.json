@@ -3010,5 +3010,18 @@
       "mastered": []
     },
     "checkIns": []
+  },
+  "stress_086": {
+    "basic": {
+      "learned": [
+        "w86"
+      ],
+      "mastered": []
+    },
+    "business": {
+      "learned": [],
+      "mastered": []
+    },
+    "checkIns": []
   }
 }
