@@ -1983,5 +1983,18 @@
       "mastered": []
     },
     "checkIns": []
+  },
+  "stress_077": {
+    "basic": {
+      "learned": [
+        "w77"
+      ],
+      "mastered": []
+    },
+    "business": {
+      "learned": [],
+      "mastered": []
+    },
+    "checkIns": []
   }
 }
