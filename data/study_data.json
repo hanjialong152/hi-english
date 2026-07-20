@@ -2022,5 +2022,18 @@
       "mastered": []
     },
     "checkIns": []
+  },
+  "stress_034": {
+    "basic": {
+      "learned": [
+        "w34"
+      ],
+      "mastered": []
+    },
+    "business": {
+      "learned": [],
+      "mastered": []
+    },
+    "checkIns": []
   }
 }
