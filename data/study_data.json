@@ -1931,5 +1931,18 @@
       "mastered": []
     },
     "checkIns": []
+  },
+  "stress_043": {
+    "basic": {
+      "learned": [
+        "w43"
+      ],
+      "mastered": []
+    },
+    "business": {
+      "learned": [],
+      "mastered": []
+    },
+    "checkIns": []
   }
 }
