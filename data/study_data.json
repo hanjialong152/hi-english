@@ -1744,5 +1744,11 @@
     "checkIns": [],
     "basic": {},
     "business": {}
+  },
+  "_harden_test_": {
+    "basic": {
+      "learned": "apple"
+    },
+    "checkIns": []
   }
 }
