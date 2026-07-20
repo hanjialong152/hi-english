@@ -1918,5 +1918,18 @@
       "mastered": []
     },
     "checkIns": []
+  },
+  "stress_037": {
+    "basic": {
+      "learned": [
+        "w37"
+      ],
+      "mastered": []
+    },
+    "business": {
+      "learned": [],
+      "mastered": []
+    },
+    "checkIns": []
   }
 }
