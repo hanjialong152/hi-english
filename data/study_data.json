@@ -1739,16 +1739,5 @@
         "completed": false
       }
     ]
-  },
-  "_sb_probe_": {
-    "checkIns": [],
-    "basic": {},
-    "business": {}
-  },
-  "_harden_test_": {
-    "basic": {
-      "learned": "apple"
-    },
-    "checkIns": []
   }
 }
