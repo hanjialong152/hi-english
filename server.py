@@ -76,6 +76,7 @@ github_push_lock = threading.Lock()
 SUPABASE_URL = os.environ.get('SUPABASE_URL', '')
 SUPABASE_KEY = os.environ.get('SUPABASE_KEY', '')
 supabase = None
+SB_PROBE_ERROR = None  # 启动探针报错（全量，供诊断接口回显）
 if SUPABASE_URL and SUPABASE_KEY:
     try:
         from supabase import create_client
@@ -89,11 +90,14 @@ if SUPABASE_URL and SUPABASE_KEY:
             print('[Supabase] 已连接:', SUPABASE_URL, flush=True)
         except Exception as probe_err:
             supabase = None
+            SB_PROBE_ERROR = repr(probe_err)
             print('[Supabase] 连通性探针失败，降级为 GitHub data-sync 兜底:', repr(probe_err)[:200], flush=True)
     except Exception as e:
         supabase = None
+        SB_PROBE_ERROR = 'init: ' + repr(e)
         print('[Supabase] 初始化失败（将降级 GitHub data-sync 兜底）:', e, flush=True)
 else:
+    SB_PROBE_ERROR = '未配置 SUPABASE_URL/SUPABASE_KEY'
     print('[Supabase] 未配置 SUPABASE_URL/SUPABASE_KEY，使用 GitHub data-sync 存储（可靠兜底）', flush=True)
 
 
@@ -1040,6 +1044,34 @@ def handle_toggle_user():
         user['status'] = 'disabled' if user.get('status', 'active') == 'active' else 'active'
         save_json(os.path.join(DATA_DIR, 'users.json'), users)
     return jsonify({'success': True, 'status': user['status']})
+
+
+# ---- Supabase 连接诊断接口（只读，不碰任何数据）----
+@app.route('/api/sb-diag', methods=['GET'])
+def handle_sb_diag():
+    # 实时复测一次，避免只看启动时刻
+    live_err = SB_PROBE_ERROR
+    live_ok = bool(supabase)
+    if not supabase and SUPABASE_URL and SUPABASE_KEY:
+        try:
+            from supabase import create_client
+            _c = create_client(SUPABASE_URL, SUPABASE_KEY)
+            _c.table('study_data').select('empid').limit(1).execute()
+            live_ok = True
+            live_err = None
+        except Exception as e:
+            live_ok = False
+            live_err = repr(e)
+    return jsonify({
+        'url_set': bool(SUPABASE_URL),
+        'url_value': (SUPABASE_URL[:12] + '...' + SUPABASE_URL[-8:]) if SUPABASE_URL else '',
+        'key_set': bool(SUPABASE_KEY),
+        'key_len': len(SUPABASE_KEY) if SUPABASE_KEY else 0,
+        'connected_at_startup': bool(supabase),
+        'startup_error': SB_PROBE_ERROR,
+        'live_connected': live_ok,
+        'live_error': live_err,
+    })
 
 
 # ---- 学习数据 API ----
