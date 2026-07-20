@@ -1944,5 +1944,18 @@
       "mastered": []
     },
     "checkIns": []
+  },
+  "stress_016": {
+    "basic": {
+      "learned": [
+        "w16"
+      ],
+      "mastered": []
+    },
+    "business": {
+      "learned": [],
+      "mastered": []
+    },
+    "checkIns": []
   }
 }
