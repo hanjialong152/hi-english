@@ -1701,10 +1701,16 @@
       "weeklyTests": [],
       "monthlyTests": [],
       "totalSeconds": 0,
-      "unlocked": false,
+      "unlocked": true,
       "audioDone": {},
       "audioDoneDate": {}
     },
-    "checkIns": []
+    "checkIns": [
+      {
+        "date": "2026-07-20",
+        "seconds": 0,
+        "completed": false
+      }
+    ]
   }
 }
