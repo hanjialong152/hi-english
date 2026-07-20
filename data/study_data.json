@@ -2074,5 +2074,18 @@
       "mastered": []
     },
     "checkIns": []
+  },
+  "stress_084": {
+    "basic": {
+      "learned": [
+        "w84"
+      ],
+      "mastered": []
+    },
+    "business": {
+      "learned": [],
+      "mastered": []
+    },
+    "checkIns": []
   }
 }
