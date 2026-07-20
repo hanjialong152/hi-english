@@ -50,7 +50,7 @@ DEFAULT_ADMIN_PASSWORD = '1234.com'
 # 注意：更新 data-sync 分支不会触发 Render 自动部署（只监听 master 分支）
 
 # Token 拆分存储，避免被搜索引擎直接索引
-_t_parts = ['github_pat_11CGMVYEA0', 'Q3nvGzgJKBWW_zWzyeWcj', 'KQPhhtl6ay5n5BYac86iJ', 'sKHnOX4K2U0rmzSTES4Q', 'YIHOMPgaXG']
+_t_parts = ['github_pat_11CGMVYE', 'A0bRUo6GrzXZ8J_MNg3', 'eSH58CWpX4sCpCOcSdj', 'lNX8ZrNQPOTdKfbbrpa', 'GSINPTKXWC6WKP28Q']
 GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN', ''.join(_t_parts))
 GITHUB_REPO = 'hanjialong152/hi-english'
 GITHUB_DATA_BRANCH = 'data-sync'
