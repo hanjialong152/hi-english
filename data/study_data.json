@@ -1996,5 +1996,18 @@
       "mastered": []
     },
     "checkIns": []
+  },
+  "stress_039": {
+    "basic": {
+      "learned": [
+        "w39"
+      ],
+      "mastered": []
+    },
+    "business": {
+      "learned": [],
+      "mastered": []
+    },
+    "checkIns": []
   }
 }
