@@ -65,6 +65,10 @@ _dirty_files = set()
 _dirty_lock = threading.Lock()
 # 所有 GitHub 写入串行锁：避免并发写同一文件导致 sha 冲突 / 互相覆盖丢数据
 github_push_lock = threading.Lock()
+# 上次成功推送到 GitHub 的 study_data 全量签名（md5）。仅在数据真正变化时才推送，
+# 把 100 人规模下的 GitHub API 写入量压到远低于 5000/小时限流线（周期同步的冗余写入被滤掉）。
+_last_gh_sig = None
+_gh_sig_lock = threading.Lock()
 
 # ============================================================
 # Supabase 云数据库（主存储，根治"发版丢数据"）
@@ -1132,15 +1136,34 @@ def handle_save_study_data():
         err_detail = str(e)
         print(f'[Supabase] study-data 写入异常: {e}', flush=True)
     if not persisted:
-        # Supabase 失败 → 回退 GitHub（可靠兜底）
+        # Supabase 失败 → 回退 GitHub（可靠兜底）。
+        # 加固：整段在 github_push_lock 内串行，并在锁内重新加载最新文件再合并本 empid，
+        # 杜绝"两请求并发各持旧快照→后写覆盖前写"的整文件覆盖竞争（扎堆打卡场景）；
+        # 同时按全量签名去重，仅数据真正变化才推送，规避 GitHub 5000/小时限流。
         try:
             with github_push_lock:
-                gh_ok = github_api_put('data/study_data.json', all_data)
-            if gh_ok:
-                persisted = True
-                print(f'[GitHub回退] study_data {empid} 已写入 GitHub', flush=True)
-            else:
-                err_detail = (err_detail or '') + '; GitHub回退也失败'
+                latest = load_json(study_path)
+                if empid not in latest or latest.get(empid) != all_data.get(empid):
+                    # 把本请求已合并的记录再次叠加到最新文件内容，吸收并发写入
+                    latest[empid] = merge_study_data(latest.get(empid), all_data.get(empid))
+                    unify_checkins(latest[empid])
+                    save_json(study_path, latest)
+                    all_data = latest
+                sig = hashlib.md5(json.dumps(all_data, sort_keys=True, ensure_ascii=False).encode('utf-8')).hexdigest()
+                with _gh_sig_lock:
+                    changed = (_last_gh_sig != sig)
+                if changed:
+                    gh_ok = github_api_put('data/study_data.json', all_data)
+                    if gh_ok:
+                        with _gh_sig_lock:
+                            _last_gh_sig = sig
+                        persisted = True
+                        print(f'[GitHub回退] study_data {empid} 已写入 GitHub', flush=True)
+                    else:
+                        err_detail = (err_detail or '') + '; GitHub回退失败'
+                else:
+                    # 数据无变化（如周期同步空跑），无需重复推送，视为已持久化
+                    persisted = True
         except Exception as e2:
             err_detail = (err_detail or '') + f'; GitHub回退异常:{e2}'
             print(f'[GitHub回退] study_data 失败: {e2}', flush=True)
