@@ -2334,5 +2334,18 @@
       "mastered": []
     },
     "checkIns": []
+  },
+  "stress_022": {
+    "basic": {
+      "learned": [
+        "w22"
+      ],
+      "mastered": []
+    },
+    "business": {
+      "learned": [],
+      "mastered": []
+    },
+    "checkIns": []
   }
 }
