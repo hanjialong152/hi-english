@@ -1708,7 +1708,8 @@
           "p": true
         },
         "3": {
-          "p": true
+          "p": true,
+          "e1": true
         }
       },
       "audioDoneDate": {
@@ -1733,7 +1734,7 @@
     "checkIns": [
       {
         "date": "2026-07-20",
-        "seconds": 62,
+        "seconds": 63,
         "completed": false
       }
     ]
