@@ -1736,5 +1736,18 @@
         "completed": false
       }
     ]
+  },
+  "stress_040": {
+    "basic": {
+      "learned": [
+        "w40"
+      ],
+      "mastered": []
+    },
+    "business": {
+      "learned": [],
+      "mastered": []
+    },
+    "checkIns": []
   }
 }
