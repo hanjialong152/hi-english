@@ -1082,17 +1082,18 @@ def handle_sb_diag():
 @app.route('/api/study-data', methods=['GET'])
 def handle_get_study_data():
     empid = (request.args.get('empid') or '').strip()
-    # 优先从 Supabase 实时读取（管理后台/跨终端一致的唯一真相源）
-    data = sb_get_study(empid)
+    # 优先读本地缓存：服务器本地文件已累积全员写穿结果（每次 POST 都 merge+save 到本地），
+    # 是最实时的来源。改为本地优先可让 GET 完全不打 GitHub API，规避 5000/小时限流。
+    study_data = load_json(os.path.join(DATA_DIR, 'study_data.json'))
+    data = study_data.get(empid)
     if data is None:
-        # 降级1：读 GitHub data-sync 缓存
+        # 降级1：读 GitHub data-sync 缓存（权威兜底，仅本地缺失时触发，频率极低）
         gh_data = github_api_get('data/study_data.json')
         if gh_data and empid in gh_data:
             data = gh_data.get(empid)
     if data is None:
-        # 降级2：读本地缓存
-        study_data = load_json(os.path.join(DATA_DIR, 'study_data.json'))
-        data = study_data.get(empid)
+        # 降级2：Supabase（已废弃，返回 None 自动跳过）
+        data = sb_get_study(empid)
     if not data:
         return jsonify({'success': True, 'studyData': None})
     return jsonify({'success': True, 'studyData': data})
@@ -1100,12 +1101,12 @@ def handle_get_study_data():
 
 @app.route('/api/all-study-data', methods=['GET'])
 def handle_all_study_data():
-    """学员端排行榜专用：返回全体学员学习数据（实时从 Supabase 读取，保证全员一致）。"""
-    study_data = sb_get_all_study()
-    if not study_data and GITHUB_TOKEN:
+    """学员端排行榜专用：返回全体学员学习数据。优先本地缓存（已累积全员写穿），GitHub 兜底。"""
+    study_data = load_json(os.path.join(DATA_DIR, 'study_data.json'))
+    if not study_data:
         study_data = github_api_get('data/study_data.json') or {}
     if not study_data:
-        study_data = load_json(os.path.join(DATA_DIR, 'study_data.json'))
+        study_data = sb_get_all_study()
     return jsonify({'success': True, 'studyData': study_data})
 
 
