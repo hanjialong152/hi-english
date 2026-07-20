@@ -1111,6 +1111,7 @@ def handle_all_study_data():
 
 @app.route('/api/study-data', methods=['POST'])
 def handle_save_study_data():
+    global _last_gh_sig
     body = request.json or {}
     empid = (body.get('empid') or '').strip()
     sd = body.get('studyData', {})
