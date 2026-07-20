@@ -1679,13 +1679,15 @@
   },
   "230959": {
     "basic": {
-      "readIndex": 1,
+      "readIndex": 2,
       "spellIndex": 0,
       "learned": [
-        "1"
+        "1",
+        "2"
       ],
       "learnedDates": {
-        "1": "2026-07-20"
+        "1": "2026-07-20",
+        "2": "2026-07-20"
       },
       "mastered": [],
       "speakScores": {},
