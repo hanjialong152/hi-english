@@ -2750,5 +2750,18 @@
       "mastered": []
     },
     "checkIns": []
+  },
+  "stress_099": {
+    "basic": {
+      "learned": [
+        "w99"
+      ],
+      "mastered": []
+    },
+    "business": {
+      "learned": [],
+      "mastered": []
+    },
+    "checkIns": []
   }
 }
