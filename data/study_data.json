@@ -1879,5 +1879,18 @@
       "mastered": []
     },
     "checkIns": []
+  },
+  "stress_033": {
+    "basic": {
+      "learned": [
+        "w33"
+      ],
+      "mastered": []
+    },
+    "business": {
+      "learned": [],
+      "mastered": []
+    },
+    "checkIns": []
   }
 }
