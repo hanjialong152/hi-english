@@ -2399,5 +2399,18 @@
       "mastered": []
     },
     "checkIns": []
+  },
+  "stress_042": {
+    "basic": {
+      "learned": [
+        "w42"
+      ],
+      "mastered": []
+    },
+    "business": {
+      "learned": [],
+      "mastered": []
+    },
+    "checkIns": []
   }
 }
