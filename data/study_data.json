@@ -2165,5 +2165,18 @@
       "mastered": []
     },
     "checkIns": []
+  },
+  "stress_070": {
+    "basic": {
+      "learned": [
+        "w70"
+      ],
+      "mastered": []
+    },
+    "business": {
+      "learned": [],
+      "mastered": []
+    },
+    "checkIns": []
   }
 }
