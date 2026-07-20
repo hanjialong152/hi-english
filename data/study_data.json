@@ -1688,7 +1688,11 @@
       "weeklyTests": [],
       "monthlyTests": [],
       "totalSeconds": 0,
-      "audioDone": {},
+      "audioDone": {
+        "1": {
+          "p": true
+        }
+      },
       "audioDoneDate": {}
     },
     "business": {
@@ -1708,7 +1712,7 @@
     "checkIns": [
       {
         "date": "2026-07-20",
-        "seconds": 5,
+        "seconds": 6,
         "completed": false
       }
     ]
