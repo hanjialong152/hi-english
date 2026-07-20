@@ -2009,5 +2009,18 @@
       "mastered": []
     },
     "checkIns": []
+  },
+  "stress_066": {
+    "basic": {
+      "learned": [
+        "w66"
+      ],
+      "mastered": []
+    },
+    "business": {
+      "learned": [],
+      "mastered": []
+    },
+    "checkIns": []
   }
 }
