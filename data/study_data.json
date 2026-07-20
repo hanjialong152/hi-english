@@ -1970,5 +1970,18 @@
       "mastered": []
     },
     "checkIns": []
+  },
+  "stress_007": {
+    "basic": {
+      "learned": [
+        "w7"
+      ],
+      "mastered": []
+    },
+    "business": {
+      "learned": [],
+      "mastered": []
+    },
+    "checkIns": []
   }
 }
