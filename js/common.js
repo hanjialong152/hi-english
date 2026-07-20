@@ -886,7 +886,7 @@ const HiEnglish = {
 
   // 计算个人当月总成绩（合并 basic+business 两阶段的周测/月测；打卡用顶层统一 checkIns）
   // 公式：当月打卡占比×100×30% + 当月周测均分×30% + 当月月测均分×40%
-  // 月测：当月多条（含两阶段）取平均；两端（学员端报告/排行榜、管理员端总览）共用此函数保证一致
+  // 月测：当月多条（含两阶段）取最高分（业务规则：每月只算一次，取 1~5 日多次考试的最高分）；两端（学员端报告/排行榜、管理员端总览）共用此函数保证一致
   calcMonthlyScore(sd, curMonth) {
     sd = sd || {};
     curMonth = curMonth || this.today().slice(0, 7);
@@ -898,17 +898,27 @@ const HiEnglish = {
     var checkIns = sd.checkIns || [];
     var monthCheckinDays = checkIns.filter(function(c){ return c.completed && (c.date || '').slice(0, 7) === curMonth; }).length;
     var chk = (daysInMonth > 0 ? (monthCheckinDays / daysInMonth) * 100 : 0) * 0.3;
-    // 周测项：合并两阶段，当月归属月过滤，求平均 × 0.3
+    // 周测项：合并两阶段，当月归属月过滤；每个自然周取多次考试的最高分，再按月对各周最高分求平均 × 0.3
     var allWeekly = [].concat((sd.basic && sd.basic.weeklyTests) || [], (sd.business && sd.business.weeklyTests) || []);
     var wt = allWeekly.filter(function(t){ return self.weeklyTestMonthKey(t.date) === curMonth; });
-    var wAvg = wt.length > 0 ? wt.reduce(function(s, t){ return s + (t.avgScore || 0); }, 0) / wt.length : 0;
-    // 月测项：合并两阶段，当月归属月过滤，取平均 × 0.4
+    var wAvg = 0;
+    if (wt.length > 0) {
+      var weekMax = {};
+      wt.forEach(function(t){
+        var wk = self.getWeekKey(t.date);
+        var sc = t.avgScore || 0;
+        if (!(wk in weekMax) || sc > weekMax[wk]) weekMax[wk] = sc;
+      });
+      var weekVals = Object.keys(weekMax).map(function(k){ return weekMax[k]; });
+      wAvg = weekVals.reduce(function(s, v){ return s + v; }, 0) / weekVals.length;
+    }
+    // 月测项：合并两阶段，当月归属月过滤（1~5日归属上月），取当月多次考试的最高分 × 0.4
     var allMonthly = [].concat((sd.basic && sd.basic.monthlyTests) || [], (sd.business && sd.business.monthlyTests) || []);
     var mt = allMonthly.filter(function(t){ return self.monthlyTestMonthKey(t.date) === curMonth; });
-    var mAvg = mt.length > 0 ? mt.reduce(function(s, t){ return s + (t.avgScore || 0); }, 0) / mt.length : 0;
+    var mMax = mt.length > 0 ? Math.max.apply(null, mt.map(function(t){ return t.avgScore || 0; })) : 0;
     var checkinScore = Math.round(chk * 10) / 10;
     var weeklyScore = Math.round(wAvg * 0.3 * 10) / 10;
-    var monthlyScore = Math.round(mAvg * 0.4 * 10) / 10;
+    var monthlyScore = Math.round(mMax * 0.4 * 10) / 10;
     var total = Math.round((checkinScore + weeklyScore + monthlyScore) * 10) / 10;
     return {
       total: total,
@@ -917,7 +927,7 @@ const HiEnglish = {
       monthlyScore: monthlyScore,
       monthCheckinDays: monthCheckinDays,
       weeklyAvg: Math.round(wAvg),
-      monthlyAvg: Math.round(mAvg)
+      monthlyAvg: Math.round(mMax)
     };
   },
 
