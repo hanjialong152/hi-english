@@ -1687,7 +1687,9 @@
       "speakScores": {},
       "weeklyTests": [],
       "monthlyTests": [],
-      "totalSeconds": 0
+      "totalSeconds": 0,
+      "audioDone": {},
+      "audioDoneDate": {}
     },
     "business": {
       "readIndex": 0,
@@ -1699,7 +1701,9 @@
       "weeklyTests": [],
       "monthlyTests": [],
       "totalSeconds": 0,
-      "unlocked": false
+      "unlocked": false,
+      "audioDone": {},
+      "audioDoneDate": {}
     },
     "checkIns": []
   }
