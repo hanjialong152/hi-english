@@ -88,7 +88,9 @@ CLEAN_BACKUP_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'dat
 
 # 学习数据版本号：用于客户端判断服务端数据是否比本地更新（整体回滚/清洗后 bump）。
 # 客户端发现服务端 dataVersion > 本地时，用服务端数据完全覆盖本地，解决回滚后客户端仍显示脏数据的问题。
-_STUDY_DATA_VERSION = 2
+# 2026-07-21 安全事件收尾：升到 3，强制所有客户端用「干净备份重载后的服务端数据」覆盖本地，
+# 彻底断掉「客户端此前误拉的脏 7/21(999秒/completed)」被回推污染服务端的链路。
+_STUDY_DATA_VERSION = 3
 
 # ============================================================
 # Supabase 云数据库（已废弃：扫描器污染 + 国内 DNS 不稳定）
@@ -850,17 +852,23 @@ def save_json(filepath, data):
         print(f'[GitHub回退] 配置 {cfg_key} 已加入防抖推送队列', flush=True)
 
 def init_data_files():  # v-restart-trigger-20260711
-    """初始化数据文件：启动时从 Supabase 拉取最新数据到本地缓存。
+    """初始化数据文件：启动时从干净备份加载，重建本地缓存。
 
-    2026-07-11 起改为 Supabase 主存储（根治发版丢数据）：
-    - 配置类(users/admin/groups/...)：从 app_config 表拉取
-    - study_data：从 study_data 表全量拉取
-    本地文件仅作运行时缓存，Render 重启/部署后从 Supabase 重建，永不丢失。
-    未配置 Supabase 时回退到 GitHub data-sync（兼容开发/迁移过渡）。"""
+    2026-07-21 安全事件后：每次启动强制删除本地旧缓存，确保从 data-clean/ 干净备份全新加载，
+    避免 Render 容器重启时继承被污染的本地 study_data.json。"""
     # ===== 7/20 整体回滚：强制从干净备份加载，彻底甩掉所有污染 =====
     # 优先级：本地 data-clean/ 目录（随代码部署，Render 沙箱不依赖外网）> GitHub f1a5eed7 > data-sync HEAD
     # 扫描器已污染 Supabase/data-sync 的多个字段，本次回滚一律以干净备份为准。稳定后可恢复。
     print('[回滚] 强制从干净备份加载，忽略 Supabase/远程脏数据...', flush=True)
+    # 关键：先删除本地可能被污染的缓存，确保全新加载（Render 容器重启不保证文件系统清空）
+    for _name in ['study_data', 'users', 'admin', 'groups', 'messages', 'dingtalk', 'beta']:
+        _cached = os.path.join(DATA_DIR, _name + '.json')
+        if os.path.exists(_cached):
+            try:
+                os.remove(_cached)
+                print(f'[回滚] 已删除本地旧缓存 {_name}.json', flush=True)
+            except Exception as e:
+                print(f'[回滚] 删除本地旧缓存 {_name}.json 失败: {e}', flush=True)
     _clean_dir = CLEAN_BACKUP_DIR
     def _load_clean(name):
         _p = os.path.join(_clean_dir, name + '.json')
