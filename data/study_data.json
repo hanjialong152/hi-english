@@ -157,10 +157,13 @@
         "3": {
           "p": true,
           "e3": true,
-          "e1": true
+          "e1": true,
+          "e2": true
         }
       },
-      "audioDoneDate": {}
+      "audioDoneDate": {
+        "3": "2026-07-21"
+      }
     },
     "business": {
       "learned": [],
@@ -184,7 +187,7 @@
       },
       {
         "date": "2026-07-21",
-        "seconds": 36,
+        "seconds": 37,
         "completed": false
       }
     ]
