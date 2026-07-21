@@ -434,6 +434,9 @@ def github_api_get_commit(path, ref):
 _dingtalk_last_push = {'ts': 0, 'sig': None}
 _dingtalk_lock = threading.Lock()
 
+# 回滚诊断标记：用于确认 Render 实例实际运行的是哪份代码
+SERVER_ROLLBACK_MARKER = 'SECURITY-20260721-v1'
+
 
 def github_api_put(path, data, timeout=15):
     """推送文件到 GitHub data-sync 分支（调用方负责用 github_push_lock 串行化）"""
