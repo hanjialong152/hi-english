@@ -347,7 +347,7 @@
         "5"
       ],
       "monthlyTests": [],
-      "readIndex": 8,
+      "readIndex": 9,
       "speakScores": {
         "1": {
           "ex1": 89.0,
@@ -394,7 +394,14 @@
       },
       "spellIndex": 10,
       "totalSeconds": 0,
-      "weeklyTests": [],
+      "weeklyTests": [
+        {
+          "date": "2026-07-21",
+          "avgScore": 0,
+          "passed": 0,
+          "total": 10
+        }
+      ],
       "audioDone": {
         "1": {
           "p": true,
