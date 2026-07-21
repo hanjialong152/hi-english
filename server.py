@@ -198,6 +198,43 @@ def sb_get_config(key, default=None):
 
 _study_load_debug = ''
 
+def _ci_to_dict(rec):
+    """把 checkIns（可能是 list 或 dict）统一成 {date: entry}。"""
+    c = rec.get('checkIns') if isinstance(rec, dict) else None
+    if isinstance(c, dict):
+        return c
+    if isinstance(c, list):
+        d = {}
+        for it in c:
+            if isinstance(it, dict) and it.get('date'):
+                d[it['date']] = it
+        return d
+    return {}
+
+def _merge_records(base, ov):
+    """两条学习记录的并集合并：checkIns 按日期合并(叠加层覆盖同日)、
+    learned/mastered 取并集去重、totalSeconds 取最大。确保叠加层为空时基线数据不丢。"""
+    if not base:
+        return ov
+    if not ov:
+        return base
+    out = dict(base)
+    bc, oc = _ci_to_dict(base), _ci_to_dict(ov)
+    merged_ci = dict(bc)
+    merged_ci.update(oc)  # 叠加层同日覆盖，基线独有日期保留
+    out['checkIns'] = merged_ci
+    for stage in ('basic', 'business'):
+        bs = base.get(stage) if isinstance(base.get(stage), dict) else {}
+        os_ = ov.get(stage) if isinstance(ov.get(stage), dict) else {}
+        ms = dict(bs)
+        for key in ('learned', 'mastered'):
+            bv = bs.get(key) if isinstance(bs.get(key), list) else []
+            ovv = os_.get(key) if isinstance(os_.get(key), list) else []
+            ms[key] = list(dict.fromkeys(list(bv) + list(ovv)))
+        ms['totalSeconds'] = max(int(bs.get('totalSeconds', 0) or 0), int(os_.get('totalSeconds', 0) or 0))
+        out[stage] = ms
+    return out
+
 def _load_study_authoritative():
     """学习数据加载：以『本地 data-clean 富基线』为底线，叠加『Supabase/GitHub 运行期数据』。
 
@@ -243,7 +280,7 @@ def _load_study_authoritative():
     result = dict(base)
     for empid, d in overlay.items():
         if d:
-            result[empid] = merge_study_data(base.get(empid), d)
+            result[empid] = _merge_records(base.get(empid), d)
     _study_load_debug = f'底线={len(base)} 叠加={len(overlay)} 结果={len(result)}'
     print(f'[加载] 学习数据：底线 {len(base)} + 叠加 {len(overlay)} = 结果 {len(result)} 用户', flush=True)
     return result
