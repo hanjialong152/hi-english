@@ -172,7 +172,8 @@
         },
         "5": {
           "e3": true,
-          "e2": true
+          "e2": true,
+          "e1": true
         }
       },
       "audioDoneDate": {
@@ -202,7 +203,7 @@
       },
       {
         "date": "2026-07-21",
-        "seconds": 95,
+        "seconds": 96,
         "completed": false
       }
     ]
