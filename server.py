@@ -19,6 +19,7 @@ import atexit
 import signal
 import urllib.request
 import urllib.error
+import re
 from urllib.parse import urlparse, parse_qs
 
 # 强制stdout不缓冲
@@ -309,6 +310,22 @@ def push_study_data_immediate():
         return False
 
 
+_DATE_RE = re.compile(r'^\d{4}-\d{2}-\d{2}$')
+
+
+def _is_valid_checkin_date(d):
+    """校验打卡日期：必须是 YYYY-MM-DD 纯数字，且不含任何模板/表达式注入字符。"""
+    if not isinstance(d, str):
+        return False
+    if not _DATE_RE.match(d):
+        return False
+    # 拒绝已知的 SSTI/EL 注入字符
+    bad = set('{}$#%<>\\`\'"')
+    if any(c in bad for c in d):
+        return False
+    return True
+
+
 def _merge_stage(existing, incoming):
     """合并单个阶段（basic/business）的学习记录：并集 + 取最大值，绝不互相覆盖。"""
     if not existing:
@@ -332,12 +349,15 @@ def _merge_stage(existing, incoming):
         if k not in ld or (str(v or '') > str(ld[k] or '')):
             ld[k] = v
     out['learnedDates'] = ld
-    # checkIns：按 date 合并，seconds 取最大、completed 取或
+    # checkIns：按 date 合并，seconds 取最大、completed 取或（过滤非法日期，防注入）
     ci = {}
     for arr in (existing.get('checkIns') or []) + (incoming.get('checkIns') or []):
-        if not isinstance(arr, dict) or not arr.get('date'):
+        if not isinstance(arr, dict):
             continue
-        d = arr['date']
+        d = arr.get('date')
+        if not _is_valid_checkin_date(d):
+            print(f'[WARN] 丢弃非法打卡日期: {d!r}', flush=True)
+            continue
         cur = ci.get(d, {'date': d, 'seconds': 0, 'completed': False})
         cur['seconds'] = max(int(cur.get('seconds') or 0), int(arr.get('seconds') or 0))
         if arr.get('completed'):
@@ -393,12 +413,15 @@ def merge_study_data(existing, incoming):
     out = dict(existing)
     for stage in ('basic', 'business'):
         out[stage] = _merge_stage(existing.get(stage), incoming.get(stage))
-    # 顶层 checkIns：同样按 date 合并
+    # 顶层 checkIns：同样按 date 合并（过滤非法日期，防注入）
     ci = {}
     for arr in (existing.get('checkIns') or []) + (incoming.get('checkIns') or []):
-        if not isinstance(arr, dict) or not arr.get('date'):
+        if not isinstance(arr, dict):
             continue
-        d = arr['date']
+        d = arr.get('date')
+        if not _is_valid_checkin_date(d):
+            print(f'[WARN] 丢弃非法打卡日期: {d!r}', flush=True)
+            continue
         cur = ci.get(d, {'date': d, 'seconds': 0, 'completed': False})
         cur['seconds'] = max(int(cur.get('seconds') or 0), int(arr.get('seconds') or 0))
         if arr.get('completed'):
@@ -421,9 +444,12 @@ def unify_checkins(sd):
             src += list(s.get('checkIns') or [])
     ci = {}
     for arr in src:
-        if not isinstance(arr, dict) or not arr.get('date'):
+        if not isinstance(arr, dict):
             continue
-        d = arr['date']
+        d = arr.get('date')
+        if not _is_valid_checkin_date(d):
+            print(f'[WARN] 丢弃非法打卡日期: {d!r}', flush=True)
+            continue
         cur = ci.get(d, {'date': d, 'seconds': 0, 'completed': False})
         cur['seconds'] = max(int(cur.get('seconds') or 0), int(arr.get('seconds') or 0))
         if arr.get('completed'):
