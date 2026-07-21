@@ -196,12 +196,15 @@ def sb_get_config(key, default=None):
         return default
 
 
+_study_load_debug = ''
+
 def _load_study_authoritative():
-    """学习数据加载优先级：Supabase(逐行去污染校验) -> GitHub data-sync -> 7/20 干净基线。
+    """学习数据加载优先级：Supabase(逐行去污染校验) -> GitHub data-sync -> 本地 data-clean -> 7/20 干净基线。
 
     7/21 教训硬编码：Supabase 仅作为持久镜像读取，每行先用 _is_suspicious_str 严格扫描整行 JSON，
     命中注入特征（如 SQL 关键字+危险字符）的整行直接丢弃，绝不并入本地，避免污染数据回流。
-    当 Supabase 不可达/无干净数据时，回退到 GitHub data-sync 最新，再回退到 7/20 干净基线。"""
+    当 Supabase 不可达/无干净数据时，回退到 GitHub data-sync 最新，再回退到本地 data-clean，最后 7/20 干净基线。"""
+    global _study_load_debug
     if supabase:
         try:
             rows = sb_get_all_study()
@@ -220,6 +223,7 @@ def _load_study_authoritative():
                 if v:
                     clean[empid] = v
             if clean:
+                _study_load_debug = f'Supabase({len(clean)}行,丢弃{polluted})'
                 print(f'[加载] 从 Supabase 载入 {len(clean)} 学员学习数据（丢弃污染 {polluted} 行）', flush=True)
                 return clean
             print(f'[加载] Supabase 无干净学习数据（污染/空 {polluted} 行），回退基线', flush=True)
@@ -228,6 +232,7 @@ def _load_study_authoritative():
     # 回退 1：GitHub data-sync 最新（运行期写穿落盘处，含最新进度）
     gh = github_api_get('data/study_data.json')
     if gh:
+        _study_load_debug = f'GitHub-data-sync({len(gh)}用户)'
         print('[加载] 从 GitHub data-sync 载入学习数据', flush=True)
         return gh
     # 回退 2：本地 data-clean（随代码部署，零网络依赖，防止启动期 GitHub 不可达导致空加载丢数据）
@@ -237,6 +242,7 @@ def _load_study_authoritative():
             with open(_lc, 'r', encoding='utf-8') as f:
                 _lcd = json.load(f)
             if _lcd:
+                _study_load_debug = f'本地data-clean({len(_lcd)}用户)'
                 print('[加载] 从本地 data-clean 载入学习数据（GitHub 不可达兜底）', flush=True)
                 return _lcd
         except Exception as e:
@@ -244,8 +250,10 @@ def _load_study_authoritative():
     # 回退 3：7/20 干净基线 commit
     base = github_api_get_commit('data/study_data.json', _CLEAN_STUDY_DATA_REF)
     if base:
+        _study_load_debug = f'7/20基线commit({len(base)}用户)'
         print('[加载] 从 7/20 干净基线载入学习数据', flush=True)
         return base
+    _study_load_debug = '全失败->空'
     return {}
 
 
@@ -1543,6 +1551,7 @@ def handle_sb_diag():
         'key_set': bool(SUPABASE_KEY),
         'connected_at_startup': bool(supabase),
         'study_gh_sync_paused': bool(_PAUSE_STUDY_DATA_GH_SYNC),
+        'study_load_debug': _study_load_debug,
         'startup_error': SB_PROBE_ERROR,
     })
 
