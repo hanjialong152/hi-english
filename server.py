@@ -233,6 +233,10 @@ def github_api_get_commit(path, ref):
 # 7/21 坏部署前的干净学习记录备份 commit（data-sync 分支）
 _CLEAN_STUDY_DATA_REF = 'f1a5eed7041937312636fa51e56f1709557d2c70'
 
+# 紧急：暂停 study_data.json 向 GitHub data-sync 的自动回写，防止旧客户端/扫描器持续污染远程备份。
+# 本地文件仍正常保存，服务运行期间数据可用；恢复同步前需先确认客户端已全部刷新到 v52 且打卡数据正常。
+_PAUSE_STUDY_DATA_GH_SYNC = True
+
 
 def github_api_put(path, data, timeout=15):
     """推送文件到 GitHub data-sync 分支（调用方负责用 github_push_lock 串行化）"""
@@ -1206,14 +1210,19 @@ def handle_save_study_data():
                 with _gh_sig_lock:
                     changed = (_last_gh_sig != sig)
                 if changed:
-                    gh_ok = github_api_put('data/study_data.json', all_data)
-                    if gh_ok:
-                        with _gh_sig_lock:
-                            _last_gh_sig = sig
+                    if _PAUSE_STUDY_DATA_GH_SYNC:
+                        # 紧急暂停：本地已保存，不同步到 GitHub，避免污染 data-sync
                         persisted = True
-                        print(f'[GitHub回退] study_data {empid} 已写入 GitHub', flush=True)
+                        print(f'[GitHub回退] study_data {empid} 本地已保存，GitHub 同步已暂停', flush=True)
                     else:
-                        err_detail = (err_detail or '') + '; GitHub回退失败'
+                        gh_ok = github_api_put('data/study_data.json', all_data)
+                        if gh_ok:
+                            with _gh_sig_lock:
+                                _last_gh_sig = sig
+                            persisted = True
+                            print(f'[GitHub回退] study_data {empid} 已写入 GitHub', flush=True)
+                        else:
+                            err_detail = (err_detail or '') + '; GitHub回退失败'
                 else:
                     # 数据无变化（如周期同步空跑），无需重复推送，视为已持久化
                     persisted = True
