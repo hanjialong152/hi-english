@@ -356,7 +356,7 @@ function toggleBetaMode() {
   fetch(HiEnglish.getServerUrl() + '/api/beta-config', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ betaMode: target })
+    body: JSON.stringify({ betaMode: target, token: sessionStorage.getItem('hi_english_admin_token') || '' })
   }).then(function(r) { return r.json(); }).then(function(data) {
     if (data && data.success) {
       _betaModeState = !!data.betaMode;
@@ -378,7 +378,7 @@ function unlockBusiness(empid) {
   fetch(HiEnglish.getServerUrl() + '/api/admin/unlock-business', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ empid: empid, unlock: true })
+    body: JSON.stringify({ empid: empid, unlock: true, token: sessionStorage.getItem('hi_english_admin_token') || '' })
   }).then(function(r) { return r.json(); }).then(function(data) {
     if (data && data.success) {
       showToast('已为 ' + empid + ' 解锁商务英语，该学员下次进入即生效');
@@ -457,7 +457,7 @@ function saveDingTalkWebhook() {
   fetch(HiEnglish.getServerUrl() + '/api/dingtalk-config', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ webhook: webhook })
+    body: JSON.stringify({ webhook: webhook, token: sessionStorage.getItem('hi_english_admin_token') || '' })
   }).then(function(r) { return r.json(); }).then(function(data) {
     if (data.success) {
       localStorage.setItem('hi_english_dingtalk_webhook', webhook);
@@ -636,7 +636,7 @@ function addStudent() {
   fetch(HiEnglish.getServerUrl() + '/api/register', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ empid: empid, name: name, group: group, password: password })
+    body: JSON.stringify({ empid: empid, name: name, group: group, password: password, token: sessionStorage.getItem('hi_english_admin_token') || '' })
   }).then(function(resp) { return resp.json(); }).then(function(data) {
     if (data.success) {
       console.log('[Sync] 学员已同步到服务端:', empid);
@@ -767,7 +767,7 @@ function batchImportStudents() {
     fetch(HiEnglish.getServerUrl() + '/api/import-students', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ students: serverStudents })
+      body: JSON.stringify({ students: serverStudents, token: sessionStorage.getItem('hi_english_admin_token') || '' })
     }).then(function(resp) { return resp.json(); }).then(function(data) {
       console.log('[Sync] 批量导入同步到服务端:', data.message);
     }).catch(function(e) {
@@ -894,11 +894,11 @@ function toggleStatus(empid) {
     showToast(users[empid].name + ' 已' + (users[empid].status === 'active' ? '启用' : '禁用'));
     renderStudentTable();
     // 同步到服务端
-    fetch(HiEnglish.getServerUrl() + '/api/admin/toggle-user', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ empid: empid })
-    }).catch(function(e) { console.log('[Sync] 切换状态失败:', e.message); });
+  fetch(HiEnglish.getServerUrl() + '/api/admin/toggle-user', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ empid: empid, token: sessionStorage.getItem('hi_english_admin_token') || '' })
+  }).catch(function(e) { console.log('[Sync] 切换状态失败:', e.message); });
   }
 }
 
