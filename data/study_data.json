@@ -271,7 +271,8 @@
       "mastered": [
         "1",
         "3",
-        "4"
+        "4",
+        "5"
       ],
       "monthlyTests": [],
       "readIndex": 4,
@@ -304,7 +305,7 @@
           "ex1": 85.0,
           "ex2": 86.0,
           "ex3": 86.0,
-          "phrase": 74.0
+          "phrase": 82.0
         },
         "6": {
           "phrase": 54.0
@@ -818,7 +819,7 @@
       },
       {
         "date": "2026-07-21",
-        "seconds": 45,
+        "seconds": 46,
         "completed": false
       }
     ]
