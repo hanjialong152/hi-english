@@ -253,6 +253,122 @@ def _sanitize_value(v, expected_type=None):
         return None
     return v
 
+# ============================================================
+# 安全：全局 WAF 中间件（不依赖任何外部服务，直接在应用层加固公网暴露面）
+# ============================================================
+def get_client_ip():
+    """获取真实客户端 IP（兼容 Render 等反向代理的 X-Forwarded-For）。"""
+    return request.headers.get('X-Forwarded-For', request.remote_addr or '').split(',')[0].strip() or 'unknown'
+
+
+# 攻击特征签名：只匹配真正的注入/命令执行/XSS 组合，不匹配正常英文句子，
+# 避免误伤（例如 "I read a book"、"The union is strong"、"drop the book" 不会触发）。
+_WAF_PATTERNS = [
+    re.compile(r"(?i)(union\s+(all\s+)?select)"),
+    re.compile(r"(?i)\b(select|insert|update|delete|drop|truncate|alter|create)\b\s+\w+\s+(from|into|table|where|database|values)"),
+    re.compile(r"(?i)'\s*(or|and)\s*'.*(=|>|<|like)"),
+    re.compile(r"(?i)\b(or|and)\b\s*['\"]?\d+['\"]?\s*=\s*['\"]?\d+"),
+    re.compile(r"(?i)(waitfor\s+delay|pg_sleep\s*\(|sleep\s*\(|benchmark\s*\(|getdate\s*\()"),
+    re.compile(r"(?i)(;\s*--|/\*.*\*/)"),
+    re.compile(r"(?i)<\s*(script|iframe|img|svg|object|embed)"),
+    re.compile(r"(?i)(onerror\s*=|onload\s*=|javascript:|vbscript:|data:text/html)"),
+    re.compile(r"(?i)\b(exec|execute|xp_cmdshell|cmd|powershell|wget|curl|/bin/sh|/bin/bash)\s*\("),
+    re.compile(r"(\$\{|`|0x[0-9a-f]{6,})"),
+    re.compile(r"(?i)\b(information_schema|sysobjects|pg_catalog|mysql\.user|sqlite_master)\b"),
+]
+
+
+def _waf_is_attack(s):
+    """判断字符串是否含注入/攻击特征。"""
+    if not isinstance(s, str):
+        return False
+    for _p in _WAF_PATTERNS:
+        if _p.search(s):
+            return True
+    return False
+
+
+def _waf_scan_obj(obj, depth=0):
+    if depth > 8:
+        return False
+    if isinstance(obj, str):
+        return _waf_is_attack(obj)
+    if isinstance(obj, (list, tuple)):
+        for _v in obj:
+            if _waf_scan_obj(_v, depth + 1):
+                return True
+    elif isinstance(obj, dict):
+        for _k, _v in obj.items():
+            if _waf_is_attack(str(_k)):
+                return True
+            if _waf_scan_obj(_v, depth + 1):
+                return True
+    return False
+
+
+# 这些接口已有自身输入清洗（学习数据按字段白名单、登录类只校验凭证），
+# 跳过全局 body 扫描，避免误伤正常英文/测试答案/密码中的特殊字符。
+_WAF_BODY_SKIP = {'/api/study-data', '/api/login', '/api/admin-login', '/api/admin-change-password'}
+
+# 对变更类敏感接口做全局按 IP 限流（限额宽松，不误伤正常教室/NAT 使用）。
+# 学习数据接口不在此列（它已有按学员限流，且高频正常）。
+_WAF_RL_PATHS = {
+    '/api/register': (2, 10),
+    '/api/import-students': (2, 10),
+    '/api/transcribe': (5, 100),
+    '/api/groups': (3, 30),
+    '/api/dingtalk-config': (3, 30),
+    '/api/beta-config': (3, 30),
+    '/api/admin/toggle-user': (3, 30),
+    '/api/admin/unlock-business': (3, 30),
+}
+
+
+@app.before_request
+def waf_before_request():
+    """全局安全中间件：拦截注入/攻击请求 + 对敏感写接口限流。"""
+    # 静态资源与落地页直接放行
+    if request.path.startswith('/static') or request.path in ('/', '/index.html', '/admin.html', '/student.html', '/manifest.json', '/service-worker.js'):
+        return
+    # 1) 路径 + 查询参数：所有请求均扫描
+    if _waf_is_attack(request.path):
+        return jsonify({'success': False, 'error': '非法请求'}), 400
+    for _k, _v in request.args.items():
+        if _waf_is_attack(_k) or _waf_is_attack(_v):
+            return jsonify({'success': False, 'error': '非法请求'}), 400
+    # 2) 变更类请求：body 扫描 + 全局按 IP 限流
+    if request.method in ('POST', 'PUT', 'DELETE'):
+        if request.path not in _WAF_BODY_SKIP:
+            _data = None
+            try:
+                _data = request.get_json(silent=True)
+            except Exception:
+                _data = None
+            if _data is None and request.form:
+                _data = request.form.to_dict()
+            if isinstance(_data, (dict, list)) and _waf_scan_obj(_data):
+                return jsonify({'success': False, 'error': '请求包含非法内容，已被拦截'}), 400
+        if request.path in _WAF_RL_PATHS:
+            _max_sec, _max_min = _WAF_RL_PATHS[request.path]
+            _allowed, _retry = check_rate_limit('waf:%s:%s' % (get_client_ip(), request.path),
+                                                max_per_second=_max_sec, max_per_minute=_max_min)
+            if not _allowed:
+                return jsonify({'success': False, 'error': f'请求过于频繁，请 {_retry} 秒后再试'}), 429
+
+
+def _is_valid_admin_token(token):
+    """校验管理后台 session_token 是否有效（不区分具体管理员账号）。"""
+    if not token:
+        return False
+    admin = load_json(os.path.join(DATA_DIR, 'admin.json'))
+    if not isinstance(admin, dict):
+        return False
+    for _u in admin.values():
+        if isinstance(_u, dict) and _u.get('session_token') == token:
+            return True
+    return False
+
+
 def _validate_study_data(sd):
     """清洗并校验客户端传入的学习数据。发现严重污染时返回 None（拒绝写入）。"""
     if not isinstance(sd, dict):
@@ -1031,9 +1147,12 @@ def handle_login():
 @app.route('/api/register', methods=['POST'])
 def handle_register():
     body = request.json or {}
-    empid = (body.get('empid') or '').strip()
-    name = (body.get('name', '')).strip()
-    group = (body.get('group', '')).strip()
+    # 仅管理员可添加学员
+    if not _is_valid_admin_token((body.get('token') or '').strip()):
+        return jsonify({'success': False, 'error': '未授权，请先登录管理后台'}), 401
+    empid = ''.join(c for c in (body.get('empid') or '') if c not in _BAD_CHARS).strip()[:32]
+    name = ''.join(c for c in (body.get('name', '') or '') if c not in _BAD_CHARS).strip()[:32]
+    group = ''.join(c for c in (body.get('group', '') or '') if c not in _BAD_CHARS).strip()[:32]
     password = (body.get('password') or '').strip() or DEFAULT_PASSWORD
     if not empid or not name:
         return jsonify({'success': False, 'error': '工号和姓名不能为空'}), 400
@@ -1061,6 +1180,8 @@ def handle_register():
 @app.route('/api/import-students', methods=['POST'])
 def handle_import_students():
     body = request.json or {}
+    if not _is_valid_admin_token((body.get('token') or '').strip()):
+        return jsonify({'success': False, 'error': '未授权，请先登录管理后台'}), 401
     students = body.get('students', [])
     added = 0
     skipped = []
@@ -1068,9 +1189,9 @@ def handle_import_students():
         users = load_json(os.path.join(DATA_DIR, 'users.json'))
         study_data = load_json(os.path.join(DATA_DIR, 'study_data.json'))
         for s in students:
-            empid = str(s.get('empid', '')).strip()
-            name = str(s.get('name', '')).strip()
-            group = str(s.get('group', '')).strip()
+            empid = ''.join(c for c in str(s.get('empid', '')).strip() if c not in _BAD_CHARS)[:32]
+            name = ''.join(c for c in str(s.get('name', '')).strip() if c not in _BAD_CHARS)[:32]
+            group = ''.join(c for c in str(s.get('group', '')).strip() if c not in _BAD_CHARS)[:32]
             if not empid or not name:
                 skipped.append(f'{empid} - 工号或姓名为空')
                 continue
@@ -1140,8 +1261,18 @@ def handle_get_groups():
 @app.route('/api/groups', methods=['POST'])
 def handle_save_groups():
     body = request.json or {}
+    if not _is_valid_admin_token((body.get('token') or '').strip()):
+        return jsonify({'success': False, 'error': '未授权'}), 401
     groups = body.get('groups', [])
-    save_json(os.path.join(DATA_DIR, 'groups.json'), groups)
+    if not isinstance(groups, list):
+        groups = []
+    cleaned = []
+    for g in groups:
+        if isinstance(g, str):
+            g = ''.join(c for c in g if c not in _BAD_CHARS).strip()[:32]
+            if g:
+                cleaned.append(g)
+    save_json(os.path.join(DATA_DIR, 'groups.json'), cleaned)
     return jsonify({'success': True})
 
 
@@ -1156,7 +1287,12 @@ def handle_get_dingtalk_config():
 @app.route('/api/dingtalk-config', methods=['POST'])
 def handle_save_dingtalk_config():
     body = request.json or {}
+    if not _is_valid_admin_token((body.get('token') or '').strip()):
+        return jsonify({'success': False, 'error': '未授权'}), 401
     webhook = (body.get('webhook') or '').strip()
+    # 仅允许钉钉/企业微信机器人地址，防止被改写为任意 URL（SSRF/钓鱼）
+    if webhook and 'oapi.dingtalk.com' not in webhook and 'qyapi.weixin.qq.com' not in webhook:
+        return jsonify({'success': False, 'error': '仅允许钉钉/企业微信机器人 Webhook'}), 400
     save_json(os.path.join(DATA_DIR, 'dingtalk.json'), {'webhook': webhook})
     return jsonify({'success': True})
 
@@ -1173,6 +1309,8 @@ def handle_get_beta_config():
 @app.route('/api/beta-config', methods=['POST'])
 def handle_save_beta_config():
     body = request.json or {}
+    if not _is_valid_admin_token((body.get('token') or '').strip()):
+        return jsonify({'success': False, 'error': '未授权'}), 401
     beta = bool(body.get('betaMode', False))
     save_json(os.path.join(DATA_DIR, 'beta.json'), {'betaMode': beta})
     return jsonify({'success': True, 'betaMode': beta})
@@ -1182,6 +1320,8 @@ def handle_save_beta_config():
 @app.route('/api/admin/unlock-business', methods=['POST'])
 def handle_unlock_business():
     body = request.json or {}
+    if not _is_valid_admin_token((body.get('token') or '').strip()):
+        return jsonify({'success': False, 'error': '未授权'}), 401
     empid = (body.get('empid') or '').strip()
     unlock = body.get('unlock', True)
     if not empid:
@@ -1326,6 +1466,8 @@ def handle_mark_messages_read():
 @app.route('/api/admin/toggle-user', methods=['POST'])
 def handle_toggle_user():
     body = request.json or {}
+    if not _is_valid_admin_token((body.get('token') or '').strip()):
+        return jsonify({'success': False, 'error': '未授权'}), 401
     empid = (body.get('empid') or '').strip()
     with data_lock:
         users = load_json(os.path.join(DATA_DIR, 'users.json'))
