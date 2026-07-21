@@ -1,0 +1,1833 @@
+{
+  "10001": {
+    "empid": "10001",
+    "name": "张三",
+    "learnedIds": [
+      1,
+      2,
+      3
+    ],
+    "masteredIds": [
+      1
+    ],
+    "studyDates": [
+      "Thu Jun 25 2026"
+    ],
+    "sessions": [],
+    "lastIndex": 3,
+    "totalStudySeconds": 120,
+    "updatedAt": 1782399759372,
+    "basic": {},
+    "business": {},
+    "checkIns": []
+  },
+  "10002": {
+    "empid": "10002",
+    "name": "李四",
+    "learnedIds": [],
+    "masteredIds": [],
+    "favoriteIds": [],
+    "speakScores": {},
+    "sessions": [],
+    "studyDates": [],
+    "lastIndex": 0,
+    "totalStudySeconds": 0,
+    "createdAt": 1782399759418,
+    "updatedAt": 1782399759418,
+    "basic": {},
+    "business": {},
+    "checkIns": []
+  },
+  "10003": {
+    "empid": "10003",
+    "name": "王五",
+    "learnedIds": [],
+    "masteredIds": [],
+    "favoriteIds": [],
+    "speakScores": {},
+    "sessions": [],
+    "studyDates": [],
+    "lastIndex": 0,
+    "totalStudySeconds": 0,
+    "createdAt": 1782399759418,
+    "updatedAt": 1782399759418,
+    "basic": {},
+    "business": {},
+    "checkIns": []
+  },
+  "gw00147407": {
+    "empid": "gw00147407",
+    "name": "韩家龙",
+    "learnedIds": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      344,
+      12
+    ],
+    "masteredIds": [
+      4
+    ],
+    "favoriteIds": [],
+    "speakScores": {
+      "4": 85
+    },
+    "sessions": [],
+    "studyDates": [
+      "Thu Jun 25 2026",
+      "Fri Jun 26 2026"
+    ],
+    "lastIndex": 12,
+    "totalStudySeconds": 401,
+    "createdAt": 1782400169193,
+    "updatedAt": 1782403425466,
+    "lastLogin": 1782403422083,
+    "loginCount": 7,
+    "basic": {},
+    "business": {},
+    "checkIns": []
+  },
+  "GW0100256": {
+    "empid": "GW0100256",
+    "name": "刘海玲",
+    "learnedIds": [],
+    "masteredIds": [],
+    "favoriteIds": [],
+    "speakScores": {},
+    "sessions": [],
+    "studyDates": [],
+    "lastIndex": 0,
+    "totalStudySeconds": 0,
+    "createdAt": 1782402576147,
+    "updatedAt": 1782402576147,
+    "basic": {},
+    "business": {},
+    "checkIns": []
+  },
+  "GW00058704": {
+    "empid": "GW00058704",
+    "name": "刘桂霄",
+    "learnedIds": [],
+    "masteredIds": [],
+    "favoriteIds": [],
+    "speakScores": {},
+    "sessions": [],
+    "studyDates": [],
+    "lastIndex": 0,
+    "totalStudySeconds": 0,
+    "createdAt": 1782402602907,
+    "updatedAt": 1782402602907,
+    "basic": {},
+    "business": {},
+    "checkIns": []
+  },
+  "test002": {
+    "basic": {
+      "learned": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10"
+      ],
+      "learnedDates": {
+        "1": "2026-07-21",
+        "2": "2026-07-21",
+        "3": "2026-07-21",
+        "4": "2026-07-21",
+        "5": "2026-07-21",
+        "6": "2026-07-21",
+        "7": "2026-07-21",
+        "8": "2026-07-21",
+        "9": "2026-07-21",
+        "10": "2026-07-21"
+      },
+      "mastered": [],
+      "monthlyTests": [],
+      "readIndex": 10,
+      "speakScores": {},
+      "spellIndex": 0,
+      "totalSeconds": 0,
+      "weeklyTests": [],
+      "audioDone": {
+        "1": {
+          "e1": true,
+          "e2": true
+        },
+        "2": {
+          "p": true
+        },
+        "3": {
+          "p": true,
+          "e3": true,
+          "e1": true,
+          "e2": true
+        },
+        "4": {
+          "e2": true,
+          "e3": true,
+          "e1": true,
+          "p": true
+        },
+        "5": {
+          "e3": true,
+          "e2": true,
+          "e1": true,
+          "p": true
+        }
+      },
+      "audioDoneDate": {
+        "3": "2026-07-21",
+        "4": "2026-07-21",
+        "5": "2026-07-21"
+      }
+    },
+    "business": {
+      "learned": [],
+      "learnedDates": {},
+      "mastered": [],
+      "monthlyTests": [],
+      "readIndex": 0,
+      "speakScores": {},
+      "spellIndex": 0,
+      "totalSeconds": 0,
+      "unlocked": true,
+      "weeklyTests": [],
+      "audioDone": {
+        "1": {
+          "b_1_0": true,
+          "b_1_1": true,
+          "b_1_3": true,
+          "b_1_2": true,
+          "b_1_4": true,
+          "b_1_5": true
+        }
+      },
+      "audioDoneDate": {
+        "1": "2026-07-21"
+      }
+    },
+    "checkIns": [
+      {
+        "date": "2026-07-07",
+        "seconds": 0,
+        "completed": false
+      },
+      {
+        "date": "2026-07-21",
+        "seconds": 232,
+        "completed": false
+      }
+    ]
+  },
+  "058704": {
+    "basic": {
+      "readIndex": 0,
+      "spellIndex": 0,
+      "learned": [],
+      "learnedDates": {},
+      "mastered": [],
+      "speakScores": {},
+      "weeklyTests": [],
+      "monthlyTests": [],
+      "totalSeconds": 0
+    },
+    "business": {
+      "readIndex": 0,
+      "spellIndex": 0,
+      "learned": [],
+      "learnedDates": {},
+      "mastered": [],
+      "speakScores": {},
+      "weeklyTests": [],
+      "monthlyTests": [],
+      "totalSeconds": 0,
+      "unlocked": false
+    },
+    "checkIns": []
+  },
+  "100031": {
+    "basic": {
+      "readIndex": 0,
+      "spellIndex": 0,
+      "learned": [],
+      "learnedDates": {},
+      "mastered": [],
+      "speakScores": {},
+      "weeklyTests": [],
+      "monthlyTests": [],
+      "totalSeconds": 0
+    },
+    "business": {
+      "readIndex": 0,
+      "spellIndex": 0,
+      "learned": [],
+      "learnedDates": {},
+      "mastered": [],
+      "speakScores": {},
+      "weeklyTests": [],
+      "monthlyTests": [],
+      "totalSeconds": 0,
+      "unlocked": false
+    },
+    "checkIns": []
+  },
+  "147407": {
+    "basic": {
+      "learned": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "a",
+        "10",
+        "11",
+        "12",
+        "13",
+        "14",
+        "15",
+        "16",
+        "17",
+        "18",
+        "19",
+        "20",
+        "21",
+        "22",
+        "23",
+        "for",
+        "the"
+      ],
+      "learnedDates": {
+        "1": "2026-07-21",
+        "2": "2026-07-21",
+        "3": "2026-07-21",
+        "4": "2026-07-21",
+        "5": "2026-07-21",
+        "6": "2026-07-21",
+        "7": "2026-07-21",
+        "8": "2026-07-21",
+        "9": "2026-07-21",
+        "10": "2026-07-21",
+        "11": "2026-07-21",
+        "12": "2026-07-14",
+        "13": "2026-07-14",
+        "14": "2026-07-14",
+        "15": "2026-07-15",
+        "16": "2026-07-15",
+        "17": "2026-07-15",
+        "18": "2026-07-15",
+        "19": "2026-07-15",
+        "20": "2026-07-15",
+        "21": "2026-07-15",
+        "22": "2026-07-15",
+        "23": "2026-07-15"
+      },
+      "mastered": [
+        "1",
+        "3",
+        "4",
+        "5"
+      ],
+      "monthlyTests": [],
+      "readIndex": 8,
+      "speakScores": {
+        "1": {
+          "ex1": 89.0,
+          "ex2": 83.0,
+          "ex3": 85.0,
+          "phrase": 85.0
+        },
+        "2": {
+          "ex1": 85.0,
+          "ex2": 84.0,
+          "ex3": 95.0,
+          "phrase": 78.0
+        },
+        "3": {
+          "ex3": 85.0,
+          "phrase": 85.0,
+          "ex1": 85.0,
+          "ex2": 85.0
+        },
+        "4": {
+          "ex1": 83.0,
+          "ex2": 85.0,
+          "ex3": 85.0,
+          "phrase": 85.0
+        },
+        "5": {
+          "ex1": 85.0,
+          "ex2": 86.0,
+          "ex3": 86.0,
+          "phrase": 82.0
+        },
+        "6": {
+          "phrase": 54.0
+        },
+        "7": {
+          "ex2": 87.0,
+          "phrase": 80.0
+        },
+        "9": {
+          "ex1": 77.0,
+          "ex2": 88.0,
+          "phrase": 80.0
+        }
+      },
+      "spellIndex": 10,
+      "totalSeconds": 0,
+      "weeklyTests": [
+        {
+          "date": "2026-07-21",
+          "avgScore": 0,
+          "passed": 0,
+          "total": 10
+        }
+      ],
+      "audioDone": {
+        "1": {
+          "p": true,
+          "e1": true,
+          "e2": true,
+          "e3": true
+        },
+        "8": {
+          "e3": true,
+          "e2": true,
+          "e1": true,
+          "p": true
+        },
+        "2": {
+          "p": true,
+          "e1": true,
+          "e2": true,
+          "e3": true
+        },
+        "3": {
+          "p": true,
+          "e1": true,
+          "e2": true,
+          "e3": true
+        },
+        "4": {
+          "p": true,
+          "e1": true,
+          "e2": true,
+          "e3": true
+        },
+        "5": {
+          "p": true,
+          "e1": true,
+          "e2": true,
+          "e3": true
+        },
+        "6": {
+          "p": true,
+          "e1": true,
+          "e2": true,
+          "e3": true
+        },
+        "7": {
+          "p": true,
+          "e1": true,
+          "e2": true,
+          "e3": true
+        },
+        "9": {
+          "p": true,
+          "e1": true,
+          "e2": true,
+          "e3": true
+        },
+        "10": {
+          "e1": true,
+          "e3": true,
+          "e2": true,
+          "p": true
+        },
+        "11": {
+          "p": true,
+          "e1": true,
+          "e2": true,
+          "e3": true
+        },
+        "12": {
+          "p": true,
+          "e1": true,
+          "e2": true,
+          "e3": true
+        },
+        "13": {
+          "p": true,
+          "e1": true,
+          "e2": true,
+          "e3": true
+        },
+        "14": {
+          "p": true,
+          "e1": true,
+          "e2": true,
+          "e3": true
+        },
+        "15": {
+          "p": true,
+          "e1": true,
+          "e2": true,
+          "e3": true
+        },
+        "16": {
+          "p": true,
+          "e1": true,
+          "e2": true,
+          "e3": true
+        },
+        "17": {
+          "p": true,
+          "e1": true,
+          "e2": true,
+          "e3": true
+        },
+        "18": {
+          "p": true,
+          "e1": true,
+          "e2": true,
+          "e3": true
+        },
+        "19": {
+          "e3": true,
+          "e2": true,
+          "e1": true,
+          "p": true
+        },
+        "20": {
+          "e3": true,
+          "e2": true,
+          "e1": true,
+          "p": true
+        }
+      },
+      "audioDoneDate": {
+        "1": "2026-07-21",
+        "8": "2026-07-21",
+        "2": "2026-07-21",
+        "3": "2026-07-21",
+        "4": "2026-07-21",
+        "5": "2026-07-21",
+        "6": "2026-07-21",
+        "7": "2026-07-21",
+        "9": "2026-07-21",
+        "10": "2026-07-21",
+        "11": "2026-07-14",
+        "12": "2026-07-14",
+        "13": "2026-07-14",
+        "14": "2026-07-14",
+        "15": "2026-07-14",
+        "16": "2026-07-14",
+        "17": "2026-07-14",
+        "18": "2026-07-14",
+        "19": "2026-07-14",
+        "20": "2026-07-14"
+      }
+    },
+    "business": {
+      "learned": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10",
+        "11",
+        "12",
+        "13",
+        "14",
+        "15",
+        "16",
+        "17",
+        "18",
+        "19",
+        "20",
+        "21",
+        "22",
+        "23",
+        "24",
+        "25",
+        "26",
+        "27",
+        "28",
+        "29",
+        "30",
+        "31",
+        "32"
+      ],
+      "learnedDates": {
+        "1": "2026-07-14",
+        "2": "2026-07-14",
+        "3": "2026-07-18",
+        "4": "2026-07-21",
+        "5": "2026-07-21",
+        "6": "2026-07-21",
+        "7": "2026-07-21",
+        "8": "2026-07-12",
+        "9": "2026-07-12",
+        "10": "2026-07-12",
+        "11": "2026-07-12",
+        "12": "2026-07-12",
+        "13": "2026-07-12",
+        "14": "2026-07-12",
+        "15": "2026-07-12",
+        "16": "2026-07-12",
+        "17": "2026-07-12",
+        "18": "2026-07-12",
+        "19": "2026-07-12",
+        "20": "2026-07-12",
+        "21": "2026-07-12",
+        "22": "2026-07-12",
+        "23": "2026-07-12",
+        "24": "2026-07-12",
+        "25": "2026-07-12",
+        "26": "2026-07-12",
+        "27": "2026-07-12",
+        "28": "2026-07-12",
+        "29": "2026-07-12",
+        "30": "2026-07-12",
+        "31": "2026-07-13",
+        "32": "2026-07-14"
+      },
+      "mastered": [
+        "1",
+        "2",
+        "4",
+        "5",
+        "6"
+      ],
+      "monthlyTests": [],
+      "readIndex": 7,
+      "speakScores": {
+        "4": {
+          "s0": 100.0,
+          "s1": 85.0,
+          "s2": 80.0,
+          "s3": 85.0,
+          "s4": 85.0,
+          "s5": 82.0,
+          "s10": 80.0,
+          "s6": 85.0,
+          "s7": 85.0,
+          "s8": 85.0,
+          "s9": 85.0
+        },
+        "1": {
+          "s0": 93.0,
+          "s1": 85.0,
+          "s2": 92.0,
+          "s3": 82.0,
+          "s4": 85.0,
+          "s5": 87.0
+        },
+        "2": {
+          "s0": 85.0,
+          "s1": 80.0,
+          "s2": 85.0,
+          "s3": 83.0,
+          "s4": 85.0,
+          "s5": 86.0,
+          "s6": 85.0,
+          "s7": 100.0,
+          "s8": 80.0,
+          "s9": 91.0
+        },
+        "3": {
+          "s0": 85.0,
+          "s5": 100.0,
+          "s1": 100.0,
+          "s2": 100.0,
+          "s6": 80.0,
+          "s3": 66.0,
+          "s4": 89.0
+        },
+        "5": {
+          "s7": 100.0,
+          "s5": 100.0,
+          "s4": 80.0,
+          "s3": 87.0,
+          "s1": 80.0,
+          "s8": 100.0,
+          "s2": 81.0,
+          "s6": 85.0,
+          "s0": 100.0
+        },
+        "31": {
+          "s4": 93.0,
+          "s0": 51.0,
+          "s3": 72.0,
+          "s2": 100.0,
+          "s1": 64.0
+        },
+        "6": {
+          "s4": 83.0,
+          "s2": 88.0,
+          "s1": 100.0,
+          "s0": 100.0,
+          "s3": 100.0,
+          "s7": 90.0,
+          "s8": 97.0,
+          "s9": 100.0,
+          "s5": 90.0,
+          "s11": 81.0,
+          "s10": 85.0,
+          "s6": 88.0
+        },
+        "7": {
+          "s3": 100.0,
+          "s1": 100.0,
+          "s6": 100.0,
+          "s7": 100.0,
+          "s5": 95.0,
+          "s4": 68.0,
+          "s2": 100.0,
+          "s0": 100.0
+        },
+        "8": {
+          "s1": 100.0,
+          "s2": 100.0,
+          "s4": 100.0,
+          "s5": 35.0,
+          "s0": 100.0,
+          "s3": 21.0
+        }
+      },
+      "spellIndex": 2,
+      "totalSeconds": 0,
+      "unlocked": true,
+      "weeklyTests": [],
+      "audioDone": {
+        "32": {
+          "b_32_0": true,
+          "b_32_1": true,
+          "b_32_2": true,
+          "b_32_4": true,
+          "b_32_5": true,
+          "b_32_6": true,
+          "b_32_8": true,
+          "b_32_7": true,
+          "b_32_9": true,
+          "b_32_3": true
+        },
+        "33": {
+          "b_33_0": true
+        },
+        "2": {
+          "b_2_0": true,
+          "b_2_1": true,
+          "b_2_2": true,
+          "b_2_3": true,
+          "b_2_4": true,
+          "b_2_5": true,
+          "b_2_6": true,
+          "b_2_7": true,
+          "b_2_8": true,
+          "b_2_9": true
+        },
+        "3": {
+          "b_3_0": true,
+          "b_3_1": true,
+          "b_3_2": true,
+          "b_3_4": true,
+          "b_3_3": true,
+          "b_3_5": true,
+          "b_3_6": true
+        },
+        "4": {
+          "b_4_0": true,
+          "b_4_1": true,
+          "b_4_2": true,
+          "b_4_3": true,
+          "b_4_4": true,
+          "b_4_5": true,
+          "b_4_6": true,
+          "b_4_7": true,
+          "b_4_8": true,
+          "b_4_9": true,
+          "b_4_10": true
+        },
+        "5": {
+          "b_5_0": true,
+          "b_5_1": true,
+          "b_5_2": true,
+          "b_5_3": true,
+          "b_5_4": true,
+          "b_5_5": true,
+          "b_5_6": true,
+          "b_5_7": true,
+          "b_5_8": true
+        },
+        "6": {
+          "b_6_0": true,
+          "b_6_1": true,
+          "b_6_2": true,
+          "b_6_3": true,
+          "b_6_4": true,
+          "b_6_5": true,
+          "b_6_6": true,
+          "b_6_7": true,
+          "b_6_8": true,
+          "b_6_9": true,
+          "b_6_10": true,
+          "b_6_11": true
+        },
+        "7": {
+          "b_7_1": true,
+          "b_7_0": true,
+          "b_7_2": true,
+          "b_7_3": true,
+          "b_7_4": true,
+          "b_7_5": true,
+          "b_7_6": true,
+          "b_7_7": true
+        },
+        "1": {
+          "b_1_0": true,
+          "b_1_1": true,
+          "b_1_2": true,
+          "b_1_4": true,
+          "b_1_3": true,
+          "b_1_5": true
+        }
+      },
+      "audioDoneDate": {
+        "32": "2026-07-13",
+        "2": "2026-07-14",
+        "3": "2026-07-14",
+        "4": "2026-07-14",
+        "5": "2026-07-14",
+        "6": "2026-07-14",
+        "7": "2026-07-14",
+        "1": "2026-07-16"
+      }
+    },
+    "checkIns": [
+      {
+        "date": "2026-07-06",
+        "seconds": 6,
+        "completed": false
+      },
+      {
+        "date": "2026-07-07",
+        "seconds": 355,
+        "completed": false
+      },
+      {
+        "date": "2026-07-08",
+        "seconds": 7,
+        "completed": false
+      },
+      {
+        "date": "2026-07-09",
+        "seconds": 153,
+        "completed": false
+      },
+      {
+        "date": "2026-07-10",
+        "seconds": 298,
+        "completed": false
+      },
+      {
+        "date": "2026-07-11",
+        "seconds": 900,
+        "completed": true
+      },
+      {
+        "date": "2026-07-12",
+        "seconds": 900,
+        "completed": true
+      },
+      {
+        "date": "2026-07-13",
+        "seconds": 900,
+        "completed": true
+      },
+      {
+        "date": "2026-07-14",
+        "seconds": 900,
+        "completed": true
+      },
+      {
+        "date": "2026-07-15",
+        "seconds": 372,
+        "completed": false
+      },
+      {
+        "date": "2026-07-16",
+        "seconds": 45,
+        "completed": false
+      },
+      {
+        "date": "2026-07-17",
+        "seconds": 21,
+        "completed": false
+      },
+      {
+        "date": "2026-07-18",
+        "seconds": 362,
+        "completed": false
+      },
+      {
+        "date": "2026-07-19",
+        "seconds": 0,
+        "completed": false
+      },
+      {
+        "date": "2026-07-20",
+        "seconds": 12,
+        "completed": false
+      },
+      {
+        "date": "2026-07-21",
+        "seconds": 223,
+        "completed": false
+      }
+    ]
+  },
+  "407556": {
+    "basic": {
+      "learned": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10",
+        "11"
+      ],
+      "learnedDates": {
+        "1": "2026-07-07",
+        "2": "2026-07-07",
+        "3": "2026-07-07",
+        "4": "2026-07-07",
+        "5": "2026-07-07",
+        "6": "2026-07-07",
+        "7": "2026-07-07",
+        "8": "2026-07-07",
+        "9": "2026-07-08",
+        "10": "2026-07-09",
+        "11": "2026-07-09"
+      },
+      "mastered": [
+        "10",
+        "11"
+      ],
+      "monthlyTests": [],
+      "readIndex": 11,
+      "speakScores": {
+        "9": {
+          "ex1": 84.0,
+          "ex2": 62.0,
+          "phrase": 85.0
+        },
+        "10": {
+          "ex1": 85.0,
+          "ex2": 87.0,
+          "ex3": 83.0,
+          "phrase": 85.0
+        },
+        "11": {
+          "phrase": 85.0,
+          "ex1": 86.0,
+          "ex2": 85.0,
+          "ex3": 88.0
+        }
+      },
+      "spellIndex": 65,
+      "totalSeconds": 0,
+      "weeklyTests": [],
+      "audioDone": {},
+      "audioDoneDate": {}
+    },
+    "business": {
+      "learned": [],
+      "learnedDates": {},
+      "mastered": [],
+      "monthlyTests": [],
+      "readIndex": 0,
+      "speakScores": {},
+      "spellIndex": 0,
+      "totalSeconds": 0,
+      "unlocked": true,
+      "weeklyTests": [],
+      "audioDone": {},
+      "audioDoneDate": {}
+    },
+    "checkIns": [
+      {
+        "date": "2026-07-07",
+        "seconds": 15,
+        "completed": false
+      },
+      {
+        "date": "2026-07-08",
+        "seconds": 179,
+        "completed": false
+      },
+      {
+        "date": "2026-07-09",
+        "seconds": 59,
+        "completed": false
+      },
+      {
+        "date": "2026-07-15",
+        "seconds": 0,
+        "completed": false
+      }
+    ]
+  },
+  "102334": {
+    "basic": {
+      "readIndex": 0,
+      "spellIndex": 0,
+      "learned": [],
+      "learnedDates": {},
+      "mastered": [],
+      "speakScores": {},
+      "weeklyTests": [],
+      "monthlyTests": [],
+      "totalSeconds": 0
+    },
+    "business": {
+      "readIndex": 0,
+      "spellIndex": 0,
+      "learned": [],
+      "learnedDates": {},
+      "mastered": [],
+      "speakScores": {},
+      "weeklyTests": [],
+      "monthlyTests": [],
+      "totalSeconds": 0,
+      "unlocked": false
+    },
+    "checkIns": []
+  },
+  "100256": {
+    "basic": {
+      "learned": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10",
+        "11"
+      ],
+      "learnedDates": {
+        "1": "2026-07-10",
+        "2": "2026-07-10",
+        "3": "2026-07-10",
+        "4": "2026-07-10",
+        "5": "2026-07-10",
+        "6": "2026-07-10",
+        "7": "2026-07-15",
+        "8": "2026-07-15",
+        "9": "2026-07-15",
+        "10": "2026-07-15",
+        "11": "2026-07-15"
+      },
+      "mastered": [
+        "1",
+        "2"
+      ],
+      "monthlyTests": [],
+      "readIndex": 11,
+      "speakScores": {
+        "1": {
+          "ex1": 85.0,
+          "ex2": 85.0,
+          "ex3": 85.0,
+          "phrase": 85.0
+        },
+        "2": {
+          "ex1": 85.0,
+          "ex2": 85.0,
+          "ex3": 85.0,
+          "phrase": 85.0
+        },
+        "3": {
+          "ex1": 91.0,
+          "ex2": 85.0,
+          "ex3": 58.0,
+          "phrase": 85.0
+        },
+        "4": {
+          "ex1": 85.0,
+          "ex2": 85.0,
+          "ex3": 11.0,
+          "phrase": 85.0
+        },
+        "5": {
+          "phrase": 21.0
+        }
+      },
+      "spellIndex": 9,
+      "totalSeconds": 0,
+      "weeklyTests": [],
+      "audioDone": {
+        "7": {
+          "p": true,
+          "e1": true,
+          "e2": true,
+          "e3": true
+        }
+      },
+      "audioDoneDate": {
+        "7": "2026-07-15"
+      }
+    },
+    "business": {
+      "learned": [
+        "1"
+      ],
+      "learnedDates": {
+        "1": "2026-07-10"
+      },
+      "mastered": [],
+      "monthlyTests": [],
+      "readIndex": 1,
+      "speakScores": {},
+      "spellIndex": 0,
+      "totalSeconds": 0,
+      "unlocked": true,
+      "weeklyTests": [],
+      "audioDone": {
+        "2": {
+          "b_2_0": true,
+          "b_2_1": true,
+          "b_2_2": true,
+          "b_2_3": true,
+          "b_2_4": true,
+          "b_2_6": true,
+          "b_2_7": true,
+          "b_2_8": true,
+          "b_2_9": true
+        }
+      },
+      "audioDoneDate": {}
+    },
+    "checkIns": [
+      {
+        "date": "2026-07-08",
+        "seconds": 23,
+        "completed": false
+      },
+      {
+        "date": "2026-07-09",
+        "seconds": 160,
+        "completed": false
+      },
+      {
+        "date": "2026-07-10",
+        "seconds": 262,
+        "completed": false
+      },
+      {
+        "date": "2026-07-14",
+        "seconds": 6,
+        "completed": false
+      },
+      {
+        "date": "2026-07-15",
+        "seconds": 51,
+        "completed": false
+      }
+    ]
+  },
+  "190763": {
+    "basic": {
+      "readIndex": 0,
+      "spellIndex": 0,
+      "learned": [],
+      "learnedDates": {},
+      "mastered": [],
+      "speakScores": {},
+      "weeklyTests": [],
+      "monthlyTests": [],
+      "totalSeconds": 0
+    },
+    "business": {
+      "readIndex": 0,
+      "spellIndex": 0,
+      "learned": [],
+      "learnedDates": {},
+      "mastered": [],
+      "speakScores": {},
+      "weeklyTests": [],
+      "monthlyTests": [],
+      "totalSeconds": 0,
+      "unlocked": false
+    },
+    "checkIns": []
+  },
+  "233593": {
+    "basic": {
+      "learned": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "learnedDates": {
+        "1": "2026-07-09",
+        "2": "2026-07-09",
+        "3": "2026-07-09",
+        "4": "2026-07-09",
+        "5": "2026-07-09"
+      },
+      "mastered": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "monthlyTests": [],
+      "readIndex": 5,
+      "speakScores": {
+        "1": {
+          "ex1": 94.0,
+          "ex2": 82.0,
+          "ex3": 90.0,
+          "phrase": 85.0
+        },
+        "2": {
+          "ex1": 87.0,
+          "ex2": 93.0,
+          "ex3": 82.0,
+          "phrase": 85.0
+        },
+        "3": {
+          "ex1": 85.0,
+          "ex2": 96.0,
+          "ex3": 95.0,
+          "phrase": 85.0
+        },
+        "4": {
+          "ex1": 85.0,
+          "ex2": 85.0,
+          "ex3": 84.0,
+          "phrase": 85.0
+        },
+        "5": {
+          "ex1": 93.0,
+          "ex2": 85.0,
+          "ex3": 88.0,
+          "phrase": 85.0
+        },
+        "6": {
+          "phrase": 65.0
+        }
+      },
+      "spellIndex": 0,
+      "totalSeconds": 0,
+      "weeklyTests": []
+    },
+    "business": {
+      "learned": [],
+      "learnedDates": {},
+      "mastered": [],
+      "monthlyTests": [],
+      "readIndex": 0,
+      "speakScores": {},
+      "spellIndex": 0,
+      "totalSeconds": 0,
+      "unlocked": false,
+      "weeklyTests": []
+    },
+    "checkIns": [
+      {
+        "date": "2026-07-09",
+        "seconds": 326,
+        "completed": false
+      }
+    ]
+  },
+  "252250": {
+    "basic": {
+      "readIndex": 0,
+      "spellIndex": 0,
+      "learned": [],
+      "learnedDates": {},
+      "mastered": [],
+      "speakScores": {},
+      "weeklyTests": [],
+      "monthlyTests": [],
+      "totalSeconds": 0
+    },
+    "business": {
+      "readIndex": 0,
+      "spellIndex": 0,
+      "learned": [],
+      "learnedDates": {},
+      "mastered": [],
+      "speakScores": {},
+      "weeklyTests": [],
+      "monthlyTests": [],
+      "totalSeconds": 0,
+      "unlocked": false
+    },
+    "checkIns": []
+  },
+  "253010": {
+    "basic": {
+      "readIndex": 0,
+      "spellIndex": 0,
+      "learned": [],
+      "learnedDates": {},
+      "mastered": [],
+      "speakScores": {},
+      "weeklyTests": [],
+      "monthlyTests": [],
+      "totalSeconds": 0
+    },
+    "business": {
+      "readIndex": 0,
+      "spellIndex": 0,
+      "learned": [],
+      "learnedDates": {},
+      "mastered": [],
+      "speakScores": {},
+      "weeklyTests": [],
+      "monthlyTests": [],
+      "totalSeconds": 0,
+      "unlocked": false
+    },
+    "checkIns": []
+  },
+  "073508": {
+    "basic": {
+      "learned": [],
+      "learnedDates": {},
+      "mastered": [],
+      "monthlyTests": [],
+      "readIndex": 0,
+      "speakScores": {
+        "1": {
+          "phrase": 13.0
+        }
+      },
+      "spellIndex": 0,
+      "totalSeconds": 0,
+      "weeklyTests": []
+    },
+    "business": {
+      "learned": [],
+      "learnedDates": {},
+      "mastered": [],
+      "monthlyTests": [],
+      "readIndex": 0,
+      "speakScores": {},
+      "spellIndex": 0,
+      "totalSeconds": 0,
+      "unlocked": true,
+      "weeklyTests": []
+    },
+    "checkIns": [
+      {
+        "date": "2026-07-10",
+        "seconds": 7,
+        "completed": false
+      }
+    ]
+  },
+  "238240": {
+    "basic": {
+      "readIndex": 0,
+      "spellIndex": 0,
+      "learned": [],
+      "learnedDates": {},
+      "mastered": [],
+      "speakScores": {},
+      "weeklyTests": [],
+      "monthlyTests": [],
+      "totalSeconds": 0
+    },
+    "business": {
+      "readIndex": 0,
+      "spellIndex": 0,
+      "learned": [],
+      "learnedDates": {},
+      "mastered": [],
+      "speakScores": {},
+      "weeklyTests": [],
+      "monthlyTests": [],
+      "totalSeconds": 0,
+      "unlocked": false
+    },
+    "checkIns": []
+  },
+  "110233": {
+    "basic": {
+      "learned": [],
+      "learnedDates": {},
+      "mastered": [],
+      "monthlyTests": [],
+      "readIndex": 0,
+      "speakScores": {},
+      "spellIndex": 0,
+      "totalSeconds": 0,
+      "weeklyTests": []
+    },
+    "business": {
+      "learned": [],
+      "learnedDates": {},
+      "mastered": [],
+      "monthlyTests": [],
+      "readIndex": 0,
+      "speakScores": {},
+      "spellIndex": 0,
+      "totalSeconds": 0,
+      "unlocked": false,
+      "weeklyTests": []
+    },
+    "checkIns": [
+      {
+        "date": "2026-07-08",
+        "seconds": 0,
+        "completed": false
+      }
+    ]
+  },
+  "342114": {
+    "basic": {
+      "readIndex": 0,
+      "spellIndex": 0,
+      "learned": [],
+      "learnedDates": {},
+      "mastered": [],
+      "speakScores": {},
+      "weeklyTests": [],
+      "monthlyTests": [],
+      "totalSeconds": 0
+    },
+    "business": {
+      "readIndex": 0,
+      "spellIndex": 0,
+      "learned": [],
+      "learnedDates": {},
+      "mastered": [],
+      "speakScores": {},
+      "weeklyTests": [],
+      "monthlyTests": [],
+      "totalSeconds": 0,
+      "unlocked": false
+    },
+    "checkIns": []
+  },
+  "339911": {
+    "basic": {
+      "learned": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "learnedDates": {
+        "1": "2026-07-08",
+        "2": "2026-07-08",
+        "3": "2026-07-08",
+        "4": "2026-07-08",
+        "5": "2026-07-08"
+      },
+      "mastered": [],
+      "monthlyTests": [],
+      "readIndex": 5,
+      "speakScores": {},
+      "spellIndex": 0,
+      "totalSeconds": 0,
+      "weeklyTests": []
+    },
+    "business": {
+      "learned": [],
+      "learnedDates": {},
+      "mastered": [],
+      "monthlyTests": [],
+      "readIndex": 0,
+      "speakScores": {},
+      "spellIndex": 0,
+      "totalSeconds": 0,
+      "unlocked": false,
+      "weeklyTests": []
+    },
+    "checkIns": [
+      {
+        "date": "2026-07-08",
+        "seconds": 229,
+        "completed": false
+      }
+    ]
+  },
+  "059707": {
+    "basic": {
+      "readIndex": 0,
+      "spellIndex": 0,
+      "learned": [],
+      "learnedDates": {},
+      "mastered": [],
+      "speakScores": {},
+      "weeklyTests": [],
+      "monthlyTests": [],
+      "totalSeconds": 0
+    },
+    "business": {
+      "readIndex": 0,
+      "spellIndex": 0,
+      "learned": [],
+      "learnedDates": {},
+      "mastered": [],
+      "speakScores": {},
+      "weeklyTests": [],
+      "monthlyTests": [],
+      "totalSeconds": 0,
+      "unlocked": false
+    },
+    "checkIns": []
+  },
+  "189146": {
+    "basic": {
+      "learned": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6"
+      ],
+      "learnedDates": {
+        "1": "2026-07-09",
+        "2": "2026-07-09",
+        "3": "2026-07-09",
+        "4": "2026-07-09",
+        "5": "2026-07-09",
+        "6": "2026-07-09"
+      },
+      "mastered": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6"
+      ],
+      "monthlyTests": [],
+      "readIndex": 6,
+      "speakScores": {
+        "1": {
+          "ex1": 94.0,
+          "ex2": 85.0,
+          "ex3": 85.0,
+          "phrase": 85.0
+        },
+        "2": {
+          "ex1": 96.0,
+          "ex2": 85.0,
+          "ex3": 81.0,
+          "phrase": 85.0
+        },
+        "3": {
+          "ex1": 85.0,
+          "ex2": 83.0,
+          "ex3": 92.0,
+          "phrase": 85.0
+        },
+        "4": {
+          "ex1": 85.0,
+          "ex2": 93.0,
+          "ex3": 86.0,
+          "phrase": 85.0
+        },
+        "5": {
+          "ex1": 93.0,
+          "ex2": 85.0,
+          "ex3": 96.0,
+          "phrase": 81.0
+        },
+        "6": {
+          "ex1": 93.0,
+          "ex2": 87.0,
+          "ex3": 85.0,
+          "phrase": 85.0
+        },
+        "7": {
+          "phrase": 85.0,
+          "ex1": 70.0
+        }
+      },
+      "spellIndex": 49,
+      "totalSeconds": 0,
+      "weeklyTests": []
+    },
+    "business": {
+      "learned": [],
+      "learnedDates": {},
+      "mastered": [],
+      "monthlyTests": [],
+      "readIndex": 0,
+      "speakScores": {},
+      "spellIndex": 0,
+      "totalSeconds": 0,
+      "unlocked": true,
+      "weeklyTests": []
+    },
+    "checkIns": [
+      {
+        "date": "2026-07-09",
+        "seconds": 429,
+        "completed": false
+      },
+      {
+        "date": "2026-07-10",
+        "seconds": 125,
+        "completed": false
+      }
+    ]
+  },
+  "228174": {
+    "basic": {
+      "readIndex": 0,
+      "spellIndex": 0,
+      "learned": [],
+      "learnedDates": {},
+      "mastered": [],
+      "speakScores": {},
+      "weeklyTests": [],
+      "monthlyTests": [],
+      "totalSeconds": 0
+    },
+    "business": {
+      "readIndex": 0,
+      "spellIndex": 0,
+      "learned": [],
+      "learnedDates": {},
+      "mastered": [],
+      "speakScores": {},
+      "weeklyTests": [],
+      "monthlyTests": [],
+      "totalSeconds": 0,
+      "unlocked": false
+    },
+    "checkIns": []
+  },
+  "225979": {
+    "basic": {
+      "readIndex": 0,
+      "spellIndex": 0,
+      "learned": [],
+      "learnedDates": {},
+      "mastered": [],
+      "speakScores": {},
+      "weeklyTests": [],
+      "monthlyTests": [],
+      "totalSeconds": 0
+    },
+    "business": {
+      "readIndex": 0,
+      "spellIndex": 0,
+      "learned": [],
+      "learnedDates": {},
+      "mastered": [],
+      "speakScores": {},
+      "weeklyTests": [],
+      "monthlyTests": [],
+      "totalSeconds": 0,
+      "unlocked": true
+    },
+    "checkIns": [
+      {
+        "date": "2026-07-13",
+        "seconds": 9,
+        "completed": false
+      }
+    ]
+  },
+  "115174": {
+    "basic": {
+      "readIndex": 0,
+      "spellIndex": 2,
+      "learned": [],
+      "learnedDates": {},
+      "mastered": [],
+      "speakScores": {},
+      "weeklyTests": [],
+      "monthlyTests": [],
+      "totalSeconds": 0,
+      "audioDone": {},
+      "audioDoneDate": {}
+    },
+    "business": {
+      "readIndex": 5,
+      "spellIndex": 0,
+      "learned": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "learnedDates": {
+        "1": "2026-07-13",
+        "2": "2026-07-13",
+        "3": "2026-07-13",
+        "4": "2026-07-13",
+        "5": "2026-07-13"
+      },
+      "mastered": [],
+      "speakScores": {},
+      "weeklyTests": [],
+      "monthlyTests": [],
+      "totalSeconds": 0,
+      "unlocked": true,
+      "audioDone": {},
+      "audioDoneDate": {}
+    },
+    "checkIns": [
+      {
+        "date": "2026-07-13",
+        "seconds": 26,
+        "completed": false
+      },
+      {
+        "date": "2026-07-14",
+        "seconds": 2,
+        "completed": false
+      }
+    ]
+  },
+  "033815": {
+    "checkIns": [
+      {
+        "date": "2026-07-17",
+        "seconds": 9,
+        "completed": false
+      }
+    ],
+    "basic": {
+      "readIndex": 0,
+      "spellIndex": 0,
+      "learned": [],
+      "learnedDates": {},
+      "mastered": [],
+      "speakScores": {},
+      "weeklyTests": [],
+      "monthlyTests": [],
+      "totalSeconds": 0,
+      "audioDone": {},
+      "audioDoneDate": {}
+    },
+    "business": {
+      "readIndex": 0,
+      "spellIndex": 0,
+      "learned": [],
+      "learnedDates": {},
+      "mastered": [],
+      "speakScores": {},
+      "weeklyTests": [],
+      "monthlyTests": [],
+      "totalSeconds": 0,
+      "unlocked": true,
+      "audioDone": {},
+      "audioDoneDate": {}
+    }
+  },
+  "230959": {
+    "basic": {
+      "readIndex": 2,
+      "spellIndex": 0,
+      "learned": [
+        "1",
+        "2"
+      ],
+      "learnedDates": {
+        "1": "2026-07-20",
+        "2": "2026-07-20"
+      },
+      "mastered": [],
+      "speakScores": {},
+      "weeklyTests": [],
+      "monthlyTests": [],
+      "totalSeconds": 0,
+      "audioDone": {
+        "1": {
+          "p": true,
+          "e1": true,
+          "e2": true,
+          "e3": true
+        },
+        "2": {
+          "e1": true,
+          "e2": true,
+          "e3": true,
+          "p": true
+        },
+        "3": {
+          "p": true,
+          "e1": true,
+          "e2": true
+        }
+      },
+      "audioDoneDate": {
+        "1": "2026-07-20",
+        "2": "2026-07-20"
+      }
+    },
+    "business": {
+      "readIndex": 0,
+      "spellIndex": 0,
+      "learned": [],
+      "learnedDates": {},
+      "mastered": [],
+      "speakScores": {},
+      "weeklyTests": [],
+      "monthlyTests": [],
+      "totalSeconds": 0,
+      "unlocked": true,
+      "audioDone": {},
+      "audioDoneDate": {}
+    },
+    "checkIns": [
+      {
+        "date": "2026-07-20",
+        "seconds": 68,
+        "completed": false
+      }
+    ]
+  }
+}
