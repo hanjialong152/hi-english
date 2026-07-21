@@ -649,12 +649,16 @@ def init_data_files():  # v-restart-trigger-20260711
                 print(f'[Supabase] 已加载 {len(all_sd)} 个学员学习数据', flush=True)
             elif GITHUB_TOKEN:
                 # Supabase 为空/失败 → 回退 GitHub 干净备份加载学习数据
-                # 使用 7/21 坏部署前的 f1a5eed7 备份，避免 data-sync HEAD 被污染后把脏数据带回
+                # 优先用 7/21 坏部署前的 f1a5eed7 备份；失败则读 data-sync HEAD（已提前重置为干净）
                 gh_sd = github_api_get_commit('data/study_data.json', _CLEAN_STUDY_DATA_REF)
+                source = '干净备份'
+                if not gh_sd:
+                    gh_sd = github_api_get('data/study_data.json')
+                    source = 'data-sync HEAD'
                 if gh_sd:
                     with open(os.path.join(DATA_DIR, 'study_data.json'), 'w', encoding='utf-8') as f:
                         json.dump(gh_sd, f, ensure_ascii=False, indent=2)
-                    print(f'[GitHub回退] 已从干净备份加载 {len(gh_sd)} 个学员学习数据', flush=True)
+                    print(f'[GitHub回退] 已从{source}加载 {len(gh_sd)} 个学员学习数据', flush=True)
                 else:
                     print('[Supabase] study_data 为空且 GitHub 无数据，保留本地现有缓存', flush=True)
             else:
@@ -670,10 +674,14 @@ def init_data_files():  # v-restart-trigger-20260711
             if filename == 'study_data.json':
                 # 数据恢复：从 7/21 坏部署前的干净备份加载学习记录，避免 data-sync HEAD 污染回灌
                 remote_data = github_api_get_commit(rel_path, _CLEAN_STUDY_DATA_REF)
+                source = '干净备份'
+                if remote_data is None:
+                    remote_data = github_api_get(rel_path)
+                    source = 'data-sync HEAD'
                 if remote_data is not None:
                     with open(local_path, 'w', encoding='utf-8') as f:
                         json.dump(remote_data, f, ensure_ascii=False, indent=2)
-                    print(f'[Sync] 已从干净备份恢复 {filename} ({len(remote_data)} users)', flush=True)
+                    print(f'[Sync] 已从{source}恢复 {filename} ({len(remote_data)} users)', flush=True)
                 continue
             remote_data = github_api_get(rel_path)
             if remote_data is not None:
