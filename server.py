@@ -1382,12 +1382,13 @@ def handle_save_study_data():
     if not empid:
         return jsonify({'success': False, 'error': '缺少 empid'}), 400
 
-    # ---- 认证：必须携带登录时颁发的 session_token ----
+    # ---- 认证：必须携带登录时颁发的非空 session_token ----
     users = load_json(os.path.join(DATA_DIR, 'users.json'))
     user = users.get(empid)
     if not user:
         return jsonify({'success': False, 'error': '用户不存在'}), 404
-    if token != user.get('session_token', ''):
+    server_token = user.get('session_token', '')
+    if not token or not server_token or token != server_token:
         return jsonify({'success': False, 'error': '未授权，请重新登录'}), 401
 
     # ---- 限流：单 IP + 单用户 ----
