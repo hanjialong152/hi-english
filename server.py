@@ -664,44 +664,32 @@ def init_data_files():  # v-restart-trigger-20260711
     - study_data：从 study_data 表全量拉取
     本地文件仅作运行时缓存，Render 重启/部署后从 Supabase 重建，永不丢失。
     未配置 Supabase 时回退到 GitHub data-sync（兼容开发/迁移过渡）。"""
-    if supabase:
-        # ===== 7/20 整体回滚：强制从干净备份 f1a5eed7 加载，彻底甩掉所有污染 =====
-        # 扫描器已污染 Supabase 库（mastered/audioDoneDate/users/groups 均含注入字符串），
-        # 本次回滚一律以 f1a5eed7 干净备份为准，忽略 Supabase 脏数据。稳定后可恢复。
-        print('[回滚] 忽略 Supabase 脏数据，强制从 f1a5eed7 干净备份加载...', flush=True)
-        _clean_sd = github_api_get_commit('data/study_data.json', _CLEAN_STUDY_DATA_REF) or {}
-        with open(os.path.join(DATA_DIR, 'study_data.json'), 'w', encoding='utf-8') as f:
-            json.dump(_clean_sd, f, ensure_ascii=False, indent=2)
-        for key in ['users', 'admin', 'groups', 'messages', 'dingtalk', 'beta']:
-            _cd = github_api_get_commit(f'data/{key}.json', _CLEAN_STUDY_DATA_REF)
-            if _cd is not None:
-                with open(os.path.join(DATA_DIR, key + '.json'), 'w', encoding='utf-8') as f:
-                    json.dump(_cd, f, ensure_ascii=False, indent=2)
-        print(f'[回滚] 已从 f1a5eed7 恢复 {len(_clean_sd)} 学员 + 全部配置', flush=True)
-    elif GITHUB_TOKEN:
-        # 兼容回退：未配置 Supabase 时使用原 GitHub 逻辑
-        print('[Sync] 未配置 Supabase，回退 GitHub data-sync 拉取...', flush=True)
-        for filename in ['users.json', 'study_data.json', 'admin.json', 'groups.json', 'messages.json', 'dingtalk.json', 'beta.json']:
-            rel_path = f'data/{filename}'
-            local_path = os.path.join(DATA_DIR, filename)
-            if filename == 'study_data.json':
-                # 数据恢复：从 7/21 坏部署前的干净备份加载学习记录，避免 data-sync HEAD 污染回灌
-                remote_data = github_api_get_commit(rel_path, _CLEAN_STUDY_DATA_REF)
-                source = '干净备份'
-                if remote_data is None:
-                    remote_data = github_api_get(rel_path)
-                    source = 'data-sync HEAD'
-                if remote_data is not None:
-                    for _eid, _rec in remote_data.items():
-                        _sanitize_study_record(_rec)
-                    with open(local_path, 'w', encoding='utf-8') as f:
-                        json.dump(remote_data, f, ensure_ascii=False, indent=2)
-                    print(f'[Sync] 已从{source}恢复并自愈 {filename} ({len(remote_data)} users)', flush=True)
-                continue
-            remote_data = github_api_get(rel_path)
-            if remote_data is not None:
-                with open(local_path, 'w', encoding='utf-8') as f:
-                    json.dump(remote_data, f, ensure_ascii=False, indent=2)
+    # ===== 7/20 整体回滚：强制从干净备份加载，彻底甩掉所有污染 =====
+    # 优先级：本地 data-clean/ 目录（随代码部署，Render 沙箱不依赖外网）> GitHub f1a5eed7 > data-sync HEAD
+    # 扫描器已污染 Supabase/data-sync 的多个字段，本次回滚一律以干净备份为准。稳定后可恢复。
+    print('[回滚] 强制从干净备份加载，忽略 Supabase/远程脏数据...', flush=True)
+    _clean_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data-clean')
+    def _load_clean(name):
+        _p = os.path.join(_clean_dir, name + '.json')
+        if os.path.exists(_p):
+            try:
+                with open(_p, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+            except Exception as e:
+                print(f'[回滚] 读本地干净备份 {name} 失败: {e}', flush=True)
+        _gh = github_api_get_commit(f'data/{name}.json', _CLEAN_STUDY_DATA_REF)
+        if _gh is not None:
+            return _gh
+        return github_api_get(f'data/{name}.json')
+    _clean_sd = _load_clean('study_data') or {}
+    with open(os.path.join(DATA_DIR, 'study_data.json'), 'w', encoding='utf-8') as f:
+        json.dump(_clean_sd, f, ensure_ascii=False, indent=2)
+    for key in ['users', 'admin', 'groups', 'messages', 'dingtalk', 'beta']:
+        _cd = _load_clean(key)
+        if _cd is not None:
+            with open(os.path.join(DATA_DIR, key + '.json'), 'w', encoding='utf-8') as f:
+                json.dump(_cd, f, ensure_ascii=False, indent=2)
+    print(f'[回滚] 已从干净备份恢复 {len(_clean_sd)} 学员 + 全部配置', flush=True)
 
     # 本地文件不存在时创建默认值
     users_path = os.path.join(DATA_DIR, 'users.json')
