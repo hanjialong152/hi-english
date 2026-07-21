@@ -1410,6 +1410,9 @@ def handle_save_study_data():
         sd = unify_checkins(sd)  # 先把传入数据里的 basic/business.checkIns 归并到顶层
         merged = merge_study_data(all_data.get(empid), sd)
         unify_checkins(merged)  # 收敛为单一顶层 checkIns，清理 sub-field
+        # 关键：打卡完成状态必须由服务端根据「当日累计≥900秒」派生，不信任客户端传入的布尔。
+        # 这能防止扫描器把 completed 直接标为 true，也能在误操作/测试后自动修正。
+        _sanitize_study_record(merged)
         all_data[empid] = merged
         # 本地原子写 + 标脏 + 防抖兜底
         save_json(study_path, all_data)
