@@ -76,12 +76,12 @@ _gh_sig_lock = threading.Lock()
 # ============================================================
 # 7/21 坏部署前的干净学习记录备份 commit（data-sync 分支）
 _CLEAN_STUDY_DATA_REF = 'f1a5eed7041937312636fa51e56f1709557d2c70'
-# 紧急：暂停 study_data.json 向 GitHub data-sync 的自动回写，防止旧客户端/扫描器持续污染远程备份。
-# 本地文件仍正常保存，服务运行期间数据可用；恢复同步前需先确认客户端已全部刷新且打卡数据正常。
-_PAUSE_STUDY_DATA_GH_SYNC = True
-# 永久关闭 Supabase：扫描器已污染 Supabase 库，且 Supabase 在国内访问不稳定、DNS 偶发失效。
-# 关闭后所有读写走本地文件 + GitHub data-sync 兜底，不再依赖 Supabase。
-_DISABLE_SUPABASE_WRITE = True
+# 2026-07-21 后恢复：study_data 恢复向 GitHub data-sync 自动回写（作为 Supabase 之外的二级兜底）。
+_PAUSE_STUDY_DATA_GH_SYNC = False
+# 2026-07-21 后恢复：Supabase 作为学习数据主持久层（按学员单行 UPSERT，并发安全、部署存活）。
+# 安全约束（7/21 教训）：Supabase 仅写穿 + 启动读取时逐行去污染校验；绝不作为"覆盖干净备份"的权威源。
+# 国内 DNS 偶发不稳 → 代码已做连通性探针 + 静默降级（Supabase 不可达时自动退回本地+GitHub）。
+_DISABLE_SUPABASE_WRITE = False
 
 # 本地干净备份目录（随代码部署到 Render，不依赖外网访问 GitHub）
 CLEAN_BACKUP_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data-clean')
@@ -193,7 +193,49 @@ def sb_get_config(key, default=None):
             return res.data[0]['value']
     except Exception as e:
         print(f'[Supabase] get config {key} 失败: {e}', flush=True)
-    return default
+        return default
+
+
+def _load_study_authoritative():
+    """学习数据加载优先级：Supabase(逐行去污染校验) -> GitHub data-sync -> 7/20 干净基线。
+
+    7/21 教训硬编码：Supabase 仅作为持久镜像读取，每行先用 _is_suspicious_str 严格扫描整行 JSON，
+    命中注入特征（如 SQL 关键字+危险字符）的整行直接丢弃，绝不并入本地，避免污染数据回流。
+    当 Supabase 不可达/无干净数据时，回退到 GitHub data-sync 最新，再回退到 7/20 干净基线。"""
+    if supabase:
+        try:
+            rows = sb_get_all_study()
+            clean = {}
+            polluted = 0
+            for empid, data in (rows or {}).items():
+                try:
+                    raw = json.dumps(data, ensure_ascii=False)
+                except Exception:
+                    polluted += 1
+                    continue
+                if _is_suspicious_str(raw):
+                    polluted += 1
+                    continue
+                v = _validate_study_data(data)
+                if v:
+                    clean[empid] = v
+            if clean:
+                print(f'[加载] 从 Supabase 载入 {len(clean)} 学员学习数据（丢弃污染 {polluted} 行）', flush=True)
+                return clean
+            print(f'[加载] Supabase 无干净学习数据（污染/空 {polluted} 行），回退基线', flush=True)
+        except Exception as e:
+            print(f'[加载] Supabase 读取失败，回退: {e}', flush=True)
+    # 回退 1：GitHub data-sync 最新
+    gh = github_api_get('data/study_data.json')
+    if gh:
+        print('[加载] 从 GitHub data-sync 载入学习数据', flush=True)
+        return gh
+    # 回退 2：7/20 干净基线 commit
+    base = github_api_get_commit('data/study_data.json', _CLEAN_STUDY_DATA_REF)
+    if base:
+        print('[加载] 从 7/20 干净基线载入学习数据', flush=True)
+        return base
+    return {}
 
 
 # ============================================================
@@ -998,7 +1040,7 @@ def init_data_files():  # v-restart-trigger-20260711
         if _gh is not None:
             return _gh
         return github_api_get(f'data/{name}.json')
-    _clean_sd = _load_clean('study_data') or {}
+    _clean_sd = _load_study_authoritative() or {}
     with open(os.path.join(DATA_DIR, 'study_data.json'), 'w', encoding='utf-8') as f:
         json.dump(_clean_sd, f, ensure_ascii=False, indent=2)
     for key in ['users', 'admin', 'groups', 'messages', 'dingtalk', 'beta']:
@@ -1601,6 +1643,14 @@ def handle_save_study_data():
     except Exception as e2:
         err_detail = (err_detail or '') + f'; GitHub回退异常:{e2}'
         print(f'[GitHub回退] study_data 失败: {e2}', flush=True)
+    # 写穿 Supabase（主持久层，7/21 后恢复）：同步写入，确保 200 前已落地，Render 休眠/部署不丢。
+    if supabase and not _DISABLE_SUPABASE_WRITE:
+        try:
+            sb_upsert_study(empid, all_data.get(empid))
+            persisted = True
+        except Exception as e:
+            err_detail = (err_detail or '') + f'; Supabase写穿失败:{e}'
+            print(f'[Supabase] 写穿失败(本地+GitHub已兜底): {e}', flush=True)
     return jsonify({'success': True, 'persisted': bool(persisted), 'dataVersion': _STUDY_DATA_VERSION, 'sb_debug': err_detail, 'sb_connected': bool(supabase)})
 
 
@@ -1655,6 +1705,11 @@ def handle_admin_login():
     body = request.json or {}
     username = (body.get('username') or '').strip()
     password = body.get('password', '')
+    # 防爆破：按 IP 滑动窗口限流（宽松，不误伤本人）
+    client_ip = request.headers.get('X-Forwarded-For', request.remote_addr or '').split(',')[0].strip() or 'unknown'
+    allowed, retry = check_rate_limit('adminlogin:' + client_ip, max_per_second=1, max_per_minute=10)
+    if not allowed:
+        return jsonify({'success': False, 'error': f'登录过于频繁，请 {retry} 秒后再试'}), 429
     admin = load_json(os.path.join(DATA_DIR, 'admin.json'))
     admin_user = admin.get(username)
     if not admin_user or not verify_password(password, admin_user['password_hash'], admin_user['salt']):
@@ -1664,7 +1719,7 @@ def handle_admin_login():
         admin_user['session_token'] = token
         admin_user['last_login'] = int(time.time() * 1000)
         save_json(os.path.join(DATA_DIR, 'admin.json'), admin)
-    return jsonify({'success': True, 'token': token})
+    return jsonify({'success': True, 'token': token, 'mustChangePassword': bool(admin_user.get('must_change_password', False))})
 
 
 @app.route('/api/admin-change-password', methods=['POST'])
@@ -1686,6 +1741,7 @@ def handle_admin_change_password():
         admin_user['password_hash'] = hashed
         admin_user['salt'] = salt
         admin_user['last_password_change'] = int(time.time() * 1000)
+        admin_user['must_change_password'] = False
         save_json(os.path.join(DATA_DIR, 'admin.json'), admin)
     return jsonify({'success': True, 'message': '密码修改成功'})
 
