@@ -200,10 +200,13 @@
           "b_1_1": true,
           "b_1_3": true,
           "b_1_2": true,
-          "b_1_4": true
+          "b_1_4": true,
+          "b_1_5": true
         }
       },
-      "audioDoneDate": {}
+      "audioDoneDate": {
+        "1": "2026-07-21"
+      }
     },
     "checkIns": [
       {
@@ -213,7 +216,7 @@
       },
       {
         "date": "2026-07-21",
-        "seconds": 127,
+        "seconds": 128,
         "completed": false
       }
     ]
