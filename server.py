@@ -199,62 +199,54 @@ def sb_get_config(key, default=None):
 _study_load_debug = ''
 
 def _load_study_authoritative():
-    """学习数据加载优先级：Supabase(逐行去污染校验) -> GitHub data-sync -> 本地 data-clean -> 7/20 干净基线。
+    """学习数据加载：以『本地 data-clean 富基线』为底线，叠加『Supabase/GitHub 运行期数据』。
 
-    7/21 教训硬编码：Supabase 仅作为持久镜像读取，每行先用 _is_suspicious_str 严格扫描整行 JSON，
-    命中注入特征（如 SQL 关键字+危险字符）的整行直接丢弃，绝不并入本地，避免污染数据回流。
-    当 Supabase 不可达/无干净数据时，回退到 GitHub data-sync 最新，再回退到本地 data-clean，最后 7/20 干净基线。"""
+    设计要点（根治 7/21 后空加载竞态）：
+    - 底线 = 随代码部署的本地 data-clean/study_data.json（必然是 7/20 富基线，零网络依赖）。
+      即使 GitHub/Supabase 在某用户上被并发写入污染成空，底线仍能补回该用户数据，绝不整体清空。
+    - 叠加层 = Supabase（主持久层，逐行去污染）+ GitHub data-sync（运行期写穿）。
+      运行期新增/变更优先采用叠加层；叠加层为空时保留底线。
+    - 7/21 教训：Supabase 仅作镜像读取，每行先 _is_suspicious_str 扫描，命中注入特征整行丢弃。"""
     global _study_load_debug
-    if supabase:
-        try:
-            rows = sb_get_all_study()
-            clean = {}
-            polluted = 0
-            for empid, data in (rows or {}).items():
-                try:
-                    raw = json.dumps(data, ensure_ascii=False)
-                except Exception:
-                    polluted += 1
-                    continue
-                if _is_suspicious_str(raw):
-                    polluted += 1
-                    continue
-                v = _validate_study_data(data)
-                if v:
-                    clean[empid] = v
-            if clean:
-                _study_load_debug = f'Supabase({len(clean)}行,丢弃{polluted})'
-                print(f'[加载] 从 Supabase 载入 {len(clean)} 学员学习数据（丢弃污染 {polluted} 行）', flush=True)
-                return clean
-            print(f'[加载] Supabase 无干净学习数据（污染/空 {polluted} 行），回退基线', flush=True)
-        except Exception as e:
-            print(f'[加载] Supabase 读取失败，回退: {e}', flush=True)
-    # 回退 1：GitHub data-sync 最新（运行期写穿落盘处，含最新进度）
-    gh = github_api_get('data/study_data.json')
-    if gh:
-        _study_load_debug = f'GitHub-data-sync({len(gh)}用户)'
-        print('[加载] 从 GitHub data-sync 载入学习数据', flush=True)
-        return gh
-    # 回退 2：本地 data-clean（随代码部署，零网络依赖，防止启动期 GitHub 不可达导致空加载丢数据）
+    # 1) 底线：本地 data-clean
+    base = {}
     _lc = os.path.join(CLEAN_BACKUP_DIR, 'study_data.json')
     if os.path.exists(_lc):
         try:
             with open(_lc, 'r', encoding='utf-8') as f:
-                _lcd = json.load(f)
-            if _lcd:
-                _study_load_debug = f'本地data-clean({len(_lcd)}用户)'
-                print('[加载] 从本地 data-clean 载入学习数据（GitHub 不可达兜底）', flush=True)
-                return _lcd
+                base = json.load(f) or {}
         except Exception as e:
             print(f'[加载] 本地 data-clean 读取失败: {e}', flush=True)
-    # 回退 3：7/20 干净基线 commit
-    base = github_api_get_commit('data/study_data.json', _CLEAN_STUDY_DATA_REF)
-    if base:
-        _study_load_debug = f'7/20基线commit({len(base)}用户)'
-        print('[加载] 从 7/20 干净基线载入学习数据', flush=True)
-        return base
-    _study_load_debug = '全失败->空'
-    return {}
+    # 2) 叠加层收集
+    overlay = {}
+    if supabase:
+        try:
+            rows = sb_get_all_study()
+            for empid, data in (rows or {}).items():
+                try:
+                    raw = json.dumps(data, ensure_ascii=False)
+                except Exception:
+                    continue
+                if _is_suspicious_str(raw):
+                    continue
+                v = _validate_study_data(data)
+                if v:
+                    overlay[empid] = v
+        except Exception as e:
+            print(f'[加载] Supabase 读取失败: {e}', flush=True)
+    gh = github_api_get('data/study_data.json')
+    if gh:
+        for empid, data in gh.items():
+            if data:
+                overlay[empid] = data
+    # 3) 合并：底线打底，叠加层覆盖（运行期优先），叠加层为空则保留底线
+    result = dict(base)
+    for empid, d in overlay.items():
+        if d:
+            result[empid] = merge_study_data(base.get(empid), d)
+    _study_load_debug = f'底线={len(base)} 叠加={len(overlay)} 结果={len(result)}'
+    print(f'[加载] 学习数据：底线 {len(base)} + 叠加 {len(overlay)} = 结果 {len(result)} 用户', flush=True)
+    return result
 
 
 # ============================================================
