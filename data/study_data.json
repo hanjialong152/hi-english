@@ -347,7 +347,7 @@
         "5"
       ],
       "monthlyTests": [],
-      "readIndex": 8,
+      "readIndex": 4,
       "speakScores": {
         "1": {
           "ex1": 89.0,
@@ -388,7 +388,7 @@
         },
         "9": {
           "ex1": 77.0,
-          "ex2": 7.0,
+          "ex2": 63.0,
           "phrase": 80.0
         }
       },
