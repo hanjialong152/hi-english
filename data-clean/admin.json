@@ -7,6 +7,6 @@
     "session_token": "",
     "last_login": 0,
     "last_password_change": 0,
-    "must_change_password": true
+    "must_change_password": false
   }
 }
