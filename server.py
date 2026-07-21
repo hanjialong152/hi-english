@@ -240,6 +240,11 @@ _PAUSE_STUDY_DATA_GH_SYNC = True
 # 本次整体回滚期间只使用 f1a5eed7 干净备份 + 本地文件，Supabase 不参与读写。
 _DISABLE_SUPABASE_WRITE = True
 
+# 回滚诊断标记：用于确认 Render 实例实际运行的是哪份代码
+SERVER_ROLLBACK_MARKER = 'ROLLBACK-20260721-FINAL-v4'
+# 本地干净备份目录（随代码部署到 Render，不依赖外网访问 GitHub）
+CLEAN_BACKUP_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data-clean')
+
 # 钉钉推送限流/去重：防止催学提醒被循环调用或前端重试疯狂刷屏
 _dingtalk_last_push = {'ts': 0, 'sig': None}
 _dingtalk_lock = threading.Lock()
@@ -668,7 +673,7 @@ def init_data_files():  # v-restart-trigger-20260711
     # 优先级：本地 data-clean/ 目录（随代码部署，Render 沙箱不依赖外网）> GitHub f1a5eed7 > data-sync HEAD
     # 扫描器已污染 Supabase/data-sync 的多个字段，本次回滚一律以干净备份为准。稳定后可恢复。
     print('[回滚] 强制从干净备份加载，忽略 Supabase/远程脏数据...', flush=True)
-    _clean_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data-clean')
+    _clean_dir = CLEAN_BACKUP_DIR
     def _load_clean(name):
         _p = os.path.join(_clean_dir, name + '.json')
         if os.path.exists(_p):
@@ -1722,6 +1727,7 @@ def keepalive_endpoint():
     return jsonify({
         'status': 'ok',
         'time': now,
+        'marker': SERVER_ROLLBACK_MARKER,
         'keepalive': {
             'started_at': _keepalive_status['started_at'],
             'last_ping_time': last_ping,
@@ -1729,6 +1735,12 @@ def keepalive_endpoint():
             'last_ping_status': _keepalive_status['last_ping_status'],
             'ping_count': _keepalive_status['ping_count'],
             'self_ping_url': SELF_PING_URL
+        },
+        'diag': {
+            'supabase_enabled': bool(supabase),
+            'clean_backup_dir': CLEAN_BACKUP_DIR,
+            'clean_study_exists': os.path.exists(os.path.join(CLEAN_BACKUP_DIR, 'study_data.json')),
+            'clean_users_exists': os.path.exists(os.path.join(CLEAN_BACKUP_DIR, 'users.json'))
         }
     })
 
