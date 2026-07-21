@@ -237,6 +237,10 @@ _CLEAN_STUDY_DATA_REF = 'f1a5eed7041937312636fa51e56f1709557d2c70'
 # 本地文件仍正常保存，服务运行期间数据可用；恢复同步前需先确认客户端已全部刷新到 v52 且打卡数据正常。
 _PAUSE_STUDY_DATA_GH_SYNC = True
 
+# 钉钉推送限流/去重：防止催学提醒被循环调用或前端重试疯狂刷屏
+_dingtalk_last_push = {'ts': 0, 'sig': None}
+_dingtalk_lock = threading.Lock()
+
 
 def github_api_put(path, data, timeout=15):
     """推送文件到 GitHub data-sync 分支（调用方负责用 github_push_lock 串行化）"""
@@ -357,6 +361,11 @@ def _is_valid_checkin_date(d):
     return True
 
 
+# 7/20 客户端规则：单日累计学习满 15 分钟(900秒)记为「已完成打卡」。
+# 服务端统一按 seconds 派生 completed，不信任客户端传入的布尔，
+# 彻底杜绝旧客户端/扫描器把全部日期标 completed 造成的回写污染。
+_COMPLETED_SECONDS_THRESHOLD = 900
+
 def _merge_stage(existing, incoming):
     """合并单个阶段（basic/business）的学习记录：并集 + 取最大值，绝不互相覆盖。"""
     if not existing:
@@ -380,7 +389,8 @@ def _merge_stage(existing, incoming):
         if k not in ld or (str(v or '') > str(ld[k] or '')):
             ld[k] = v
     out['learnedDates'] = ld
-    # checkIns：按 date 合并，seconds 取最大、completed 取或（过滤非法日期，防注入）
+    # checkIns：按 date 合并，seconds 取最大；completed 由服务端按「当日累计≥900秒」派生，
+    # 不信任客户端传入的 completed 布尔（防旧客户端/扫描器把全部日期标 completed 回写污染）。
     ci = {}
     for arr in (existing.get('checkIns') or []) + (incoming.get('checkIns') or []):
         if not isinstance(arr, dict):
@@ -391,9 +401,9 @@ def _merge_stage(existing, incoming):
             continue
         cur = ci.get(d, {'date': d, 'seconds': 0, 'completed': False})
         cur['seconds'] = max(int(cur.get('seconds') or 0), int(arr.get('seconds') or 0))
-        if arr.get('completed'):
-            cur['completed'] = True
         ci[d] = cur
+    for _d, _cur in ci.items():
+        _cur['completed'] = int(_cur.get('seconds') or 0) >= _COMPLETED_SECONDS_THRESHOLD
     out['checkIns'] = list(ci.values())
     # speakScores：深层合并，分数取最大
     ss = dict(existing.get('speakScores') or {})
@@ -444,7 +454,7 @@ def merge_study_data(existing, incoming):
     out = dict(existing)
     for stage in ('basic', 'business'):
         out[stage] = _merge_stage(existing.get(stage), incoming.get(stage))
-    # 顶层 checkIns：同样按 date 合并（过滤非法日期，防注入）
+    # 顶层 checkIns：同样按 date 合并（过滤非法日期，防注入）；completed 由 seconds 派生
     ci = {}
     for arr in (existing.get('checkIns') or []) + (incoming.get('checkIns') or []):
         if not isinstance(arr, dict):
@@ -455,9 +465,9 @@ def merge_study_data(existing, incoming):
             continue
         cur = ci.get(d, {'date': d, 'seconds': 0, 'completed': False})
         cur['seconds'] = max(int(cur.get('seconds') or 0), int(arr.get('seconds') or 0))
-        if arr.get('completed'):
-            cur['completed'] = True
         ci[d] = cur
+    for _d, _cur in ci.items():
+        _cur['completed'] = int(_cur.get('seconds') or 0) >= _COMPLETED_SECONDS_THRESHOLD
     out['checkIns'] = list(ci.values())
     return out
 
@@ -483,9 +493,9 @@ def unify_checkins(sd):
             continue
         cur = ci.get(d, {'date': d, 'seconds': 0, 'completed': False})
         cur['seconds'] = max(int(cur.get('seconds') or 0), int(arr.get('seconds') or 0))
-        if arr.get('completed'):
-            cur['completed'] = True
         ci[d] = cur
+    for _d, _cur in ci.items():
+        _cur['completed'] = int(_cur.get('seconds') or 0) >= _COMPLETED_SECONDS_THRESHOLD
     sd['checkIns'] = list(ci.values())
     for stage in ('basic', 'business'):
         s = sd.get(stage)
@@ -640,13 +650,27 @@ def init_data_files():  # v-restart-trigger-20260711
                         json.dump(remote, f, ensure_ascii=False, indent=2)
                 except Exception as e:
                     print(f'[Supabase] 写本地缓存 {key} 失败: {e}', flush=True)
-        all_sd = sb_get_all_study()
+        all_sd = sb_get_all_study() or {}
+        # 回滚保护：用 7/21 坏部署前的干净备份（f1a5eed7）把「存量学员」的打卡记录
+        # 整体回滚到 7/20 干净基线，仅保留备份中不存在的新学员数据，
+        # 彻底杜绝 Supabase / 客户端脏数据（打卡全 completed、SSTI 注入）回灌。
+        # 学习进度（已学/已掌握/时长）予以保留，仅重置打卡字段。
+        _clean_sd = github_api_get_commit('data/study_data.json', _CLEAN_STUDY_DATA_REF)
+        if _clean_sd:
+            for _eid, _csd in _clean_sd.items():
+                if _eid in all_sd and isinstance(all_sd[_eid], dict):
+                    all_sd[_eid]['checkIns'] = _csd.get('checkIns', [])
+                    for _stage in ('basic', 'business'):
+                        if isinstance(all_sd[_eid].get(_stage), dict) and isinstance(_csd.get(_stage), dict):
+                            all_sd[_eid][_stage]['checkIns'] = _csd[_stage].get('checkIns', [])
+                elif _eid not in all_sd:
+                    all_sd[_eid] = _csd
         try:
             # 关键修复：Supabase 读空/失败时不写空本地文件，防止把空数据回推覆盖真实数据
             if all_sd:
                 with open(os.path.join(DATA_DIR, 'study_data.json'), 'w', encoding='utf-8') as f:
                     json.dump(all_sd, f, ensure_ascii=False, indent=2)
-                print(f'[Supabase] 已加载 {len(all_sd)} 个学员学习数据', flush=True)
+                print(f'[Supabase] 已加载并回滚至 7/20 干净基线 {len(all_sd)} 个学员学习数据', flush=True)
             elif GITHUB_TOKEN:
                 # Supabase 为空/失败 → 回退 GitHub 干净备份加载学习数据
                 # 优先用 7/21 坏部署前的 f1a5eed7 备份；失败则读 data-sync HEAD（已提前重置为干净）
@@ -1048,31 +1072,47 @@ def handle_send_message():
         cfg = load_json(os.path.join(DATA_DIR, 'dingtalk.json'))
         webhook = cfg.get('webhook', '') if isinstance(cfg, dict) else ''
         if webhook:
-            users = load_json(os.path.join(DATA_DIR, 'users.json'))
-            study_data_all = load_json(os.path.join(DATA_DIR, 'study_data.json'))
-            if not isinstance(study_data_all, dict):
-                study_data_all = {}
-            rows = []
-            for empid in targets:
-                eid = str(empid).strip()
-                if not eid:
-                    continue
-                u = users.get(eid) if isinstance(users, dict) else None
-                name = u.get('name', '') if u else eid
-                sd = study_data_all.get(eid)
-                days = 0
-                if isinstance(sd, dict):
-                    checkins = sd.get('checkIns') or []
-                    days = sum(1 for c in checkins if isinstance(c, dict) and c.get('completed'))
-                rows.append((name, eid, days))
-            # 按打卡天数升序（0、1、2…），最该催的排在前面
-            rows.sort(key=lambda r: r[2])
-            # 北京时间 (UTC+8)
-            bj_now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=8)))
-            time_str = bj_now.strftime('%Y-%m-%d %H:%M')
-            threading.Thread(target=push_dingtalk_card,
-                             args=(webhook, title, content, rows, time_str),
-                             daemon=True).start()
+            # 防刷屏：全局 15 秒最小推送间隔 + 同内容 60 秒内去重，
+            # 避免催学提醒被循环调用/前端重试疯狂推送到钉钉群。
+            _now = time.time()
+            _sig = hashlib.md5((title + '|' + content + '|' + '|'.join(sorted(str(t) for t in targets))).encode('utf-8')).hexdigest()
+            _skip = False
+            with _dingtalk_lock:
+                if _now - _dingtalk_last_push['ts'] < 15:
+                    _skip = True
+                    print('[DingTalk] 限流：距上次推送不足15秒，跳过', flush=True)
+                elif _dingtalk_last_push.get('sig') == _sig and _now - _dingtalk_last_push['ts'] < 60:
+                    _skip = True
+                    print('[DingTalk] 去重：60秒内相同内容已推送，跳过', flush=True)
+                else:
+                    _dingtalk_last_push['ts'] = _now
+                    _dingtalk_last_push['sig'] = _sig
+            if not _skip:
+                users = load_json(os.path.join(DATA_DIR, 'users.json'))
+                study_data_all = load_json(os.path.join(DATA_DIR, 'study_data.json'))
+                if not isinstance(study_data_all, dict):
+                    study_data_all = {}
+                rows = []
+                for empid in targets:
+                    eid = str(empid).strip()
+                    if not eid:
+                        continue
+                    u = users.get(eid) if isinstance(users, dict) else None
+                    name = u.get('name', '') if u else eid
+                    sd = study_data_all.get(eid)
+                    days = 0
+                    if isinstance(sd, dict):
+                        checkins = sd.get('checkIns') or []
+                        days = sum(1 for c in checkins if isinstance(c, dict) and c.get('completed'))
+                    rows.append((name, eid, days))
+                # 按打卡天数升序（0、1、2…），最该催的排在前面
+                rows.sort(key=lambda r: r[2])
+                # 北京时间 (UTC+8)
+                bj_now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=8)))
+                time_str = bj_now.strftime('%Y-%m-%d %H:%M')
+                threading.Thread(target=push_dingtalk_card,
+                                 args=(webhook, title, content, rows, time_str),
+                                 daemon=True).start()
 
     return jsonify({'success': True, 'count': count, 'time': server_time})
 
