@@ -207,6 +207,33 @@ def github_api_get(path):
     return None
 
 
+def github_api_get_commit(path, ref):
+    """从 GitHub 指定 commit/ref 获取文件内容（用于数据恢复，绕过当前被污染的 data-sync HEAD）"""
+    if not GITHUB_TOKEN:
+        return None
+    url = f'https://api.github.com/repos/{GITHUB_REPO}/contents/{path}?ref={ref}'
+    req = urllib.request.Request(url)
+    req.add_header('Authorization', f'token {GITHUB_TOKEN}')
+    req.add_header('Accept', 'application/vnd.github.v3+json')
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            result = json.loads(resp.read().decode('utf-8'))
+            content = result.get('content', '')
+            if content:
+                content_clean = content.replace('\n', '')
+                decoded = base64.b64decode(content_clean).decode('utf-8')
+                return json.loads(decoded)
+    except urllib.error.HTTPError as e:
+        print(f'[Sync] 获取 {path}@{ref} 失败: HTTP {e.code}', flush=True)
+    except Exception as e:
+        print(f'[Sync] 获取 {path}@{ref} 异常: {e}', flush=True)
+    return None
+
+
+# 7/21 坏部署前的干净学习记录备份 commit（data-sync 分支）
+_CLEAN_STUDY_DATA_REF = 'f1a5eed7041937312636fa51e56f1709557d2c70'
+
+
 def github_api_put(path, data, timeout=15):
     """推送文件到 GitHub data-sync 分支（调用方负责用 github_push_lock 串行化）"""
     if not GITHUB_TOKEN:
@@ -617,12 +644,13 @@ def init_data_files():  # v-restart-trigger-20260711
                     json.dump(all_sd, f, ensure_ascii=False, indent=2)
                 print(f'[Supabase] 已加载 {len(all_sd)} 个学员学习数据', flush=True)
             elif GITHUB_TOKEN:
-                # Supabase 为空/失败 → 回退 GitHub data-sync 加载学习数据
-                gh_sd = github_api_get('data/study_data.json')
+                # Supabase 为空/失败 → 回退 GitHub 干净备份加载学习数据
+                # 使用 7/21 坏部署前的 f1a5eed7 备份，避免 data-sync HEAD 被污染后把脏数据带回
+                gh_sd = github_api_get_commit('data/study_data.json', _CLEAN_STUDY_DATA_REF)
                 if gh_sd:
                     with open(os.path.join(DATA_DIR, 'study_data.json'), 'w', encoding='utf-8') as f:
                         json.dump(gh_sd, f, ensure_ascii=False, indent=2)
-                    print(f'[GitHub回退] 已加载 {len(gh_sd)} 个学员学习数据', flush=True)
+                    print(f'[GitHub回退] 已从干净备份加载 {len(gh_sd)} 个学员学习数据', flush=True)
                 else:
                     print('[Supabase] study_data 为空且 GitHub 无数据，保留本地现有缓存', flush=True)
             else:
@@ -634,22 +662,19 @@ def init_data_files():  # v-restart-trigger-20260711
         print('[Sync] 未配置 Supabase，回退 GitHub data-sync 拉取...', flush=True)
         for filename in ['users.json', 'study_data.json', 'admin.json', 'groups.json', 'messages.json', 'dingtalk.json', 'beta.json']:
             rel_path = f'data/{filename}'
-            remote_data = github_api_get(rel_path)
             local_path = os.path.join(DATA_DIR, filename)
-            if remote_data is not None:
-                if filename == 'study_data.json' and os.path.exists(local_path):
-                    local_data = load_json(local_path) or {}
-                    for uid, remote_sd in (remote_data or {}).items():
-                        local_sd = local_data.get(uid) or {}
-                        merged_sd = merge_study_data(local_sd, remote_sd)
-                        merged_sd = unify_checkins(merged_sd)
-                        local_data[uid] = merged_sd
-                    with open(local_path, 'w', encoding='utf-8') as f:
-                        json.dump(local_data, f, ensure_ascii=False, indent=2)
-                    print(f'[Sync] 已合并 {filename} ({len(local_data)} users)', flush=True)
-                else:
+            if filename == 'study_data.json':
+                # 数据恢复：从 7/21 坏部署前的干净备份加载学习记录，避免 data-sync HEAD 污染回灌
+                remote_data = github_api_get_commit(rel_path, _CLEAN_STUDY_DATA_REF)
+                if remote_data is not None:
                     with open(local_path, 'w', encoding='utf-8') as f:
                         json.dump(remote_data, f, ensure_ascii=False, indent=2)
+                    print(f'[Sync] 已从干净备份恢复 {filename} ({len(remote_data)} users)', flush=True)
+                continue
+            remote_data = github_api_get(rel_path)
+            if remote_data is not None:
+                with open(local_path, 'w', encoding='utf-8') as f:
+                    json.dump(remote_data, f, ensure_ascii=False, indent=2)
 
     # 本地文件不存在时创建默认值
     users_path = os.path.join(DATA_DIR, 'users.json')
