@@ -7,13 +7,14 @@
 // v24: 音频缓存版本提升，强制刷新重新生成的发音MP3
 // v22: 移动端通知栏推送（showNotification + notificationclick）
 // v21: 修复分组数据持久化 + 搜索栏禁止浏览器自动填充
+// v52: 回滚7/20基线后强制刷新缓存（清除7/21坏版本v51缓存）
 // v50: 补卡UI定稿（选中=蓝底白字实心；今天边框选中他日期时弱化为淡蓝虚线）
 // v49: 补卡UI再修（按钮日期换第二行/今天格子可点击取消选中/17日细框取消）
 // v48: 补卡2项UI修复（日历选中框跟随点击日期/去补卡按钮日期字体缩小防换行）
 // v47: 4项Bug修复（补卡入口/禁用拦截/状态标签/报表日期联动）强制刷新缓存
 
-var CACHE_VERSION = 'hi-english-v50';
-var CORE_CACHE = 'hi-english-core-v50';
+var CACHE_VERSION = 'hi-english-v52';
+var CORE_CACHE = 'hi-english-core-v52';
 var AUDIO_CACHE = 'hi-english-audio-v31';
 
 var CORE_FILES = [
