@@ -236,6 +236,9 @@ _CLEAN_STUDY_DATA_REF = 'f1a5eed7041937312636fa51e56f1709557d2c70'
 # 紧急：暂停 study_data.json 向 GitHub data-sync 的自动回写，防止旧客户端/扫描器持续污染远程备份。
 # 本地文件仍正常保存，服务运行期间数据可用；恢复同步前需先确认客户端已全部刷新到 v52 且打卡数据正常。
 _PAUSE_STUDY_DATA_GH_SYNC = True
+# 紧急：禁止写 Supabase。扫描器已污染 Supabase 库，写回会让脏数据永久化；
+# 本次整体回滚期间只使用 f1a5eed7 干净备份 + 本地文件，Supabase 不参与读写。
+_DISABLE_SUPABASE_WRITE = True
 
 # 钉钉推送限流/去重：防止催学提醒被循环调用或前端重试疯狂刷屏
 _dingtalk_last_push = {'ts': 0, 'sig': None}
@@ -646,7 +649,7 @@ def save_json(filepath, data):
     if fname == 'study_data.json':
         return  # 学习数据由 POST 路由单独 UPSERT 单用户行
     cfg_key = fname[:-5] if fname.endswith('.json') else fname  # 去 .json 后缀
-    if supabase:
+    if supabase and not _DISABLE_SUPABASE_WRITE:
         sb_upsert_config(cfg_key, data)
     elif GITHUB_TOKEN:
         # Supabase 不可达 → 回退 GitHub（可靠兜底，避免配置变更随部署丢失）
@@ -662,54 +665,19 @@ def init_data_files():  # v-restart-trigger-20260711
     本地文件仅作运行时缓存，Render 重启/部署后从 Supabase 重建，永不丢失。
     未配置 Supabase 时回退到 GitHub data-sync（兼容开发/迁移过渡）。"""
     if supabase:
-        print('[Supabase] 从数据库加载最新数据到本地缓存...', flush=True)
+        # ===== 7/20 整体回滚：强制从干净备份 f1a5eed7 加载，彻底甩掉所有污染 =====
+        # 扫描器已污染 Supabase 库（mastered/audioDoneDate/users/groups 均含注入字符串），
+        # 本次回滚一律以 f1a5eed7 干净备份为准，忽略 Supabase 脏数据。稳定后可恢复。
+        print('[回滚] 忽略 Supabase 脏数据，强制从 f1a5eed7 干净备份加载...', flush=True)
+        _clean_sd = github_api_get_commit('data/study_data.json', _CLEAN_STUDY_DATA_REF) or {}
+        with open(os.path.join(DATA_DIR, 'study_data.json'), 'w', encoding='utf-8') as f:
+            json.dump(_clean_sd, f, ensure_ascii=False, indent=2)
         for key in ['users', 'admin', 'groups', 'messages', 'dingtalk', 'beta']:
-            remote = sb_get_config(key)
-            # 关键修复：app_config 为空时回退读 GitHub users.json，
-            # 避免 Supabase 配置后丢失已注册的学员账号（之前误创建默认张三/李四/王五）
-            if remote is None and GITHUB_TOKEN:
-                gh_data = github_api_get(f'data/{key}.json')
-                if gh_data is not None:
-                    remote = gh_data
-                    # 同步写入 app_config，之后启动不再依赖 GitHub
-                    sb_upsert_config(key, remote)
-                    print(f'[Supabase] app_config[{key}] 为空，回退 GitHub 加载并写库', flush=True)
-            if remote is not None:
-                try:
-                    with open(os.path.join(DATA_DIR, key + '.json'), 'w', encoding='utf-8') as f:
-                        json.dump(remote, f, ensure_ascii=False, indent=2)
-                except Exception as e:
-                    print(f'[Supabase] 写本地缓存 {key} 失败: {e}', flush=True)
-        all_sd = sb_get_all_study() or {}
-        # 回滚/自愈：对每条学习记录剔除非法打卡日期（SSTI 注入）并按「当日累计≥900秒」
-        # 重新派生 completed，不信任客户端传入的布尔。污染的（全部 completed）会还原为
-        # 真实完成日（如 7/11-7/14）；用户合法的后续打卡（满 900 秒）予以保留，重启不再清空。
-        for _eid, _rec in all_sd.items():
-            _sanitize_study_record(_rec)
-        try:
-            # 关键修复：Supabase 读空/失败时不写空本地文件，防止把空数据回推覆盖真实数据
-            if all_sd:
-                with open(os.path.join(DATA_DIR, 'study_data.json'), 'w', encoding='utf-8') as f:
-                    json.dump(all_sd, f, ensure_ascii=False, indent=2)
-                print(f'[Supabase] 已加载并回滚至 7/20 干净基线 {len(all_sd)} 个学员学习数据', flush=True)
-            elif GITHUB_TOKEN:
-                # Supabase 为空/失败 → 回退 GitHub 干净备份加载学习数据
-                # 优先用 7/21 坏部署前的 f1a5eed7 备份；失败则读 data-sync HEAD（已提前重置为干净）
-                gh_sd = github_api_get_commit('data/study_data.json', _CLEAN_STUDY_DATA_REF)
-                source = '干净备份'
-                if not gh_sd:
-                    gh_sd = github_api_get('data/study_data.json')
-                    source = 'data-sync HEAD'
-                if gh_sd:
-                    with open(os.path.join(DATA_DIR, 'study_data.json'), 'w', encoding='utf-8') as f:
-                        json.dump(gh_sd, f, ensure_ascii=False, indent=2)
-                    print(f'[GitHub回退] 已从{source}加载 {len(gh_sd)} 个学员学习数据', flush=True)
-                else:
-                    print('[Supabase] study_data 为空且 GitHub 无数据，保留本地现有缓存', flush=True)
-            else:
-                print('[Supabase] study_data 为空或读取失败，保留本地现有缓存', flush=True)
-        except Exception as e:
-            print(f'[Supabase] 写本地 study_data 缓存失败: {e}', flush=True)
+            _cd = github_api_get_commit(f'data/{key}.json', _CLEAN_STUDY_DATA_REF)
+            if _cd is not None:
+                with open(os.path.join(DATA_DIR, key + '.json'), 'w', encoding='utf-8') as f:
+                    json.dump(_cd, f, ensure_ascii=False, indent=2)
+        print(f'[回滚] 已从 f1a5eed7 恢复 {len(_clean_sd)} 学员 + 全部配置', flush=True)
     elif GITHUB_TOKEN:
         # 兼容回退：未配置 Supabase 时使用原 GitHub 逻辑
         print('[Sync] 未配置 Supabase，回退 GitHub data-sync 拉取...', flush=True)
