@@ -40,7 +40,8 @@ const HiEnglish = {
           name: data.user.name,
           group: data.user.group || '',
           status: data.user.status || 'active',
-          password: password
+          password: password,
+          token: data.token || ''
         };
         this.saveUsers(users);
         // 设置 sessionStorage 登录状态（仅当前浏览器标签页有效）
@@ -150,9 +151,25 @@ const HiEnglish = {
     try {
       var resp = await fetch(this.getServerUrl() + '/api/study-data?empid=' + encodeURIComponent(empid));
       var data = await resp.json();
-      if (data.success && data.studyData) {
+      if (!data.success) {
+        console.log('[Sync] 服务端返回失败 (attempt ' + attempt + '):', data.error);
+        return null;
+      }
+      var localVersion = parseInt(localStorage.getItem('hi_english_data_version') || '0', 10);
+      var serverVersion = parseInt(data.dataVersion || '0', 10);
+      var all = JSON.parse(localStorage.getItem('hi_english_study') || '{}');
+
+      // 服务端数据版本更新：用服务端权威数据完全覆盖本地（解决回滚/清洗后客户端仍保留脏数据的问题）
+      if (serverVersion > localVersion) {
+        all[empid] = data.studyData || {};
+        localStorage.setItem('hi_english_study', JSON.stringify(all));
+        localStorage.setItem('hi_english_data_version', String(serverVersion));
+        console.log('[Sync] 服务端数据版本更新 (' + localVersion + '->' + serverVersion + ')，已用服务端权威数据覆盖本地');
+        return all[empid];
+      }
+
+      if (data.studyData) {
         // 与本地合并（本地真相优先），避免服务端旧快照覆盖客户端最新进度
-        var all = JSON.parse(localStorage.getItem('hi_english_study') || '{}');
         var local = all[empid] || {};
         var merged = this.mergeStudyData(local, data.studyData);
         all[empid] = merged;
@@ -164,7 +181,6 @@ const HiEnglish = {
       }
       console.log('[Sync] 服务端无学习数据 (attempt ' + attempt + ')');
       // 服务端无记录但本地有进度：把本地真相推上去，避免部署清空后本地进度丢不上来
-      var all = JSON.parse(localStorage.getItem('hi_english_study') || '{}');
       if (all[empid]) {
         this.pushServerStudyData(empid, all[empid]);
         return all[empid];
@@ -248,9 +264,10 @@ const HiEnglish = {
       this._syncTimer = null;
       var pending = this._lastPushedData;
       this._lastPushedData = null;
+      var token = this._getUserToken(pending.empid);
       // 使用 sendBeacon 确保页面关闭时数据也能发送
       if (navigator.sendBeacon) {
-        var blob = new Blob([JSON.stringify({ empid: pending.empid, studyData: pending.data })], { type: 'application/json' });
+        var blob = new Blob([JSON.stringify({ empid: pending.empid, studyData: pending.data, token: token })], { type: 'application/json' });
         navigator.sendBeacon(this.getServerUrl() + '/api/study-data', blob);
         console.log('[Sync] 学习数据已通过sendBeacon紧急推送');
       } else {
@@ -259,13 +276,19 @@ const HiEnglish = {
     }
   },
 
+  _getUserToken(empid) {
+    var users = this.getUsers();
+    return (users[empid] && users[empid].token) || '';
+  },
+
   _doPush(empid, data, attempt) {
     attempt = attempt || 1;
     var self = this;
+    var token = this._getUserToken(empid);
     fetch(self.getServerUrl() + '/api/study-data', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ empid: empid, studyData: data })
+      body: JSON.stringify({ empid: empid, studyData: data, token: token })
     }).then(function(resp) {
       console.log('[Sync] 学习数据已推送到服务端');
     }).catch(function(e) {
