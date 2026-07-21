@@ -246,7 +246,19 @@ def _load_study_authoritative():
     - 7/21 教训：Supabase 仅作镜像读取，每行先 _is_suspicious_str 扫描，命中注入特征整行丢弃。"""
     global _study_load_debug
     # 1) 底线：优先 GitHub 不可变 7/20 基线 commit（永远富、不受实例本地文件影响），
-    #    本地 data-clean 作为兜底；取用户数最多者，防止任一来源损坏导致空加载。
+    #    本地 data-clean 作为兜底；按"总数据量"加权取最富者，防止损坏的本地空文件被选中。
+    def _weight(data):
+        w = 0
+        if isinstance(data, dict):
+            for _u in data.values():
+                if isinstance(_u, dict):
+                    _ci = _u.get('checkIns')
+                    w += len(_ci) if isinstance(_ci, (list, dict)) else 0
+                    for _st in ('basic', 'business'):
+                        _s = _u.get(_st)
+                        if isinstance(_s, dict):
+                            w += len(_s.get('learned', []) or []) + len(_s.get('mastered', []) or [])
+        return w
     base = {}
     _cands = []
     _lc = os.path.join(CLEAN_BACKUP_DIR, 'study_data.json')
@@ -259,7 +271,7 @@ def _load_study_authoritative():
     if _cc:
         _cands.append(('基线commit', _cc))
     for _n, _d in _cands:
-        if isinstance(_d, dict) and len(_d) > len(base):
+        if isinstance(_d, dict) and _weight(_d) > _weight(base):
             base = _d
     # 2) 叠加层收集
     overlay = {}
