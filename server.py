@@ -1524,13 +1524,14 @@ def handle_toggle_user():
 # ---- Supabase 连接诊断接口（只读，不碰任何数据）----
 @app.route('/api/sb-diag', methods=['GET'])
 def handle_sb_diag():
-    """Supabase 诊断接口（只读）：2026-07-21 起 Supabase 已永久关闭，仅返回禁用状态供审计。"""
+    """Supabase 诊断接口（只读）：2026-07-21 后恢复为学习数据主持久层，返回真实连接状态。"""
     return jsonify({
-        'disabled': True,
-        'disabled_reason': '2026-07-21 安全事件后永久关闭 Supabase，使用本地文件 + GitHub data-sync 兜底',
+        'disabled': bool(_DISABLE_SUPABASE_WRITE) or (not supabase),
+        'role': 'study_data 主持久层（写穿 + 启动逐行去污染读取），GitHub data-sync 为二级兜底',
         'url_set': bool(SUPABASE_URL),
         'key_set': bool(SUPABASE_KEY),
-        'connected_at_startup': False,
+        'connected_at_startup': bool(supabase),
+        'study_gh_sync_paused': bool(_PAUSE_STUDY_DATA_GH_SYNC),
         'startup_error': SB_PROBE_ERROR,
     })
 
