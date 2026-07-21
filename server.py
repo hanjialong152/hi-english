@@ -225,12 +225,23 @@ def _load_study_authoritative():
             print(f'[加载] Supabase 无干净学习数据（污染/空 {polluted} 行），回退基线', flush=True)
         except Exception as e:
             print(f'[加载] Supabase 读取失败，回退: {e}', flush=True)
-    # 回退 1：GitHub data-sync 最新
+    # 回退 1：GitHub data-sync 最新（运行期写穿落盘处，含最新进度）
     gh = github_api_get('data/study_data.json')
     if gh:
         print('[加载] 从 GitHub data-sync 载入学习数据', flush=True)
         return gh
-    # 回退 2：7/20 干净基线 commit
+    # 回退 2：本地 data-clean（随代码部署，零网络依赖，防止启动期 GitHub 不可达导致空加载丢数据）
+    _lc = os.path.join(CLEAN_BACKUP_DIR, 'study_data.json')
+    if os.path.exists(_lc):
+        try:
+            with open(_lc, 'r', encoding='utf-8') as f:
+                _lcd = json.load(f)
+            if _lcd:
+                print('[加载] 从本地 data-clean 载入学习数据（GitHub 不可达兜底）', flush=True)
+                return _lcd
+        except Exception as e:
+            print(f'[加载] 本地 data-clean 读取失败: {e}', flush=True)
+    # 回退 3：7/20 干净基线 commit
     base = github_api_get_commit('data/study_data.json', _CLEAN_STUDY_DATA_REF)
     if base:
         print('[加载] 从 7/20 干净基线载入学习数据', flush=True)
