@@ -194,7 +194,11 @@
       "totalSeconds": 0,
       "unlocked": true,
       "weeklyTests": [],
-      "audioDone": {},
+      "audioDone": {
+        "1": {
+          "b_1_0": true
+        }
+      },
       "audioDoneDate": {}
     },
     "checkIns": [
@@ -205,7 +209,7 @@
       },
       {
         "date": "2026-07-21",
-        "seconds": 106,
+        "seconds": 107,
         "completed": false
       }
     ]
