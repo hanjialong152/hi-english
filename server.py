@@ -72,17 +72,34 @@ _last_gh_sig = None
 _gh_sig_lock = threading.Lock()
 
 # ============================================================
-# Supabase 云数据库（主存储，根治"发版丢数据"）
-# 2026-07-11 起，学习数据与配置统一持久化到 Supabase Postgres，
-# 不受 Render 免费版文件系统重置 / 部署 / 休眠影响。
-# 凭证通过环境变量注入（SUPABASE_URL / SUPABASE_KEY=service_role），
-# 不硬编码到代码，避免泄露。本地/生产未配置时降级为本地文件（兼容开发）。
+# 7/21 安全事件：紧急开关（必须在 Supabase 初始化之前定义，以彻底关闭连接）
+# ============================================================
+# 7/21 坏部署前的干净学习记录备份 commit（data-sync 分支）
+_CLEAN_STUDY_DATA_REF = 'f1a5eed7041937312636fa51e56f1709557d2c70'
+# 紧急：暂停 study_data.json 向 GitHub data-sync 的自动回写，防止旧客户端/扫描器持续污染远程备份。
+# 本地文件仍正常保存，服务运行期间数据可用；恢复同步前需先确认客户端已全部刷新且打卡数据正常。
+_PAUSE_STUDY_DATA_GH_SYNC = True
+# 永久关闭 Supabase：扫描器已污染 Supabase 库，且 Supabase 在国内访问不稳定、DNS 偶发失效。
+# 关闭后所有读写走本地文件 + GitHub data-sync 兜底，不再依赖 Supabase。
+_DISABLE_SUPABASE_WRITE = True
+
+# 本地干净备份目录（随代码部署到 Render，不依赖外网访问 GitHub）
+CLEAN_BACKUP_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data-clean')
+
+# 学习数据版本号：用于客户端判断服务端数据是否比本地更新（整体回滚/清洗后 bump）。
+# 客户端发现服务端 dataVersion > 本地时，用服务端数据完全覆盖本地，解决回滚后客户端仍显示脏数据的问题。
+_STUDY_DATA_VERSION = 2
+
+# ============================================================
+# Supabase 云数据库（已废弃：扫描器污染 + 国内 DNS 不稳定）
+# 2026-07-11 起曾作为主存储，2026-07-21 整体关闭。
+# 保留代码仅作历史兼容，实际不再连接/读写。
 # ============================================================
 SUPABASE_URL = os.environ.get('SUPABASE_URL', '')
 SUPABASE_KEY = os.environ.get('SUPABASE_KEY', '')
 supabase = None
-SB_PROBE_ERROR = None  # 启动探针报错（全量，供诊断接口回显）
-if SUPABASE_URL and SUPABASE_KEY:
+SB_PROBE_ERROR = 'Supabase 已在 2026-07-21 永久关闭，使用本地文件 + GitHub data-sync 兜底'
+if not _DISABLE_SUPABASE_WRITE and SUPABASE_URL and SUPABASE_KEY:
     try:
         from supabase import create_client
         _client = create_client(SUPABASE_URL, SUPABASE_KEY)
@@ -102,13 +119,12 @@ if SUPABASE_URL and SUPABASE_KEY:
         SB_PROBE_ERROR = 'init: ' + repr(e)
         print('[Supabase] 初始化失败（将降级 GitHub data-sync 兜底）:', e, flush=True)
 else:
-    SB_PROBE_ERROR = '未配置 SUPABASE_URL/SUPABASE_KEY'
-    print('[Supabase] 未配置 SUPABASE_URL/SUPABASE_KEY，使用 GitHub data-sync 存储（可靠兜底）', flush=True)
+    print('[Supabase] 已禁用（_DISABLE_SUPABASE_WRITE=True），使用本地文件 + GitHub data-sync 存储', flush=True)
 
 
 def sb_upsert_study(empid, data, retry=2):
     """把单个学员学习数据 UPSERT 到 Supabase study_data 表（按 empid 单行）。"""
-    if not supabase or not empid:
+    if _DISABLE_SUPABASE_WRITE or not supabase or not empid:
         return False
     last_err = None
     for attempt in range(retry + 1):
@@ -178,6 +194,190 @@ def sb_get_config(key, default=None):
     return default
 
 
+# ============================================================
+# 安全：请求限流（内存级，防扫描器暴力 POST）
+# ============================================================
+_rate_limit_store = {}
+_rate_limit_lock = threading.Lock()
+
+def check_rate_limit(key, max_per_second=1, max_per_minute=10):
+    """简单滑动窗口限流。key 可以是 IP 或 empid。返回 (allowed, retry_after_seconds)。"""
+    now = time.time()
+    with _rate_limit_lock:
+        rec = _rate_limit_store.get(key, {'sec': [], 'min': []})
+        # 清理过期
+        rec['sec'] = [t for t in rec['sec'] if now - t < 1]
+        rec['min'] = [t for t in rec['min'] if now - t < 60]
+        if len(rec['sec']) >= max_per_second or len(rec['min']) >= max_per_minute:
+            retry = 1 if rec['sec'] else 60 - int(now - rec['min'][0]) if rec['min'] else 60
+            return False, retry
+        rec['sec'].append(now)
+        rec['min'].append(now)
+        _rate_limit_store[key] = rec
+    return True, 0
+
+
+# 危险字符与 SQL 注入关键字（用于输入校验）
+_BAD_CHARS = set('${}#<>%\\`\'"')
+_SQL_KEYWORDS = {'select', 'insert', 'update', 'delete', 'drop', 'union', 'or', 'and', 'waitfor', 'delay', 'sleep', 'pg_sleep', 'dbms_pipe', 'receive_message', 'exec', 'script', 'alert', 'from', 'where'}
+_DATE_RE = re.compile(r'^\d{4}-\d{2}-\d{2}$')
+
+def _is_suspicious_str(s):
+    """检测字符串是否包含注入 payload 特征。"""
+    if not isinstance(s, str):
+        return False
+    low = s.lower()
+    has_bad = any(c in s for c in _BAD_CHARS)
+    has_sql = any(kw in low for kw in _SQL_KEYWORDS)
+    return has_bad and has_sql
+
+def _sanitize_value(v, expected_type=None):
+    """单值清洗：字符串剔除危险字符；非预期类型强转或丢弃。"""
+    if expected_type == str:
+        if not isinstance(v, str):
+            return ''
+        # 只剔除真正危险的控制字符，保留正常标点
+        return ''.join(c for c in v if c not in _BAD_CHARS)
+    if expected_type == int:
+        try:
+            return max(0, int(v))
+        except Exception:
+            return 0
+    if expected_type == bool:
+        return bool(v)
+    if expected_type == 'date':
+        if isinstance(v, str) and _DATE_RE.match(v):
+            return v
+        return None
+    return v
+
+def _validate_study_data(sd):
+    """清洗并校验客户端传入的学习数据。发现严重污染时返回 None（拒绝写入）。"""
+    if not isinstance(sd, dict):
+        return {}
+    out = {}
+    # 允许的白名单字段
+    allowed_top = {'checkIns', 'basic', 'business'}
+    for k in list(sd.keys()):
+        if k not in allowed_top:
+            continue
+        out[k] = sd[k]
+
+    # 清洗 checkIns
+    clean_checkins = []
+    if isinstance(out.get('checkIns'), list):
+        for c in out['checkIns']:
+            if not isinstance(c, dict) or not c.get('date'):
+                continue
+            date = _sanitize_value(c.get('date'), 'date')
+            if not date:
+                continue
+            seconds = _sanitize_value(c.get('seconds'), int)
+            completed = _sanitize_value(c.get('completed'), bool)
+            # 如果 completed=true 但 seconds<900，视为异常（由服务端派生规则修正）
+            clean_checkins.append({'date': date, 'seconds': seconds, 'completed': completed})
+    out['checkIns'] = clean_checkins
+
+    # 清洗阶段数据
+    for stage in ('basic', 'business'):
+        st = out.get(stage)
+        if not isinstance(st, dict):
+            out[stage] = {
+                'readIndex': 0, 'spellIndex': 0, 'learned': [], 'learnedDates': {},
+                'mastered': [], 'speakScores': {}, 'weeklyTests': [], 'monthlyTests': [],
+                'totalSeconds': 0, 'audioDone': {}, 'audioDoneDate': {}
+            }
+            if stage == 'business':
+                out[stage]['unlocked'] = False
+            continue
+        # 数组字段：只保留字符串/数字（拒绝注入 payload）
+        for arr_key in ('learned', 'mastered'):
+            arr = st.get(arr_key)
+            if not isinstance(arr, list):
+                st[arr_key] = []
+                continue
+            clean_arr = []
+            for x in arr:
+                if isinstance(x, (str, int)):
+                    sx = str(x)
+                    if _is_suspicious_str(sx):
+                        continue
+                    clean_arr.append(sx)
+            st[arr_key] = clean_arr
+        # learnedDates / audioDoneDate: 键必须是日期或词ID字符串，值必须是日期或布尔
+        for map_key in ('learnedDates', 'audioDoneDate'):
+            m = st.get(map_key)
+            if not isinstance(m, dict):
+                st[map_key] = {}
+                continue
+            clean_m = {}
+            for k, v in m.items():
+                if _is_suspicious_str(k) or _is_suspicious_str(str(v)):
+                    continue
+                if isinstance(v, bool):
+                    clean_m[k] = v
+                elif isinstance(v, str) and _DATE_RE.match(v):
+                    clean_m[k] = v
+                else:
+                    clean_m[k] = True
+            st[map_key] = clean_m
+        # audioDone: 深层布尔
+        ad = st.get('audioDone')
+        if not isinstance(ad, dict):
+            st['audioDone'] = {}
+        else:
+            clean_ad = {}
+            for k, sub in ad.items():
+                if _is_suspicious_str(k):
+                    continue
+                if not isinstance(sub, dict):
+                    continue
+                clean_ad[k] = {}
+                for sk, sv in sub.items():
+                    if _is_suspicious_str(sk):
+                        continue
+                    clean_ad[k][sk] = bool(sv)
+            st['audioDone'] = clean_ad
+        # speakScores: 数字
+        ss = st.get('speakScores')
+        if isinstance(ss, dict):
+            clean_ss = {}
+            for k, sub in ss.items():
+                if _is_suspicious_str(k):
+                    continue
+                if not isinstance(sub, dict):
+                    continue
+                clean_ss[k] = {}
+                for sk, sv in sub.items():
+                    if _is_suspicious_str(sk):
+                        continue
+                    try:
+                        clean_ss[k][sk] = max(0, min(100, float(sv)))
+                    except Exception:
+                        pass
+            st['speakScores'] = clean_ss
+        else:
+            st['speakScores'] = {}
+        # 测试记录：保留原始但清洗字符串字段
+        for test_key in ('weeklyTests', 'monthlyTests'):
+            arr = st.get(test_key)
+            if not isinstance(arr, list):
+                st[test_key] = []
+            else:
+                clean_arr = []
+                for it in arr:
+                    if not isinstance(it, dict):
+                        continue
+                    clean_it = {}
+                    for k, v in it.items():
+                        if isinstance(v, str) and _is_suspicious_str(v):
+                            continue
+                        clean_it[k] = v
+                    clean_arr.append(clean_it)
+                st[test_key] = clean_arr
+    return out
+
+
 def github_api_get(path):
     """从 GitHub data-sync 分支获取文件内容"""
     if not GITHUB_TOKEN:
@@ -229,21 +429,6 @@ def github_api_get_commit(path, ref):
         print(f'[Sync] 获取 {path}@{ref} 异常: {e}', flush=True)
     return None
 
-
-# 7/21 坏部署前的干净学习记录备份 commit（data-sync 分支）
-_CLEAN_STUDY_DATA_REF = 'f1a5eed7041937312636fa51e56f1709557d2c70'
-
-# 紧急：暂停 study_data.json 向 GitHub data-sync 的自动回写，防止旧客户端/扫描器持续污染远程备份。
-# 本地文件仍正常保存，服务运行期间数据可用；恢复同步前需先确认客户端已全部刷新到 v52 且打卡数据正常。
-_PAUSE_STUDY_DATA_GH_SYNC = True
-# 紧急：禁止写 Supabase。扫描器已污染 Supabase 库，写回会让脏数据永久化；
-# 本次整体回滚期间只使用 f1a5eed7 干净备份 + 本地文件，Supabase 不参与读写。
-_DISABLE_SUPABASE_WRITE = True
-
-# 回滚诊断标记：用于确认 Render 实例实际运行的是哪份代码
-SERVER_ROLLBACK_MARKER = 'ROLLBACK-20260721-FINAL-v4'
-# 本地干净备份目录（随代码部署到 Render，不依赖外网访问 GitHub）
-CLEAN_BACKUP_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data-clean')
 
 # 钉钉推送限流/去重：防止催学提醒被循环调用或前端重试疯狂刷屏
 _dingtalk_last_push = {'ts': 0, 'sig': None}
@@ -814,12 +999,16 @@ def handle_login():
         return jsonify({'success': False, 'error': '密码错误'}), 401
     if user.get('status', 'active') != 'active':
         return jsonify({'success': False, 'error': '账号已被禁用，如需启用请联系管理员'}), 403
+    # 颁发 session_token，用于后续写接口认证
+    session_token = secrets.token_hex(16)
     with data_lock:
         user['last_login'] = int(time.time() * 1000)
         user['login_count'] = user.get('login_count', 0) + 1
+        user['session_token'] = session_token
         save_json(os.path.join(DATA_DIR, 'users.json'), users)
     return jsonify({
         'success': True,
+        'token': session_token,
         'user': {
             'empid': user['empid'], 'name': user['name'],
             'group': user.get('group', ''), 'status': user.get('status', 'active'),
@@ -1140,28 +1329,14 @@ def handle_toggle_user():
 # ---- Supabase 连接诊断接口（只读，不碰任何数据）----
 @app.route('/api/sb-diag', methods=['GET'])
 def handle_sb_diag():
-    # 实时复测一次，避免只看启动时刻
-    live_err = SB_PROBE_ERROR
-    live_ok = bool(supabase)
-    if not supabase and SUPABASE_URL and SUPABASE_KEY:
-        try:
-            from supabase import create_client
-            _c = create_client(SUPABASE_URL, SUPABASE_KEY)
-            _c.table('study_data').select('empid').limit(1).execute()
-            live_ok = True
-            live_err = None
-        except Exception as e:
-            live_ok = False
-            live_err = repr(e)
+    """Supabase 诊断接口（只读）：2026-07-21 起 Supabase 已永久关闭，仅返回禁用状态供审计。"""
     return jsonify({
+        'disabled': True,
+        'disabled_reason': '2026-07-21 安全事件后永久关闭 Supabase，使用本地文件 + GitHub data-sync 兜底',
         'url_set': bool(SUPABASE_URL),
-        'url_value': (SUPABASE_URL[:12] + '...' + SUPABASE_URL[-8:]) if SUPABASE_URL else '',
         'key_set': bool(SUPABASE_KEY),
-        'key_len': len(SUPABASE_KEY) if SUPABASE_KEY else 0,
-        'connected_at_startup': bool(supabase),
+        'connected_at_startup': False,
         'startup_error': SB_PROBE_ERROR,
-        'live_connected': live_ok,
-        'live_error': live_err,
     })
 
 
@@ -1174,16 +1349,13 @@ def handle_get_study_data():
     study_data = load_json(os.path.join(DATA_DIR, 'study_data.json'))
     data = study_data.get(empid)
     if data is None:
-        # 降级1：读 GitHub data-sync 缓存（权威兜底，仅本地缺失时触发，频率极低）
+        # 降级：读 GitHub data-sync 缓存（权威兜底，仅本地缺失时触发，频率极低）
         gh_data = github_api_get('data/study_data.json')
         if gh_data and empid in gh_data:
             data = gh_data.get(empid)
-    if data is None:
-        # 降级2：Supabase（已废弃，返回 None 自动跳过）
-        data = sb_get_study(empid)
     if not data:
-        return jsonify({'success': True, 'studyData': None})
-    return jsonify({'success': True, 'studyData': data})
+        return jsonify({'success': True, 'studyData': None, 'dataVersion': _STUDY_DATA_VERSION})
+    return jsonify({'success': True, 'studyData': data, 'dataVersion': _STUDY_DATA_VERSION})
 
 
 @app.route('/api/all-study-data', methods=['GET'])
@@ -1192,8 +1364,6 @@ def handle_all_study_data():
     study_data = load_json(os.path.join(DATA_DIR, 'study_data.json'))
     if not study_data:
         study_data = github_api_get('data/study_data.json') or {}
-    if not study_data:
-        study_data = sb_get_all_study()
     return jsonify({'success': True, 'studyData': study_data})
 
 
@@ -1202,7 +1372,33 @@ def handle_save_study_data():
     global _last_gh_sig
     body = request.json or {}
     empid = (body.get('empid') or '').strip()
+    token = (body.get('token') or '').strip()
     sd = body.get('studyData', {})
+
+    # ---- 基础校验 ----
+    if not empid:
+        return jsonify({'success': False, 'error': '缺少 empid'}), 400
+
+    # ---- 认证：必须携带登录时颁发的 session_token ----
+    users = load_json(os.path.join(DATA_DIR, 'users.json'))
+    user = users.get(empid)
+    if not user:
+        return jsonify({'success': False, 'error': '用户不存在'}), 404
+    if token != user.get('session_token', ''):
+        return jsonify({'success': False, 'error': '未授权，请重新登录'}), 401
+
+    # ---- 限流：单 IP + 单用户 ----
+    client_ip = request.headers.get('X-Forwarded-For', request.remote_addr or '').split(',')[0].strip() or 'unknown'
+    allowed, retry = check_rate_limit(f'ip:{client_ip}', max_per_second=2, max_per_minute=30)
+    if not allowed:
+        return jsonify({'success': False, 'error': f'请求过于频繁，请 {retry} 秒后再试'}), 429
+    allowed, retry = check_rate_limit(f'user:{empid}', max_per_second=1, max_per_minute=20)
+    if not allowed:
+        return jsonify({'success': False, 'error': f'请求过于频繁，请 {retry} 秒后再试'}), 429
+
+    # ---- 输入清洗与校验 ----
+    sd = _validate_study_data(sd)
+
     study_path = os.path.join(DATA_DIR, 'study_data.json')
     with data_lock:
         all_data = load_json(study_path)
@@ -1213,55 +1409,42 @@ def handle_save_study_data():
         all_data[empid] = merged
         # 本地原子写 + 标脏 + 防抖兜底
         save_json(study_path, all_data)
-    # 写穿（write-through）：实时 UPSERT 到 Supabase（按 empid 单行）。
-    # 若 Supabase 不可达（如 DNS 失败/项目暂停），自动回退 GitHub data-sync（Render 可稳定连接），
-    # 确保本请求返回即已持久化，Render 部署/休眠/清缓存都不丢。
+    # 写穿（write-through）：Supabase 已关闭，直接走 GitHub data-sync 兜底。
     err_detail = None
     persisted = False
     try:
-        persisted = sb_upsert_study(empid, merged)
-    except Exception as e:
-        persisted = False
-        err_detail = str(e)
-        print(f'[Supabase] study-data 写入异常: {e}', flush=True)
-    if not persisted:
-        # Supabase 失败 → 回退 GitHub（可靠兜底）。
-        # 加固：整段在 github_push_lock 内串行，并在锁内重新加载最新文件再合并本 empid，
-        # 杜绝"两请求并发各持旧快照→后写覆盖前写"的整文件覆盖竞争（扎堆打卡场景）；
-        # 同时按全量签名去重，仅数据真正变化才推送，规避 GitHub 5000/小时限流。
-        try:
-            with github_push_lock:
-                latest = load_json(study_path)
-                if empid not in latest or latest.get(empid) != all_data.get(empid):
-                    # 把本请求已合并的记录再次叠加到最新文件内容，吸收并发写入
-                    latest[empid] = merge_study_data(latest.get(empid), all_data.get(empid))
-                    unify_checkins(latest[empid])
-                    save_json(study_path, latest)
-                    all_data = latest
-                sig = hashlib.md5(json.dumps(all_data, sort_keys=True, ensure_ascii=False).encode('utf-8')).hexdigest()
-                with _gh_sig_lock:
-                    changed = (_last_gh_sig != sig)
-                if changed:
-                    if _PAUSE_STUDY_DATA_GH_SYNC:
-                        # 紧急暂停：本地已保存，不同步到 GitHub，避免污染 data-sync
-                        persisted = True
-                        print(f'[GitHub回退] study_data {empid} 本地已保存，GitHub 同步已暂停', flush=True)
-                    else:
-                        gh_ok = github_api_put('data/study_data.json', all_data)
-                        if gh_ok:
-                            with _gh_sig_lock:
-                                _last_gh_sig = sig
-                            persisted = True
-                            print(f'[GitHub回退] study_data {empid} 已写入 GitHub', flush=True)
-                        else:
-                            err_detail = (err_detail or '') + '; GitHub回退失败'
-                else:
-                    # 数据无变化（如周期同步空跑），无需重复推送，视为已持久化
+        with github_push_lock:
+            latest = load_json(study_path)
+            if empid not in latest or latest.get(empid) != all_data.get(empid):
+                # 把本请求已合并的记录再次叠加到最新文件内容，吸收并发写入
+                latest[empid] = merge_study_data(latest.get(empid), all_data.get(empid))
+                unify_checkins(latest[empid])
+                save_json(study_path, latest)
+                all_data = latest
+            sig = hashlib.md5(json.dumps(all_data, sort_keys=True, ensure_ascii=False).encode('utf-8')).hexdigest()
+            with _gh_sig_lock:
+                changed = (_last_gh_sig != sig)
+            if changed:
+                if _PAUSE_STUDY_DATA_GH_SYNC:
+                    # 紧急暂停：本地已保存，不同步到 GitHub，避免污染 data-sync
                     persisted = True
-        except Exception as e2:
-            err_detail = (err_detail or '') + f'; GitHub回退异常:{e2}'
-            print(f'[GitHub回退] study_data 失败: {e2}', flush=True)
-    return jsonify({'success': True, 'persisted': bool(persisted), 'sb_debug': err_detail, 'sb_connected': bool(supabase)})
+                    print(f'[GitHub回退] study_data {empid} 本地已保存，GitHub 同步已暂停', flush=True)
+                else:
+                    gh_ok = github_api_put('data/study_data.json', all_data)
+                    if gh_ok:
+                        with _gh_sig_lock:
+                            _last_gh_sig = sig
+                        persisted = True
+                        print(f'[GitHub回退] study_data {empid} 已写入 GitHub', flush=True)
+                    else:
+                        err_detail = (err_detail or '') + '; GitHub回退失败'
+            else:
+                # 数据无变化（如周期同步空跑），无需重复推送，视为已持久化
+                persisted = True
+    except Exception as e2:
+        err_detail = (err_detail or '') + f'; GitHub回退异常:{e2}'
+        print(f'[GitHub回退] study_data 失败: {e2}', flush=True)
+    return jsonify({'success': True, 'persisted': bool(persisted), 'dataVersion': _STUDY_DATA_VERSION, 'sb_debug': err_detail, 'sb_connected': bool(supabase)})
 
 
 # ---- 密码管理 API ----
@@ -1481,10 +1664,8 @@ def handle_admin_get_study_data():
     admin = load_json(os.path.join(DATA_DIR, 'admin.json'))
     if token != admin.get('admin', {}).get('session_token', ''):
         return jsonify({'success': False, 'error': '未授权'}), 401
-    # 实时从 Supabase 读取全体学习数据，保证管理后台与学员端一致
-    study_data = sb_get_all_study()
-    if not study_data:
-        study_data = load_json(os.path.join(DATA_DIR, 'study_data.json'))
+    # 2026-07-21: Supabase 已关闭，统一从本地文件读取学习数据
+    study_data = load_json(os.path.join(DATA_DIR, 'study_data.json'))
     return jsonify({'success': True, 'studyData': study_data})
 
 
