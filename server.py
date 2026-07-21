@@ -366,6 +366,36 @@ def _is_valid_checkin_date(d):
 # 彻底杜绝旧客户端/扫描器把全部日期标 completed 造成的回写污染。
 _COMPLETED_SECONDS_THRESHOLD = 900
 
+
+def _sanitize_study_record(sd):
+    """回滚/自愈：剔除非法打卡日期（SSTI 注入），并按「当日累计≥900秒」重新派生 completed，
+    不信任客户端传入的布尔。污染数据（全部 completed）会还原为真实的少数完成日；
+    用户合法的后续打卡（如满 900 秒）予以保留，重启不再清空。原地修改 sd。"""
+    if not isinstance(sd, dict):
+        return
+    for _stage in (None, 'basic', 'business'):
+        if _stage is None:
+            arr = sd.get('checkIns')
+        else:
+            st = sd.get(_stage)
+            arr = st.get('checkIns') if isinstance(st, dict) else None
+        if not isinstance(arr, list):
+            continue
+        new_arr = []
+        for c in arr:
+            if not isinstance(c, dict):
+                continue
+            d = c.get('date')
+            if not _is_valid_checkin_date(d):
+                continue  # 丢弃非法（SSTI/EL 注入）日期
+            sec = int(c.get('seconds') or 0)
+            new_arr.append({'date': d, 'seconds': sec, 'completed': sec >= _COMPLETED_SECONDS_THRESHOLD})
+        if _stage is None:
+            sd['checkIns'] = new_arr
+        else:
+            sd.setdefault(_stage, {})['checkIns'] = new_arr
+
+
 def _merge_stage(existing, incoming):
     """合并单个阶段（basic/business）的学习记录：并集 + 取最大值，绝不互相覆盖。"""
     if not existing:
@@ -651,20 +681,11 @@ def init_data_files():  # v-restart-trigger-20260711
                 except Exception as e:
                     print(f'[Supabase] 写本地缓存 {key} 失败: {e}', flush=True)
         all_sd = sb_get_all_study() or {}
-        # 回滚保护：用 7/21 坏部署前的干净备份（f1a5eed7）把「存量学员」的打卡记录
-        # 整体回滚到 7/20 干净基线，仅保留备份中不存在的新学员数据，
-        # 彻底杜绝 Supabase / 客户端脏数据（打卡全 completed、SSTI 注入）回灌。
-        # 学习进度（已学/已掌握/时长）予以保留，仅重置打卡字段。
-        _clean_sd = github_api_get_commit('data/study_data.json', _CLEAN_STUDY_DATA_REF)
-        if _clean_sd:
-            for _eid, _csd in _clean_sd.items():
-                if _eid in all_sd and isinstance(all_sd[_eid], dict):
-                    all_sd[_eid]['checkIns'] = _csd.get('checkIns', [])
-                    for _stage in ('basic', 'business'):
-                        if isinstance(all_sd[_eid].get(_stage), dict) and isinstance(_csd.get(_stage), dict):
-                            all_sd[_eid][_stage]['checkIns'] = _csd[_stage].get('checkIns', [])
-                elif _eid not in all_sd:
-                    all_sd[_eid] = _csd
+        # 回滚/自愈：对每条学习记录剔除非法打卡日期（SSTI 注入）并按「当日累计≥900秒」
+        # 重新派生 completed，不信任客户端传入的布尔。污染的（全部 completed）会还原为
+        # 真实完成日（如 7/11-7/14）；用户合法的后续打卡（满 900 秒）予以保留，重启不再清空。
+        for _eid, _rec in all_sd.items():
+            _sanitize_study_record(_rec)
         try:
             # 关键修复：Supabase 读空/失败时不写空本地文件，防止把空数据回推覆盖真实数据
             if all_sd:
@@ -703,9 +724,11 @@ def init_data_files():  # v-restart-trigger-20260711
                     remote_data = github_api_get(rel_path)
                     source = 'data-sync HEAD'
                 if remote_data is not None:
+                    for _eid, _rec in remote_data.items():
+                        _sanitize_study_record(_rec)
                     with open(local_path, 'w', encoding='utf-8') as f:
                         json.dump(remote_data, f, ensure_ascii=False, indent=2)
-                    print(f'[Sync] 已从{source}恢复 {filename} ({len(remote_data)} users)', flush=True)
+                    print(f'[Sync] 已从{source}恢复并自愈 {filename} ({len(remote_data)} users)', flush=True)
                 continue
             remote_data = github_api_get(rel_path)
             if remote_data is not None:
