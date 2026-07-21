@@ -245,15 +245,22 @@ def _load_study_authoritative():
       运行期新增/变更优先采用叠加层；叠加层为空时保留底线。
     - 7/21 教训：Supabase 仅作镜像读取，每行先 _is_suspicious_str 扫描，命中注入特征整行丢弃。"""
     global _study_load_debug
-    # 1) 底线：本地 data-clean
+    # 1) 底线：优先 GitHub 不可变 7/20 基线 commit（永远富、不受实例本地文件影响），
+    #    本地 data-clean 作为兜底；取用户数最多者，防止任一来源损坏导致空加载。
     base = {}
+    _cands = []
     _lc = os.path.join(CLEAN_BACKUP_DIR, 'study_data.json')
     if os.path.exists(_lc):
         try:
-            with open(_lc, 'r', encoding='utf-8') as f:
-                base = json.load(f) or {}
+            _cands.append(('本地', json.load(open(_lc, encoding='utf-8')) or {}))
         except Exception as e:
             print(f'[加载] 本地 data-clean 读取失败: {e}', flush=True)
+    _cc = github_api_get_commit('data/study_data.json', _CLEAN_STUDY_DATA_REF)
+    if _cc:
+        _cands.append(('基线commit', _cc))
+    for _n, _d in _cands:
+        if isinstance(_d, dict) and len(_d) > len(base):
+            base = _d
     # 2) 叠加层收集
     overlay = {}
     if supabase:
