@@ -236,44 +236,33 @@ def _merge_records(base, ov):
     return out
 
 def _load_study_authoritative():
-    """学习数据加载：以『本地 data-clean 富基线』为底线，叠加『Supabase/GitHub 运行期数据』。
+    """学习数据启动加载：以本地 data-clean/study_data.json 为唯一硬基线，
+    不可变 7/20 commit 仅作本地缺失时的兜底。GitHub data-sync 运行期数据作为叠加层并集合并。
 
-    设计要点（根治 7/21 后空加载竞态）：
-    - 底线 = 随代码部署的本地 data-clean/study_data.json（必然是 7/20 富基线，零网络依赖）。
-      即使 GitHub/Supabase 在某用户上被并发写入污染成空，底线仍能补回该用户数据，绝不整体清空。
-    - 叠加层 = Supabase（主持久层，逐行去污染）+ GitHub data-sync（运行期写穿）。
-      运行期新增/变更优先采用叠加层；叠加层为空时保留底线。
-    - 7/21 教训：Supabase 仅作镜像读取，每行先 _is_suspicious_str 扫描，命中注入特征整行丢弃。"""
+    设计要点（根治 7/21 空加载）：
+    - 本地 data-clean 随代码部署，零网络依赖，永远是当前 master 指定的富基线。
+    - 不比较 weight、不选最富：本地存在即用本地，避免网络抖动/空 commit 污染选中。
+    - 叠加层仅 additive（并集合并），空叠加层不会清空基线用户的数据。"""
     global _study_load_debug
-    # 1) 底线：优先 GitHub 不可变 7/20 基线 commit（永远富、不受实例本地文件影响），
-    #    本地 data-clean 作为兜底；按"总数据量"加权取最富者，防止损坏的本地空文件被选中。
-    def _weight(data):
-        w = 0
-        if isinstance(data, dict):
-            for _u in data.values():
-                if isinstance(_u, dict):
-                    _ci = _u.get('checkIns')
-                    w += len(_ci) if isinstance(_ci, (list, dict)) else 0
-                    for _st in ('basic', 'business'):
-                        _s = _u.get(_st)
-                        if isinstance(_s, dict):
-                            w += len(_s.get('learned', []) or []) + len(_s.get('mastered', []) or [])
-        return w
+    # 1) 硬基线：本地 data-clean（零网络）
     base = {}
-    _cands = []
     _lc = os.path.join(CLEAN_BACKUP_DIR, 'study_data.json')
     if os.path.exists(_lc):
         try:
-            _cands.append(('本地', json.load(open(_lc, encoding='utf-8')) or {}))
+            with open(_lc, 'r', encoding='utf-8') as f:
+                base = json.load(f) or {}
+            if not isinstance(base, dict):
+                base = {}
         except Exception as e:
             print(f'[加载] 本地 data-clean 读取失败: {e}', flush=True)
-    _cc = github_api_get_commit('data/study_data.json', _CLEAN_STUDY_DATA_REF)
-    if _cc:
-        _cands.append(('基线commit', _cc))
-    for _n, _d in _cands:
-        if isinstance(_d, dict) and _weight(_d) > _weight(base):
-            base = _d
-    # 2) 叠加层收集
+            base = {}
+    # 本地缺失/损坏时，用不可变 commit 兜底
+    if not base and GITHUB_TOKEN:
+        _cc = github_api_get_commit('data/study_data.json', _CLEAN_STUDY_DATA_REF)
+        if isinstance(_cc, dict):
+            base = _cc
+            print('[加载] 本地 data-clean 不可用，已回退到不可变 commit 基线', flush=True)
+    # 2) 叠加层：Supabase（如启用）+ GitHub data-sync 运行期写穿
     overlay = {}
     if supabase:
         try:
@@ -291,11 +280,11 @@ def _load_study_authoritative():
         except Exception as e:
             print(f'[加载] Supabase 读取失败: {e}', flush=True)
     gh = github_api_get('data/study_data.json')
-    if gh:
+    if isinstance(gh, dict):
         for empid, data in gh.items():
             if data:
                 overlay[empid] = data
-    # 3) 合并：底线打底，叠加层覆盖（运行期优先），叠加层为空则保留底线
+    # 3) 合并：基线打底，叠加层按并集合并（空叠加层不清空基线）
     result = dict(base)
     for empid, d in overlay.items():
         if d:
@@ -605,55 +594,80 @@ def _validate_study_data(sd):
     return out
 
 
-def github_api_get(path):
-    """从 GitHub data-sync 分支获取文件内容"""
-    if not GITHUB_TOKEN:
-        return None
-    url = f'https://api.github.com/repos/{GITHUB_REPO}/contents/{path}?ref={GITHUB_DATA_BRANCH}'
+def _github_fetch_once(url, timeout=15):
+    """单次 GitHub API 拉取，返回 (ok, result_or_error)。"""
     req = urllib.request.Request(url)
     req.add_header('Authorization', f'token {GITHUB_TOKEN}')
     req.add_header('Accept', 'application/vnd.github.v3+json')
     try:
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            result = json.loads(resp.read().decode('utf-8'))
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            return True, json.loads(resp.read().decode('utf-8'))
+    except Exception as e:
+        return False, e
+
+
+def github_api_get(path):
+    """从 GitHub data-sync 分支获取文件内容（带重试，克服启动期 SSL 抖动）。"""
+    if not GITHUB_TOKEN:
+        return None
+    url = f'https://api.github.com/repos/{GITHUB_REPO}/contents/{path}?ref={GITHUB_DATA_BRANCH}'
+    last_err = None
+    for attempt in range(3):
+        if attempt > 0:
+            time.sleep(0.5 * attempt)
+        ok, result = _github_fetch_once(url, timeout=15 + attempt * 5)
+        if ok:
             sha = result.get('sha', '')
             content = result.get('content', '')
             if content:
-                # GitHub 返回的 content 是 base64 编码的（可能含换行）
-                content_clean = content.replace('\n', '')
-                decoded = base64.b64decode(content_clean).decode('utf-8')
-                _file_sha_cache[path] = sha
-                return json.loads(decoded)
-    except urllib.error.HTTPError as e:
-        if e.code == 404:
-            print(f'[Sync] {path} 远程不存在（首次部署，正常）', flush=True)
+                try:
+                    content_clean = content.replace('\n', '')
+                    decoded = base64.b64decode(content_clean).decode('utf-8')
+                    _file_sha_cache[path] = sha
+                    return json.loads(decoded)
+                except Exception as e:
+                    print(f'[Sync] {path} base64 解码异常: {e}', flush=True)
+                    return None
+            return None
+        last_err = result
+        if isinstance(result, urllib.error.HTTPError):
+            if result.code == 404:
+                print(f'[Sync] {path} 远程不存在（首次部署，正常）', flush=True)
+                return None
+            print(f'[Sync] 获取 {path} 失败: HTTP {result.code} (attempt {attempt + 1})', flush=True)
         else:
-            print(f'[Sync] 获取 {path} 失败: HTTP {e.code}', flush=True)
-    except Exception as e:
-        print(f'[Sync] 获取 {path} 异常: {e}', flush=True)
+            print(f'[Sync] 获取 {path} 异常 (attempt {attempt + 1}): {result}', flush=True)
+    print(f'[Sync] 获取 {path} 最终失败: {last_err}', flush=True)
     return None
 
 
 def github_api_get_commit(path, ref):
-    """从 GitHub 指定 commit/ref 获取文件内容（用于数据恢复，绕过当前被污染的 data-sync HEAD）"""
+    """从 GitHub 指定 commit/ref 获取文件内容（带重试，用于数据恢复）。"""
     if not GITHUB_TOKEN:
         return None
     url = f'https://api.github.com/repos/{GITHUB_REPO}/contents/{path}?ref={ref}'
-    req = urllib.request.Request(url)
-    req.add_header('Authorization', f'token {GITHUB_TOKEN}')
-    req.add_header('Accept', 'application/vnd.github.v3+json')
-    try:
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            result = json.loads(resp.read().decode('utf-8'))
+    last_err = None
+    for attempt in range(3):
+        if attempt > 0:
+            time.sleep(0.5 * attempt)
+        ok, result = _github_fetch_once(url, timeout=15 + attempt * 5)
+        if ok:
             content = result.get('content', '')
             if content:
-                content_clean = content.replace('\n', '')
-                decoded = base64.b64decode(content_clean).decode('utf-8')
-                return json.loads(decoded)
-    except urllib.error.HTTPError as e:
-        print(f'[Sync] 获取 {path}@{ref} 失败: HTTP {e.code}', flush=True)
-    except Exception as e:
-        print(f'[Sync] 获取 {path}@{ref} 异常: {e}', flush=True)
+                try:
+                    content_clean = content.replace('\n', '')
+                    decoded = base64.b64decode(content_clean).decode('utf-8')
+                    return json.loads(decoded)
+                except Exception as e:
+                    print(f'[Sync] {path}@{ref} base64 解码异常: {e}', flush=True)
+                    return None
+            return None
+        last_err = result
+        if isinstance(result, urllib.error.HTTPError):
+            print(f'[Sync] 获取 {path}@{ref} 失败: HTTP {result.code} (attempt {attempt + 1})', flush=True)
+        else:
+            print(f'[Sync] 获取 {path}@{ref} 异常 (attempt {attempt + 1}): {result}', flush=True)
+    print(f'[Sync] 获取 {path}@{ref} 最终失败: {last_err}', flush=True)
     return None
 
 
