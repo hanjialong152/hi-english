@@ -3,23 +3,36 @@ var currentEditGroupEl = null;
 var editingEmpid = null;
 
 // ===== Initialize =====
+function _showAdminInitError(msg) {
+  var el = document.getElementById('a-dashboard-stats');
+  if (!el) el = document.body;
+  el.innerHTML = '<div style="padding:20px;background:#fff3f3;border:1px solid #ff9999;border-radius:8px;color:#c00;margin:20px;">' +
+    '<strong>管理后台初始化出错</strong><br>' + (HiEnglish._escapeHtml ? HiEnglish._escapeHtml(msg) : msg.replace(/</g, '&lt;')) +
+    '<br><button class="btn" style="margin-top:10px;" onclick="location.reload()">重试</button></div>';
+}
+
 async function init() {
-  var user = HiEnglish.getCurrentUser();
-  if (!user || user.role !== 'admin') {
-    window.location.href = 'index.html';
-    return;
+  try {
+    var user = HiEnglish.getCurrentUser();
+    if (!user || user.role !== 'admin') {
+      window.location.href = 'index.html';
+      return;
+    }
+    // 从服务端同步用户列表、分组和学习数据（跨终端数据一致性）
+    await HiEnglish.syncUsersFromServer();
+    await HiEnglish.syncGroupsFromServer();
+    await HiEnglish.syncStudyDataFromServer();
+    // 加载词库/课库，供"已学"统计（audioDone）使用，与学员端同源
+    try { await HiEnglish.loadWords(); } catch(e) {}
+    try { await HiEnglish.loadLessons(); } catch(e) {}
+    renderDashboard();
+    renderStudentTable();
+    renderGroupList();
+    fillGroupSelects();
+  } catch(e) {
+    console.error('[Admin] init 异常:', e);
+    _showAdminInitError(e.message || '未知错误，请截图联系管理员');
   }
-  // 从服务端同步用户列表、分组和学习数据（跨终端数据一致性）
-  await HiEnglish.syncUsersFromServer();
-  await HiEnglish.syncGroupsFromServer();
-  await HiEnglish.syncStudyDataFromServer();
-  // 加载词库/课库，供"已学"统计（audioDone）使用，与学员端同源
-  try { await HiEnglish.loadWords(); } catch(e) {}
-  try { await HiEnglish.loadLessons(); } catch(e) {}
-  renderDashboard();
-  renderStudentTable();
-  renderGroupList();
-  fillGroupSelects();
 }
 
 // ===== Navigation =====
