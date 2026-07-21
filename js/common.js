@@ -780,7 +780,7 @@ const HiEnglish = {
     fetch(this.getServerUrl() + '/api/groups', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ groups: groups })
+      body: JSON.stringify({ groups: groups, token: sessionStorage.getItem('hi_english_admin_token') || '' })
     }).catch(function(e) { console.log('[Sync] 分组同步失败:', e.message); });
   },
 
