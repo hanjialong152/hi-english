@@ -4,9 +4,10 @@
     "name": "TestUser2",
     "group": "B组",
     "status": "active",
-    "password_hash": "ccaa726b1c56c109024c75c85d55f49fc1232bd24cdf7c5121bf529ea6b5246a",
-    "salt": "0678e5c51c03b5a3",
-    "created_at": 1783355038782
+    "password_hash": "72f289d032390cb050b29a5db2bb2e3e86555210781d979940d1dc9e2f516a41",
+    "salt": "5a520e323476cd7d",
+    "created_at": 1783355038782,
+    "must_change_password": true
   },
   "147407": {
     "empid": "147407",
