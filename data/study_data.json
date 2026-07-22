@@ -461,6 +461,9 @@
         },
         "14": {
           "phrase": 80.0
+        },
+        "11": {
+          "phrase": 80.0
         }
       },
       "spellIndex": 10,
@@ -982,7 +985,7 @@
       },
       {
         "date": "2026-07-22",
-        "seconds": 700,
+        "seconds": 701,
         "completed": false
       }
     ]
