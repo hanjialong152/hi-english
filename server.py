@@ -633,8 +633,16 @@ def _validate_study_data(sd):
                         continue
                     clean_ad[k][sk] = bool(sv)
             st['audioDone'] = clean_ad
-        # speakScores: 数字
+        # speakScores: 数字；兼容旧客户端误传的数组类型。
+        # 旧代码把 speakScores 初始化为 []，评分后按 arr[wordId] 保存；JSON 序列化后变成数字索引数组。
+        # 这里把非 null 的数组项按索引迁移为对象键，尽量减少已产生分数的丢失。
         ss = st.get('speakScores')
+        if isinstance(ss, list):
+            migrated = {}
+            for idx, sub in enumerate(ss):
+                if isinstance(sub, dict) and sub:
+                    migrated[str(idx)] = sub
+            ss = migrated
         if isinstance(ss, dict):
             clean_ss = {}
             for k, sub in ss.items():
