@@ -140,7 +140,12 @@ function doStudentLogin() {
       } else {
         localStorage.removeItem('hi_english_saved_credentials');
       }
-      window.location.href = 'student.html';
+      // 若账号被标记为必须改密码（默认初始密码），强制跳到修改密码弹窗
+      if (serverResult.must_change_password) {
+        window.location.href = 'student.html?forceChangePassword=1';
+      } else {
+        window.location.href = 'student.html';
+      }
     } else if (serverResult && !serverResult.success) {
       // 服务端返回了明确的错误
       btn.disabled = false;
@@ -187,6 +192,8 @@ function doAdminLogin() {
     if (data.success) {
       sessionStorage.setItem('hi_english_admin_token', data.token);
       sessionStorage.setItem('hi_english_admin_name', account);
+      // 同步管理员密码到 localStorage，供离线降级登录使用（不再硬编码默认密码）
+      HiEnglish.setAdminPassword(password);
       // 设置 hi_english_user 供 admin.js init() 验证登录状态
       sessionStorage.setItem('hi_english_user', JSON.stringify({ empid: 'admin', role: 'admin', name: account }));
       window.location.href = 'admin.html';
