@@ -439,6 +439,9 @@
           "ex1": 77.0,
           "ex2": 88.0,
           "phrase": 80.0
+        },
+        "8": {
+          "phrase": 66.0
         }
       },
       "spellIndex": 10,
@@ -960,7 +963,7 @@
       },
       {
         "date": "2026-07-22",
-        "seconds": 185,
+        "seconds": 186,
         "completed": false
       }
     ]
