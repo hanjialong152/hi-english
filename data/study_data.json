@@ -278,6 +278,11 @@
         "date": "2026-07-21",
         "seconds": 232,
         "completed": false
+      },
+      {
+        "date": "2026-07-22",
+        "seconds": 0,
+        "completed": false
       }
     ]
   },
@@ -1903,42 +1908,6 @@
       {
         "date": "2026-07-20",
         "seconds": 68,
-        "completed": false
-      }
-    ]
-  },
-  "ceshi": {
-    "basic": {
-      "readIndex": 0,
-      "spellIndex": 0,
-      "learned": [],
-      "learnedDates": {},
-      "mastered": [],
-      "speakScores": {},
-      "weeklyTests": [],
-      "monthlyTests": [],
-      "totalSeconds": 0,
-      "audioDone": {},
-      "audioDoneDate": {}
-    },
-    "business": {
-      "readIndex": 0,
-      "spellIndex": 0,
-      "learned": [],
-      "learnedDates": {},
-      "mastered": [],
-      "speakScores": {},
-      "weeklyTests": [],
-      "monthlyTests": [],
-      "totalSeconds": 0,
-      "unlocked": true,
-      "audioDone": {},
-      "audioDoneDate": {}
-    },
-    "checkIns": [
-      {
-        "date": "2026-07-22",
-        "seconds": 0,
         "completed": false
       }
     ]
