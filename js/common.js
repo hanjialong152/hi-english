@@ -988,18 +988,22 @@ const HiEnglish = {
     };
   },
 
-  // Utility: Check if date is this week
+  // Utility: Check if date is this week (business week: last Saturday 00:00 ~ this Friday 23:59)
   isThisWeek(dateStr) {
-    var d = new Date(dateStr);
+    var d = new Date(String(dateStr).replace(/-/g, '/'));
+    if (isNaN(d.getTime())) return false;
     var now = new Date();
-    var dayOfWeek = now.getDay() === 0 ? 7 : now.getDay();
-    var monday = new Date(now);
-    monday.setDate(now.getDate() - dayOfWeek + 1);
-    monday.setHours(0, 0, 0, 0);
-    var sunday = new Date(monday);
-    sunday.setDate(monday.getDate() + 6);
-    sunday.setHours(23, 59, 59, 999);
-    return d >= monday && d <= sunday;
+    var dow = now.getDay(); // 0=Sun..6=Sat
+    // last Saturday: offset is -(dow + 1) % 7 (Saturday itself -> 0)
+    var satOffset = -((dow + 1) % 7);
+    var start = new Date(now);
+    start.setDate(now.getDate() + satOffset);
+    start.setHours(0, 0, 0, 0);
+    var friOffset = (5 - dow + 7) % 7;
+    var end = new Date(now);
+    end.setDate(now.getDate() + friOffset);
+    end.setHours(23, 59, 59, 999);
+    return d >= start && d <= end;
   },
 
   // Utility: Get week number
