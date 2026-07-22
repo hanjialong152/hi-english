@@ -279,5 +279,19 @@
     "last_login": 1784529986713,
     "login_count": 1,
     "must_change_password": false
+  },
+  "T999999": {
+    "empid": "T999999",
+    "name": "临时测试",
+    "group": "A组",
+    "status": "active",
+    "password_hash": "6df31b8bad3c4085361df407e733df1bb3c400f793ee3c95a53e81690cafbe59",
+    "salt": "3620e5709372d3ba",
+    "created_at": 1784698666365,
+    "created_by": "admin",
+    "last_login": 1784698667228,
+    "login_count": 1,
+    "must_change_password": false,
+    "session_token": "33988a48c89f928805e7e85c2da84c27"
   }
 }
