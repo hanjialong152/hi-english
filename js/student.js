@@ -3117,7 +3117,7 @@ function changeStudentPassword() {
   fetch(HiEnglish.getServerUrl() + '/api/change-password', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ empid: user.empid, oldPassword: oldPw, newPassword: newPw })
+    body: JSON.stringify({ empid: user.empid, oldPassword: oldPw, newPassword: newPw, token: HiEnglish._getUserToken(user.empid) })
   }).then(function(resp) { return resp.json(); }).then(function(data) {
     if (data.success) {
       // 同步更新本地缓存密码（供离线降级登录使用）
