@@ -1595,10 +1595,10 @@ function _evaluateSpeaking(recognized) {
   recState.evaluatedAlready = true;
 
   var targetRaw = (recState.targetText || '').toLowerCase().trim();
-  // 归一化：去标点、压缩空格、去冠词，用于稳健比对
-  var target = _normalizeForScoring(targetRaw);
+  // 2026-07-22 第三轮修复：口语化归一化（数字/&/%/时间缩写 -> 口语形式），再走通用归一化
+  var target = _normalizeForScoring(_toSpokenForm(targetRaw));
   recognized = (recognized || '').toLowerCase().trim();
-  var recNorm = _normalizeForScoring(recognized);
+  var recNorm = _normalizeForScoring(_toSpokenForm(recognized));
 
   var score = 0;
   var detail = '';
@@ -1658,6 +1658,58 @@ function _evaluateSpeaking(recognized) {
 
   showScoreModal(score, detail);
   _recApplyScore(recState.mode, score);
+}
+
+// ===== 口语化归一化（2026-07-22 第三轮修复）=====
+// 解决目标文本含数字 / & / % / 时间缩写，而 Whisper 输出口语形式（twenty five percent / R and D / five p m）
+// 导致字面比对不上、低分的问题。仅口语化符号与数字，不改变教学内容显示。
+var _NUM_WORDS = (function () {
+  var ones = ['zero','one','two','three','four','five','six','seven','eight','nine','ten',
+    'eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen','eighteen','nineteen'];
+  var tens = ['', '', 'twenty','thirty','forty','fifty','sixty','seventy','eighty','ninety'];
+  var arr = [];
+  for (var i = 0; i < 100; i++) {
+    if (i < 20) arr[i] = ones[i];
+    else {
+      var t = Math.floor(i / 10), u = i % 10;
+      arr[i] = tens[t] + (u ? ' ' + ones[u] : '');
+    }
+  }
+  return arr;
+})();
+
+function _numWord(n) {
+  var v = parseInt(n, 10);
+  if (v >= 0 && v <= 99 && _NUM_WORDS[v]) return _NUM_WORDS[v];
+  return String(n);
+}
+
+function _toSpokenForm(s) {
+  if (!s) return s;
+  // 1. 时间表达 H.MM a.m./p.m. -> "H MM a m / p m"（Whisper 读成 five thirty p m）
+  s = s.replace(/(\d{1,2})\.(\d{1,2})\s*([ap])\.?\s*m\.?/gi, function (m, h, mm, ap) {
+    return ' ' + _numWord(h) + ' ' + _numWord(mm) + ' ' + ap.toLowerCase() + ' m ';
+  });
+  // 2. 单独 a.m./p.m.（带点）-> a m / p m（靠 p. 的 p 区分，不误伤动词 am）
+  s = s.replace(/\b([ap])\.m\.?\b/gi, ' $1 m ');
+  // 3. & -> and
+  s = s.replace(/&/g, ' and ');
+  // 4. % -> percent
+  s = s.replace(/%/g, ' percent ');
+  // 5. / -> 空格（24/7 -> 24 7）
+  s = s.replace(/\//g, ' ');
+  // 6. 普通小数 X.Y -> X point Y
+  s = s.replace(/(\d+)\.(\d+)/g, function (m, a, b) {
+    return ' ' + _numWord(a) + ' point ' + _numWord(b) + ' ';
+  });
+  // 7. 整数 0-99 -> 英文词
+  s = s.replace(/\b(\d{1,2})\b/g, function (m, n) {
+    return ' ' + _numWord(n) + ' ';
+  });
+  // 8. 清掉残留标点/多余空格
+  s = s.replace(/[.,!?;:]/g, ' ');
+  s = s.replace(/\s+/g, ' ').trim();
+  return s;
 }
 
 function _normalizeForScoring(s) {
