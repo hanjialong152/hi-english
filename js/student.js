@@ -33,6 +33,14 @@ async function init() {
   refreshUserInfo(user);
   startAccountWatchdog();
 
+  // 首次登录强制修改默认初始密码：URL 带 forceChangePassword=1 时弹出改密窗口
+  if (new URLSearchParams(window.location.search).get('forceChangePassword') === '1') {
+    setTimeout(function() {
+      showToast('您当前使用的是系统初始密码，请先修改密码');
+      showChangePasswordModal();
+    }, 500);
+  }
+
   // 显示同步中提示（跨终端首次打开时用户能看到系统在拉数据，而非误以为丢数据）
   _showSyncLoading(true);
 
@@ -1580,10 +1588,10 @@ function _evaluateSpeaking(recognized) {
   recState.evaluatedAlready = true;
 
   var targetRaw = (recState.targetText || '').toLowerCase().trim();
-  // 归一化：去标点、压缩空格，用于稳健比对（"why?" 与 "why" 视为一致）
-  var target = targetRaw.replace(/[.,!?;:]/g, '').replace(/\s+/g, ' ').trim();
+  // 归一化：去标点、压缩空格、去冠词，用于稳健比对
+  var target = _normalizeForScoring(targetRaw);
   recognized = (recognized || '').toLowerCase().trim();
-  var recNorm = recognized.replace(/[.,!?;:]/g, '').replace(/\s+/g, ' ').trim();
+  var recNorm = _normalizeForScoring(recognized);
 
   var score = 0;
   var detail = '';
@@ -1601,15 +1609,16 @@ function _evaluateSpeaking(recognized) {
     // 清理常见填充词后再比对
     var clean = recNorm
       .replace(/\s*(uh|um|ah|er|mm|hm)\s*/g, ' ')
-      .replace(/^(the|a|an|i|it|is|to|my|we|they)\s+/, '')
-      .replace(/\s+(the|a|an|is|was|were|to|for|on|in|at)$/, '')
+      .replace(/^(i|it|is|to|my|we|they)\s+/, '')
+      .replace(/\s+(is|was|were|to|for|on|in|at)$/, '')
       .replace(/\s+/g, ' ')
       .trim();
 
     // 词覆盖率：识别文本按顺序覆盖目标多少比例词（防"只读片段就 80+"）
+    // 2026-07-22 修复：使用模糊词匹配，解决 ASR 把 variation→variations、漏 the/a 等导致分偏低
     var cov = tokenCoverage(clean, target);
     if (cov >= 0.95) {
-      var isShort = target.split(/\s+/).filter(Boolean).length <= 2;
+      var isShort = targetRaw.split(/\s+/).filter(Boolean).length <= 2;
       score = isShort ? 100 : 85;
       detail = '发音不错，已读全目标内容';
     } else if (cov >= 0.8) {
@@ -1635,16 +1644,40 @@ function _evaluateSpeaking(recognized) {
   _recApplyScore(recState.mode, score);
 }
 
+function _normalizeForScoring(s) {
+  return (' ' + s + ' ')
+    .replace(/[.,!?;:]/g, '')
+    .replace(/\s+(a|an|the)\s+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+// 单模糊词匹配：允许拼写近似（Whisper 小误差）和单复数/时态差异
+function _wordMatch(a, b) {
+  if (a === b) return true;
+  var maxLen = Math.max(a.length, b.length);
+  if (maxLen === 0) return true;
+  var dist = _levenshtein(a, b);
+  return (maxLen - dist) / maxLen >= 0.80;
+}
+
 // 计算识别文本按顺序覆盖目标文本的词比例（0~1）：用于防"只读片段即高分"
+// 2026-07-22 修复：使用 LCS + 模糊词匹配，比严格逐词相等更鲁棒
 function tokenCoverage(rec, tgt) {
   var rt = (rec || '').split(/\s+/).filter(Boolean);
   var tt = (tgt || '').split(/\s+/).filter(Boolean);
-  if (!tt.length || !rt.length) return 0;
-  var i = 0, matched = 0;
-  for (var k = 0; k < rt.length && i < tt.length; k++) {
-    if (rt[k] === tt[i]) { matched++; i++; }
+  if (!tt.length) return 0;
+  var dp = [];
+  for (var i = 0; i <= rt.length; i++) { dp[i] = []; for (var j = 0; j <= tt.length; j++) { dp[i][j] = 0; } }
+  for (var i = 1; i <= rt.length; i++) {
+    for (var j = 1; j <= tt.length; j++) {
+      dp[i][j] = Math.max(dp[i-1][j], dp[i][j-1]);
+      if (_wordMatch(rt[i-1], tt[j-1])) {
+        dp[i][j] = Math.max(dp[i][j], dp[i-1][j-1] + 1);
+      }
+    }
   }
-  return matched / tt.length;
+  return dp[rt.length][tt.length] / tt.length;
 }
 
 function _similarity(a, b) {
@@ -2980,16 +3013,36 @@ function showChangePasswordModal() {
   document.getElementById('change-password-modal').classList.add('show');
 }
 
+function _checkStudentPasswordStrength(password, account) {
+  if (password.length < 8) return '密码长度至少8位';
+  var hasLower = /[a-z]/.test(password);
+  var hasUpper = /[A-Z]/.test(password);
+  var hasDigit = /\d/.test(password);
+  var hasSpecial = /[^a-zA-Z0-9]/.test(password);
+  if ([hasLower, hasUpper, hasDigit, hasSpecial].filter(Boolean).length < 3) {
+    return '密码必须包含大写字母、小写字母、数字、特殊字符中的至少3种';
+  }
+  var low = password.toLowerCase();
+  var weakDict = ['123456','12345678','123456789','1234567890','123123','111111','000000','admin','admin123','password','passw0rd','qwerty','abc123','letmein','welcome','iloveyou','123qwe','qwe123','1234.com','123@456.com'];
+  if (weakDict.indexOf(low) !== -1) return '该密码过于常见，请更换';
+  if (/(.)(\1){3,}/.test(password)) return '密码中同一字符连续出现超过3次，请更换';
+  if (/1234|2345|3456|4567|5678|6789|7890|qwer|asdf|zxcv/.test(low)) return '密码包含连续字符序列，请更换';
+  var acc = (account || '').toLowerCase();
+  if (acc && (acc === low || low.indexOf(acc) !== -1 || acc.indexOf(low) !== -1)) return '密码不能与账号/工号相同或过于相似';
+  return '';
+}
+
 function changeStudentPassword() {
   var oldPw = document.getElementById('change-pw-old').value;
   var newPw = document.getElementById('change-pw-new').value;
   var confirmPw = document.getElementById('change-pw-confirm').value;
+  var user = HiEnglish.getCurrentUser();
   if (!oldPw) { showToast('请输入当前密码'); return; }
   if (!newPw) { showToast('请输入新密码'); return; }
-  if (newPw.length < 6) { showToast('新密码至少6位'); return; }
+  var strengthErr = _checkStudentPasswordStrength(newPw, user ? user.empid : '');
+  if (strengthErr) { showToast(strengthErr); return; }
   if (newPw !== confirmPw) { showToast('两次输入的新密码不一致'); return; }
 
-  var user = HiEnglish.getCurrentUser();
   if (!user) { showToast('登录状态已失效，请重新登录'); return; }
 
   // 关键：调用服务端修改密码（服务端是登录的唯一密码源）
