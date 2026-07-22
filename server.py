@@ -93,7 +93,9 @@ CLEAN_BACKUP_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'dat
 # 客户端发现服务端 dataVersion > 本地时，用服务端数据完全覆盖本地，解决回滚后客户端仍显示脏数据的问题。
 # 2026-07-21 安全事件收尾：升到 3，强制所有客户端用「干净备份重载后的服务端数据」覆盖本地，
 # 彻底断掉「客户端此前误拉的脏 7/21(999秒/completed)」被回推污染服务端的链路。
-_STUDY_DATA_VERSION = 3
+# 2026-07-22 修复 checkIns dict→array 格式回归：升到 4，强制所有客户端用「数组格式」的服务端数据
+# 覆盖本地，确保学习天数/报告/后台卡片计算从数组契约恢复（不再因 dict 崩溃）。
+_STUDY_DATA_VERSION = 4
 
 # ============================================================
 # Supabase 云数据库（已废弃：扫描器污染 + 国内 DNS 不稳定）
@@ -225,7 +227,10 @@ def _merge_records(base, ov):
     bc, oc = _ci_to_dict(base), _ci_to_dict(ov)
     merged_ci = dict(bc)
     merged_ci.update(oc)  # 叠加层同日覆盖，基线独有日期保留
-    out['checkIns'] = merged_ci
+    # 关键：checkIns 必须输出为数组（前端契约）。合并过程为按日期去重用了 dict，
+    # 但对外（落盘/返回前端）一律收敛成 [{date,seconds,completed}] 数组，
+    # 否则前端 .filter/.reduce/.length 会在 dict 上抛 TypeError（学习天数=0、报告白屏、后台初始化报错）。
+    out['checkIns'] = _normalize_checkins_to_list({'checkIns': merged_ci})['checkIns']
     for stage in ('basic', 'business'):
         bs = base.get(stage) if isinstance(base.get(stage), dict) else {}
         os_ = ov.get(stage) if isinstance(ov.get(stage), dict) else {}
@@ -237,6 +242,37 @@ def _merge_records(base, ov):
         ms['totalSeconds'] = max(int(bs.get('totalSeconds', 0) or 0), int(os_.get('totalSeconds', 0) or 0))
         out[stage] = ms
     return out
+
+def _normalize_checkins_to_list(rec):
+    """把 rec 的 checkIns 统一成 数组（前端契约）：dict 或 list 都收敛为
+    [{date, seconds, completed}]，completed 由「当日累计≥900秒」服务端派生。
+    幂等安全：已是合法数组时仅保证按日期排序后返回。"""
+    if not isinstance(rec, dict):
+        return rec
+    ci = rec.get('checkIns')
+    if isinstance(ci, dict):
+        items = list(ci.values())
+    elif isinstance(ci, list):
+        items = ci
+    else:
+        items = []
+    out = []
+    seen = set()
+    for it in items:
+        if not isinstance(it, dict):
+            continue
+        d = it.get('date')
+        if not _is_valid_checkin_date(d):
+            continue
+        if d in seen:
+            continue
+        seen.add(d)
+        sec = int(it.get('seconds') or 0)
+        out.append({'date': d, 'seconds': sec, 'completed': sec >= _COMPLETED_SECONDS_THRESHOLD})
+    out.sort(key=lambda x: x['date'])
+    rec['checkIns'] = out
+    return rec
+
 
 def _load_study_authoritative():
     """学习数据启动加载：以本地 data-clean/study_data.json 为唯一硬基线，
@@ -292,6 +328,10 @@ def _load_study_authoritative():
     for empid, d in overlay.items():
         if d:
             result[empid] = _merge_records(base.get(empid), d)
+    # 返回前统一把每条记录的 checkIns 规整为数组（防御：即使云端/基线存的是 dict 也转数组落盘）
+    for _eid, _rec in result.items():
+        if isinstance(_rec, dict):
+            _normalize_checkins_to_list(_rec)
     _study_load_debug = f'底线={len(base)} 叠加={len(overlay)} 结果={len(result)}'
     print(f'[加载] 学习数据：底线 {len(base)} + 叠加 {len(overlay)} = 结果 {len(result)} 用户', flush=True)
     return result
@@ -1093,6 +1133,32 @@ def save_json(filepath, data):
         schedule_sync(filepath, data)
         print(f'[GitHub回退] 配置 {cfg_key} 已加入防抖推送队列', flush=True)
 
+def _load_admin_authoritative():
+    """管理员配置：以 GitHub data-sync 运行期数据(含改后的新密码)为权威源，
+    仅当云端为空/非法时才回退 data-clean 干净基线，最后再回退不可变 commit。
+    这样管理员在后台改的新密码在 Render 重启/部署后不会丢失。"""
+    # 1) 云端运行期数据（含新密码）
+    try:
+        gh = github_api_get('data/admin.json')
+    except Exception:
+        gh = None
+    if isinstance(gh, dict) and isinstance(gh.get('admin'), dict) and gh['admin'].get('password_hash'):
+        return gh
+    # 2) 回退 data-clean 干净基线（随代码部署、零网络依赖）
+    _p = os.path.join(CLEAN_BACKUP_DIR, 'admin.json')
+    if os.path.exists(_p):
+        try:
+            with open(_p, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except Exception:
+            pass
+    # 3) 回退不可变干净 commit
+    _cc = github_api_get_commit('data/admin.json', _CLEAN_STUDY_DATA_REF)
+    if isinstance(_cc, dict):
+        return _cc
+    return None
+
+
 def init_data_files():  # v-restart-trigger-20260711
     """初始化数据文件：启动时从干净备份加载，重建本地缓存。
 
@@ -1128,7 +1194,11 @@ def init_data_files():  # v-restart-trigger-20260711
     with open(os.path.join(DATA_DIR, 'study_data.json'), 'w', encoding='utf-8') as f:
         json.dump(_clean_sd, f, ensure_ascii=False, indent=2)
     for key in ['users', 'admin', 'groups', 'messages', 'dingtalk', 'beta']:
-        _cd = _load_clean(key)
+        # admin 配置优先从 GitHub data-sync 云端加载（保留改后的新密码），其余配置仍走干净基线兜底
+        if key == 'admin':
+            _cd = _load_admin_authoritative()
+        else:
+            _cd = _load_clean(key)
         if _cd is not None:
             with open(os.path.join(DATA_DIR, key + '.json'), 'w', encoding='utf-8') as f:
                 json.dump(_cd, f, ensure_ascii=False, indent=2)
@@ -1674,6 +1744,9 @@ def handle_get_study_data():
         gh_data = github_api_get('data/study_data.json')
         if gh_data and empid in gh_data:
             data = gh_data.get(empid)
+    # 防御：无论本地还是云端来源，checkIns 必须是数组，避免前端 .filter/.reduce 崩溃
+    if isinstance(data, dict):
+        _normalize_checkins_to_list(data)
     if not data:
         return jsonify({'success': True, 'studyData': None, 'dataVersion': _STUDY_DATA_VERSION})
     return jsonify({'success': True, 'studyData': data, 'dataVersion': _STUDY_DATA_VERSION})
@@ -1685,6 +1758,10 @@ def handle_all_study_data():
     study_data = load_json(os.path.join(DATA_DIR, 'study_data.json'))
     if not study_data:
         study_data = github_api_get('data/study_data.json') or {}
+    # 防御：全员记录统一规整 checkIns 为数组
+    for _eid, _rec in study_data.items():
+        if isinstance(_rec, dict):
+            _normalize_checkins_to_list(_rec)
     return jsonify({'success': True, 'studyData': study_data})
 
 
