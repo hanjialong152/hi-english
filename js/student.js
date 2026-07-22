@@ -1627,11 +1627,18 @@ function _evaluateSpeaking(recognized) {
     } else {
       // 覆盖率低：可能是(1)只读片段，或(2)整句但有多处替换/错词
       // 用字符级相似度区分：相似度高=整句近读（可过），相似度低=真片段（不过）
-      var sim1 = _similarity(recognized, target);
+      // 2026-07-22 第二轮修复：对归一化后的文本算相似度，避免"the/a"等被去除的词 penalize 正确朗读；
+      // 短词组/短句（≤4词）进一步降低门槛，解决 Whisper 对短内容识别不稳定导致偏低分。
+      var sim1 = _similarity(recNorm, target);
       var sim2 = _similarity(clean, target);
       var bestSim = Math.max(sim1, sim2);
-      if (bestSim >= 0.8) {
-        score = Math.round(bestSim * 100);
+      var targetWordCount = targetRaw.split(/\s+/).filter(Boolean).length;
+      var isShortPhrase = targetWordCount <= 4;
+      // 短词组允许约 1/4 的词被漏识别/替换，同时要求至少覆盖一半以上内容，避免纯片段通过
+      var passSimThreshold = isShortPhrase ? 0.72 : 0.80;
+      var minCoverage = isShortPhrase ? 0.50 : 0.55;
+      if (bestSim >= passSimThreshold && cov >= minCoverage) {
+        score = Math.max(80, Math.round(bestSim * 100));
         detail = '基本正确，注意个别发音';
       } else {
         score = Math.min(78, Math.round(bestSim * 100)); // 只读片段，封顶不过 80
