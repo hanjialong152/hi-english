@@ -8,8 +8,9 @@
     "salt": "5a520e323476cd7d",
     "created_at": 1783355038782,
     "must_change_password": true,
-    "last_login": 1784613802296,
-    "login_count": 12
+    "last_login": 1784722590562,
+    "login_count": 13,
+    "session_token": "2064ea34c7fb308718ffbed66eb575b8"
   },
   "147407": {
     "empid": "147407",
