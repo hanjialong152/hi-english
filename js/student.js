@@ -21,6 +21,59 @@ var testSubScores = {};
 var bizSpellTarget = ''; // Current business spell practice target word
 var BETA_MODE = false; // 众测模式：开启后商务英语对所有人解锁 + 周测/月测不受时间限制
 
+// 自愈：speakScores 在多处被误初始化为数组 []，导致字符串键在 JSON 序列化时丢失，跟读分数"丢失"。
+// 发现数组时，把数组上的字符串属性迁移为对象属性。
+function _ensureSpeakScoresObject(sd) {
+  if (!sd) return;
+  ['basic', 'business'].forEach(function(stage) {
+    var st = sd[stage];
+    if (!st) return;
+    if (Array.isArray(st.speakScores)) {
+      var arr = st.speakScores;
+      var obj = {};
+      Object.keys(arr).forEach(function(k) {
+        if (arr[k] && typeof arr[k] === 'object') obj[k] = arr[k];
+      });
+      st.speakScores = obj;
+      console.log('[Fix] speakScores 从数组修复为对象，stage=' + stage);
+    }
+    if (!st.speakScores || typeof st.speakScores !== 'object') {
+      st.speakScores = {};
+    }
+  });
+}
+
+// 一致性修复：若 mastered 中某单词的 speakScores 并非全部 >=80，说明数据已损坏（由 speakScores 数组 bug 导致），
+// 从 mastered 中移除，避免"已通过"标签与"未达80分"提示同时出现。
+function _repairMasteredConsistency(sd) {
+  if (!sd) return false;
+  var changed = false;
+  ['basic', 'business'].forEach(function(stage) {
+    var st = sd[stage];
+    if (!st || !Array.isArray(st.mastered)) return;
+    var targets = stage === 'basic' ? ['phrase', 'ex1', 'ex2', 'ex3'] : null;
+    var newMastered = st.mastered.filter(function(wordId) {
+      var scores = (st.speakScores || {})[wordId] || {};
+      if (stage === 'business') {
+        // business 以 lesson 为单位，需 lesson.sentences 数量匹配
+        var lesson = (typeof lessons !== 'undefined' ? lessons : []).find(function(l) { return String(l.id) === String(wordId); });
+        if (!lesson || !Array.isArray(lesson.sentences)) return true; // 无课库时不处理
+        targets = lesson.sentences.map(function(_, i) { return 's' + i; });
+      }
+      var allPass = targets.every(function(t) { return scores[t] && scores[t] >= 80; });
+      if (!allPass) {
+        console.log('[Repair] ' + stage + '/' + wordId + ' 不满足全部通过，从 mastered 移除');
+        changed = true;
+      }
+      return allPass;
+    });
+    if (newMastered.length !== st.mastered.length) {
+      st.mastered = newMastered;
+    }
+  });
+  return changed;
+}
+
 // ===== Initialize =====
 async function init() {
   var user = HiEnglish.getCurrentUser();
@@ -80,10 +133,18 @@ async function init() {
     // 确保结构完整
     if (!studyData.basic) studyData.basic = { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: {}, weeklyTests: [], monthlyTests: [], totalSeconds: 0 };
     if (!studyData.business) studyData.business = { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: {}, weeklyTests: [], monthlyTests: [], totalSeconds: 0, unlocked: false };
+    _ensureSpeakScoresObject(studyData);
   }
   // Migrate: ensure learnedDates exists (backward compat)
   if (!studyData.basic.learnedDates) studyData.basic.learnedDates = {};
   if (!studyData.business.learnedDates) studyData.business.learnedDates = {};
+  // 再次修复 speakScores 数组问题（本地读取路径）
+  _ensureSpeakScoresObject(studyData);
+  // 修复 mastered 与 speakScores 不一致（数据损坏导致 UI 矛盾）
+  if (_repairMasteredConsistency(studyData)) {
+    saveStudyData();
+    console.log('[Repair] mastered 一致性修复已保存');
+  }
   // ===== 统一打卡数据：将 basic/business 的 checkIns 合并到顶层 studyData.checkIns（一次性、幂等）=====
   // 根因：两个阶段各自维护独立 checkIns 数组，导致切换阶段后打卡进度不一致、管理端与学员端统计歧义。
   // 修复：顶层 checkIns 为唯一真相；basic/business 下的 checkIns 合并进顶层后删除 sub-field。
@@ -112,6 +173,7 @@ async function init() {
       // 重新确保结构完整
       if (!studyData.basic) studyData.basic = { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: {}, weeklyTests: [], monthlyTests: [], totalSeconds: 0 };
       if (!studyData.business) studyData.business = { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: {}, weeklyTests: [], monthlyTests: [], totalSeconds: 0, unlocked: false };
+      _ensureSpeakScoresObject(studyData);
       if (!studyData.basic.learnedDates) studyData.basic.learnedDates = {};
       if (!studyData.business.learnedDates) studyData.business.learnedDates = {};
       unifyCheckIns();
@@ -142,8 +204,9 @@ async function init() {
       if (hasNewerCheckin || hasMoreProgress) {
         console.log('[Sync] 5秒兜底重拉发现更新，静默合并', hasNewerCheckin?'(打卡)':'(进度)');
         studyData = latestData;
-        if (!studyData.basic) studyData.basic = { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: [], weeklyTests: [], monthlyTests: [], totalSeconds: 0 };
-        if (!studyData.business) studyData.business = { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: [], weeklyTests: [], monthlyTests: [], totalSeconds: 0, unlocked: false };
+        if (!studyData.basic) studyData.basic = { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: {}, weeklyTests: [], monthlyTests: [], totalSeconds: 0 };
+        if (!studyData.business) studyData.business = { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: {}, weeklyTests: [], monthlyTests: [], totalSeconds: 0, unlocked: false };
+        _ensureSpeakScoresObject(studyData);
         unifyCheckIns();
         saveStudyData();
         renderHome();
@@ -213,8 +276,9 @@ async function init() {
         HiEnglish.fetchServerStudyData(u.empid).then(function(serverData) {
           if (serverData) {
             studyData = serverData;
-            if (!studyData.basic) studyData.basic = { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: [], weeklyTests: [], monthlyTests: [], totalSeconds: 0 };
-            if (!studyData.business) studyData.business = { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: [], weeklyTests: [], monthlyTests: [], totalSeconds: 0, unlocked: false };
+            if (!studyData.basic) studyData.basic = { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: {}, weeklyTests: [], monthlyTests: [], totalSeconds: 0 };
+            if (!studyData.business) studyData.business = { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: {}, weeklyTests: [], monthlyTests: [], totalSeconds: 0, unlocked: false };
+            _ensureSpeakScoresObject(studyData);
             unifyCheckIns();
             saveStudyData();
             renderHome();
@@ -236,8 +300,9 @@ async function init() {
         HiEnglish.fetchServerStudyData(user.empid).then(function(serverData) {
           if (serverData) {
             studyData = serverData;
-            if (!studyData.basic) studyData.basic = { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: [], weeklyTests: [], monthlyTests: [], totalSeconds: 0 };
-            if (!studyData.business) studyData.business = { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: [], weeklyTests: [], monthlyTests: [], totalSeconds: 0, unlocked: false };
+            if (!studyData.basic) studyData.basic = { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: {}, weeklyTests: [], monthlyTests: [], totalSeconds: 0 };
+            if (!studyData.business) studyData.business = { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: {}, weeklyTests: [], monthlyTests: [], totalSeconds: 0, unlocked: false };
+            _ensureSpeakScoresObject(studyData);
             // 统一打卡数据迁移（与 init() 中一致）
             if (unifyCheckIns()) saveStudyData();
             renderHome();
@@ -926,7 +991,7 @@ function renderWordLearnCard() {
       '<div id="voice-area-learn" style="text-align:center;">' +
         '<button class="rec-btn" data-mode="learn" data-arg="' + word.id + '">🎤</button>' +
         '<div class="rec-score" id="rec-score-learn" style="display:none;"></div>' +
-        '<div style="font-size:12px;color:var(--warning);margin-top:4px;" id="mic-hint">' + getSpeakHint(phraseScore, ex1Score, ex2Score, ex3Score) + '</div>' +
+        '<div style="font-size:12px;color:var(--warning);margin-top:4px;" id="mic-hint">' + (isWordMastered ? '✅ 全部通过，单词已掌握' : getSpeakHint(phraseScore, ex1Score, ex2Score, ex3Score)) + '</div>' +
       '</div>' +
     '</div>';
 
