@@ -1416,6 +1416,14 @@ def _is_forbidden_path(path):
     # 6) 日志/备份/报告/内部文档
     if low.endswith('.log') or low.endswith('.bak') or low.endswith('.bak_bizfix') or low.endswith('.md'):
         return True
+    # 7) 配置/脚本/密钥/数据库类扩展名（防源代码/依赖/配置/站点配置泄漏，闭合 v1/v2/v5/v7）
+    if low.endswith(('.sh', '.bat', '.cmd', '.conf', '.cfg', '.ini',
+                      '.yml', '.yaml', '.toml', '.lock', '.sqlite', '.db',
+                      '.sqlite3', '.crt', '.cer')):
+        return True
+    # 8) 许可证/声明类文件（非敏感但无需对外，满足审计清单）
+    if low in ('license', 'license.md', 'license.txt', 'notice', 'notice.md', 'notice.txt'):
+        return True
     return False
 
 
@@ -1462,12 +1470,11 @@ def handle_login():
     password = body.get('password', '')
     users = load_json(os.path.join(DATA_DIR, 'users.json'))
     user = users.get(empid)
-    if not user:
-        return jsonify({'success': False, 'error': '该工号未注册，请联系管理员'}), 401
-    if not verify_password(password, user['password_hash'], user['salt']):
-        return jsonify({'success': False, 'error': '密码错误'}), 401
-    if user.get('status', 'active') != 'active':
-        return jsonify({'success': False, 'error': '账号已被禁用，如需启用请联系管理员'}), 403
+    # 安全（2026-07-22 漏洞修复 v6）：统一认证失败响应，防用户名猜解/枚举。
+    # 无论"未注册/密码错误/已禁用"均返回相同文案与状态码，不泄露账号是否存在。
+    if not user or not verify_password(password, user['password_hash'], user['salt']) \
+            or user.get('status', 'active') != 'active':
+        return jsonify({'success': False, 'error': '工号或密码错误'}), 401
     # 颁发 session_token，用于后续写接口认证
     session_token = secrets.token_hex(16)
     with data_lock:
@@ -1989,6 +1996,10 @@ def handle_change_password():
     empid = (body.get('empid') or '').strip()
     old_password = body.get('oldPassword', '')
     new_password = body.get('newPassword', '')
+    # 安全（2026-07-22 漏洞修复 v3）：必须携带本人有效 session_token，防越权改他人密码
+    token = (body.get('token') or '').strip()
+    if not _is_valid_student_token(empid, token):
+        return jsonify({'success': False, 'error': '登录状态已失效，请重新登录'}), 401
     if old_password == new_password:
         return jsonify({'success': False, 'error': '新密码不能与原密码相同'}), 400
     ok, err = _check_password_strength(new_password, empid)
@@ -2063,6 +2074,10 @@ def handle_admin_change_password():
     username = (body.get('username') or 'admin').strip()
     old_password = body.get('oldPassword', '')
     new_password = body.get('newPassword', '')
+    # 安全（2026-07-22 漏洞修复 v4）：必须携带管理员 session_token，防未授权改管理员密码
+    token = (body.get('token') or '').strip()
+    if not _is_valid_admin_token(token):
+        return jsonify({'success': False, 'error': '未授权，请先登录管理后台'}), 401
     if old_password == new_password:
         return jsonify({'success': False, 'error': '新密码不能与原密码相同'}), 400
     ok, err = _check_password_strength(new_password, username)
