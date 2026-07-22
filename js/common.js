@@ -753,9 +753,15 @@ const HiEnglish = {
     if (!all[empid]) {
       all[empid] = {
         checkIns: [],
-        basic: { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: [], weeklyTests: [], monthlyTests: [], totalSeconds: 0, audioDone: {}, audioDoneDate: {} },
-        business: { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: [], weeklyTests: [], monthlyTests: [], totalSeconds: 0, unlocked: false, audioDone: {}, audioDoneDate: {} }
+        basic: { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: {}, weeklyTests: [], monthlyTests: [], totalSeconds: 0, audioDone: {}, audioDoneDate: {} },
+        business: { readIndex: 0, spellIndex: 0, learned: [], learnedDates: {}, mastered: [], speakScores: {}, weeklyTests: [], monthlyTests: [], totalSeconds: 0, unlocked: false, audioDone: {}, audioDoneDate: {} }
       };
+      // 初始化时即修复可能的数组类型 speakScores
+      ['basic', 'business'].forEach(function(stage) {
+        if (Array.isArray(all[empid][stage].speakScores)) {
+          all[empid][stage].speakScores = {};
+        }
+      });
       localStorage.setItem('hi_english_study', JSON.stringify(all));
     }
     // 自愈：去重 learned/mastered 数组（修复 ID 类型不一致导致的重复累积）；确保 audioDone 字段存在
@@ -764,6 +770,19 @@ const HiEnglish = {
       if (sd[stage]) {
         if (!sd[stage].audioDone) sd[stage].audioDone = {};
         if (!sd[stage].audioDoneDate) sd[stage].audioDoneDate = {};
+        // 修复 speakScores 数组类型：数组的字符串属性在 JSON 序列化时会丢失，导致跟读分数"丢分"
+        if (Array.isArray(sd[stage].speakScores)) {
+          var arr = sd[stage].speakScores;
+          var obj = {};
+          Object.keys(arr).forEach(function(k) {
+            if (arr[k] && typeof arr[k] === 'object') obj[k] = arr[k];
+          });
+          sd[stage].speakScores = obj;
+          console.log('[Fix] getStudyData 修复 speakScores 数组，stage=' + stage);
+        }
+        if (!sd[stage].speakScores || typeof sd[stage].speakScores !== 'object') {
+          sd[stage].speakScores = {};
+        }
         if (sd[stage].learned && sd[stage].learned.length > 1) {
           sd[stage].learned = Array.from(new Set(sd[stage].learned.map(function(x) { return String(x); })));
         }
