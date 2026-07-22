@@ -1607,8 +1607,10 @@ function _evaluateSpeaking(recognized) {
     detail = '很好！发音正确';
   } else {
     // 清理常见填充词后再比对
+    // 2026-07-22 修复：填充词正则必须带单词边界 \b，否则会把 supplier/together/better 等
+    // 正常单词中的 'er'、'uh'、'um' 子串误切，导致大量词组/例句评分偏低。
     var clean = recNorm
-      .replace(/\s*(uh|um|ah|er|mm|hm)\s*/g, ' ')
+      .replace(/\s*\b(uh|um|ah|er|mm|hm)\b\s*/g, ' ')
       .replace(/^(i|it|is|to|my|we|they)\s+/, '')
       .replace(/\s+(is|was|were|to|for|on|in|at)$/, '')
       .replace(/\s+/g, ' ')
