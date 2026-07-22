@@ -510,6 +510,42 @@ def _is_valid_admin_token(token):
     return False
 
 
+def _get_req_token():
+    """从 query 参数或 X-Session-Token 头取 token（读接口用）。"""
+    t = (request.args.get('token') or '').strip()
+    if not t:
+        t = (request.headers.get('X-Session-Token') or '').strip()
+    return t
+
+
+def _is_valid_student_token(empid, token):
+    """校验学员 session_token 是否本人有效。"""
+    if not token or not empid:
+        return False
+    users = load_json(os.path.join(DATA_DIR, 'users.json'))
+    u = users.get(empid)
+    return isinstance(u, dict) and u.get('session_token') == token
+
+
+def _is_valid_any_token(token):
+    """token 是否任一有效登录态：管理员 token 或任一学员 session_token。"""
+    if _is_valid_admin_token(token):
+        return True
+    if not token:
+        return False
+    users = load_json(os.path.join(DATA_DIR, 'users.json'))
+    return any(isinstance(u, dict) and u.get('session_token') == token for u in users.values())
+
+
+def _is_authorized_viewer(empid, token):
+    """学员本人 session_token 或管理员 token 均可访问该 empid 数据。"""
+    if _is_valid_admin_token(token):
+        return True
+    if empid and _is_valid_student_token(empid, token):
+        return True
+    return False
+
+
 def _validate_study_data(sd):
     """清洗并校验客户端传入的学习数据。发现严重污染时返回 None（拒绝写入）。"""
     if not isinstance(sd, dict):
@@ -1159,6 +1195,29 @@ def _load_admin_authoritative():
     return None
 
 
+def _load_users_authoritative():
+    """学员账号：以 GitHub data-sync 运行期数据(含改后的密码/新增学员)为权威源，
+    仅当云端为空/非法时才回退 data-clean 干净基线，最后回退不可变 commit。
+    这样学员改密码/管理员加学员在 Render 重建后不丢失（与 admin 对称）。"""
+    try:
+        gh = github_api_get('data/users.json')
+    except Exception:
+        gh = None
+    if isinstance(gh, dict) and len(gh) > 0:
+        return gh
+    _p = os.path.join(CLEAN_BACKUP_DIR, 'users.json')
+    if os.path.exists(_p):
+        try:
+            with open(_p, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except Exception:
+            pass
+    _cc = github_api_get_commit('data/users.json', _CLEAN_STUDY_DATA_REF)
+    if isinstance(_cc, dict):
+        return _cc
+    return None
+
+
 def init_data_files():  # v-restart-trigger-20260711
     """初始化数据文件：启动时从干净备份加载，重建本地缓存。
 
@@ -1197,6 +1256,8 @@ def init_data_files():  # v-restart-trigger-20260711
         # admin 配置优先从 GitHub data-sync 云端加载（保留改后的新密码），其余配置仍走干净基线兜底
         if key == 'admin':
             _cd = _load_admin_authoritative()
+        elif key == 'users':
+            _cd = _load_users_authoritative()
         else:
             _cd = _load_clean(key)
         if _cd is not None:
@@ -1256,7 +1317,13 @@ init_data_files()
 # ---- CORS 跨域支持 ----
 @app.after_request
 def after_request(response):
-    response.headers['Access-Control-Allow-Origin'] = '*'
+    # 2026-07-22 第二批：CORS 由 * 收紧为指定前端域名，封堵任意第三方网页跨域读取接口
+    _allowed_origin = {'https://hi-english.onrender.com'}
+    _origin = request.headers.get('Origin')
+    if _origin and (_origin in _allowed_origin or _origin.startswith('http://localhost:') or _origin.startswith('http://127.0.0.1:')):
+        response.headers['Access-Control-Allow-Origin'] = _origin
+    else:
+        response.headers['Access-Control-Allow-Origin'] = ''
     response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
     response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
     # Service Worker 和 PWA 特殊处理
@@ -1457,6 +1524,9 @@ def handle_import_students():
 # ---- 用户列表 API（公开，不含密码哈希）----
 @app.route('/api/users', methods=['GET'])
 def handle_get_users():
+    _tk = _get_req_token()
+    if not _is_valid_any_token(_tk):
+        return jsonify({'success': False, 'error': '未授权'}), 401
     users = load_json(os.path.join(DATA_DIR, 'users.json'))
     safe_users = {}
     for empid, user in users.items():
@@ -1583,6 +1653,9 @@ def handle_unlock_business():
 def handle_get_messages():
     """获取指定学员的所有站内信（按时间倒序，最新在前）"""
     empid = (request.args.get('empid') or '').strip()
+    _tk = _get_req_token()
+    if not _is_authorized_viewer(empid, _tk):
+        return jsonify({'success': False, 'error': '未授权'}), 401
     all_msgs = load_json(os.path.join(DATA_DIR, 'messages.json'))
     msgs = all_msgs.get(empid, []) if isinstance(all_msgs, dict) else []
     # 按时间倒序排列（真实接收时间，最新在最前）
@@ -1735,6 +1808,9 @@ def handle_sb_diag():
 @app.route('/api/study-data', methods=['GET'])
 def handle_get_study_data():
     empid = (request.args.get('empid') or '').strip()
+    _tk = _get_req_token()
+    if not _is_authorized_viewer(empid, _tk):
+        return jsonify({'success': False, 'error': '未授权'}), 401
     # 优先读本地缓存：服务器本地文件已累积全员写穿结果（每次 POST 都 merge+save 到本地），
     # 是最实时的来源。改为本地优先可让 GET 完全不打 GitHub API，规避 5000/小时限流。
     study_data = load_json(os.path.join(DATA_DIR, 'study_data.json'))
@@ -1755,6 +1831,9 @@ def handle_get_study_data():
 @app.route('/api/all-study-data', methods=['GET'])
 def handle_all_study_data():
     """学员端排行榜专用：返回全体学员学习数据。优先本地缓存（已累积全员写穿），GitHub 兜底。"""
+    _tk = _get_req_token()
+    if not _is_valid_any_token(_tk):
+        return jsonify({'success': False, 'error': '未授权'}), 401
     study_data = load_json(os.path.join(DATA_DIR, 'study_data.json'))
     if not study_data:
         study_data = github_api_get('data/study_data.json') or {}
