@@ -209,13 +209,13 @@
       },
       "mastered": [],
       "monthlyTests": [],
-      "readIndex": 11,
+      "readIndex": 12,
       "speakScores": {
         "11": {
           "phrase": 80.0
         },
         "12": {
-          "phrase": 49.0
+          "phrase": 100.0
         }
       },
       "spellIndex": 0,
