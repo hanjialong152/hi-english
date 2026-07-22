@@ -289,9 +289,9 @@
     "salt": "7a7bb75f3ff9c4ac",
     "created_at": 1784720492386,
     "created_by": "admin",
-    "last_login": 1784720504686,
-    "login_count": 1,
+    "last_login": 1784720525779,
+    "login_count": 2,
     "must_change_password": true,
-    "session_token": "c81803f25ad9097faab5f099732b9e87"
+    "session_token": "c1a1281219f2470b525a85970bd555c0"
   }
 }
