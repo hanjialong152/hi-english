@@ -27,7 +27,10 @@ sys.stdout.reconfigure(line_buffering=True)
 
 from flask import Flask, request, jsonify, send_from_directory, send_file
 
-app = Flask(__name__, static_folder='.', static_url_path='')
+# 关键安全改动：禁用 Flask 内置静态文件服务（static_folder=None），
+# 否则 Flask 会在根路径直接吐出 server.py / data/*.json 等敏感文件，绕过 serve_static 的黑名单。
+# 所有根路径文件请求统一走下方 serve_static（含 _is_forbidden_path 黑名单 + 资源放行）。
+app = Flask(__name__, static_folder=None)
 
 import traceback
 @app.errorhandler(500)
