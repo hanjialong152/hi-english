@@ -14,9 +14,9 @@
 // v48: 补卡2项UI修复（日历选中框跟随点击日期/去补卡按钮日期字体缩小防换行）
 // v47: 4项Bug修复（补卡入口/禁用拦截/状态标签/报表日期联动）强制刷新缓存
 
-// v73: 催学逻辑改为"本周完成打卡不足3天"，本周口径统一为"上周六00:00~本周五23:59"
-var CACHE_VERSION = 'hi-english-v73';
-var CORE_CACHE = 'hi-english-core-v73';
+// v74: 催学钉钉卡片显示天数改为"本周打卡天数"（前端传 daysMap，服务端不再按累计重算）
+var CACHE_VERSION = 'hi-english-v74';
+var CORE_CACHE = 'hi-english-core-v74';
 var AUDIO_CACHE = 'hi-english-audio-v31';
 
 var CORE_FILES = [
