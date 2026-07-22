@@ -41,13 +41,14 @@ const HiEnglish = {
           group: data.user.group || '',
           status: data.user.status || 'active',
           password: password,
-          token: data.token || ''
+          token: data.token || '',
+          must_change_password: data.user.must_change_password || false
         };
         this.saveUsers(users);
         // 设置 sessionStorage 登录状态（仅当前浏览器标签页有效）
         this.currentUser = Object.assign({}, users[account], { role: 'student' });
         sessionStorage.setItem('hi_english_user', JSON.stringify(this.currentUser));
-        return { success: true, user: this.currentUser };
+        return { success: true, user: this.currentUser, must_change_password: data.user.must_change_password || false };
       }
       return { success: false, message: data.error || '账号或密码错误' };
     } catch(e) {
@@ -330,7 +331,7 @@ const HiEnglish = {
             name: serverUser.name,
             group: serverUser.group || '',
             status: serverUser.status || 'active',
-            password: localUser ? localUser.password : '123@456.com'
+            password: localUser ? localUser.password : ''
           };
         }
         this.saveUsers(merged);
@@ -737,7 +738,7 @@ const HiEnglish = {
   },
 
   getAdminPassword() {
-    return localStorage.getItem('hi_english_admin_pwd') || '1234.com';
+    return localStorage.getItem('hi_english_admin_pwd') || '';
   },
 
   setAdminPassword(pwd) {
@@ -1021,10 +1022,8 @@ const HiEnglish = {
   // Init default data — ONLY runs on very first visit (when hi_english_users key doesn't exist at all)
   // This prevents re-creating users after admin deletes them (even if all users are deleted, the key still exists as '{}')
   initDefaultData() {
-    // Create default admin if not exists
-    if (!localStorage.getItem('hi_english_admin_pwd')) {
-      localStorage.setItem('hi_english_admin_pwd', '1234.com');
-    }
+    // 不再预置默认管理员密码：首次登录必须联网，由成功登录后 setAdminPassword 写入。
+    // 若本地没有 admin_pwd，离线登录将失败，避免硬编码默认密码泄露。
     // DingTalk webhook is managed server-side (data/dingtalk.json); no frontend hardcoded token.
     // Create default groups only if groups key doesn't exist
     if (localStorage.getItem('hi_english_groups') === null) {
