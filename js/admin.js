@@ -408,14 +408,14 @@ function unlockBusiness(empid) {
 
 // ===== Study Reminder =====
 function sendStudyReminder() {
-  // 优先使用看板中已渲染的催学列表（已按打卡天数升序），否则自行计算兜底
+  // 优先使用看板中已渲染的催学列表（已按本周打卡天数升序），否则自行计算兜底
   var list = (reminderList && reminderList.length) ? reminderList : (function() {
     var users = HiEnglish.getUsers();
     return Object.values(users).map(function(u) {
       if (u.status !== 'active') return null;
       var s = calcUserScores(u.empid);
       return (s.weeklyCompletedDays < 3) ? Object.assign({ empid: u.empid, name: u.name, group: u.group, status: u.status }, s) : null;
-    }).filter(Boolean).sort(function(a, b) { return a.completedDays - b.completedDays; });
+    }).filter(Boolean).sort(function(a, b) { return a.weeklyCompletedDays - b.weeklyCompletedDays; });
   })();
 
   // 仅发送勾选的学员
@@ -433,14 +433,30 @@ function sendStudyReminder() {
   var msgTitle = '催学提醒';
   var msgContent = '您好，您本周学习打卡不足3天，请尽快完成每日跟读学习。坚持每天15分钟，英语水平稳步提升！如有问题请联系培训管理员。';
   var targets = selected.map(function(s) { return s.empid; });
+  // 钉钉卡片需要显示"本周打卡天数"，一并传给服务端，避免服务端按累计天数重算
+  var daysMap = {};
+  selected.forEach(function(s) { daysMap[s.empid] = s.weeklyCompletedDays; });
 
   // 发送到服务端（服务端盖真实时间戳，学员端跨设备即刻收到 + 通知栏 + 钉钉由服务端推送）
-  HiEnglish.sendMessageToServer(targets, msgTitle, msgContent, 'reminder').then(function(ok) {
-    if (ok) {
+  fetch(HiEnglish.getServerUrl() + '/api/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      targets: targets,
+      title: msgTitle,
+      content: msgContent,
+      type: 'reminder',
+      daysMap: daysMap
+    })
+  }).then(function(r) { return r.json(); }).then(function(data) {
+    if (data && data.success) {
       showToast('催学提醒已发送给 ' + targets.length + ' 名学员（站内信 + 通知栏，如已配置钉钉将由服务器同步推送到群）');
     } else {
       showToast('发送失败，请检查网络后重试');
     }
+  }).catch(function(e) {
+    console.log('[Reminder] 发送失败:', e.message);
+    showToast('发送失败，请检查网络后重试');
   });
 }
 
