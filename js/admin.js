@@ -1488,7 +1488,7 @@ function changeAdminPassword() {
   fetch(HiEnglish.getServerUrl() + '/api/admin-change-password', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username: username, oldPassword: oldPw, newPassword: newPw })
+    body: JSON.stringify({ username: username, oldPassword: oldPw, newPassword: newPw, token: sessionStorage.getItem('hi_english_admin_token') || '' })
   }).then(function(resp) { return resp.json(); }).then(function(data) {
     if (data.success) {
       // 同步本地缓存密码，保证离线降级登录也只认新密码（旧密码彻底失效）
