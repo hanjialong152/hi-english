@@ -149,7 +149,8 @@ const HiEnglish = {
     attempt = attempt || 1;
     var MAX_RETRY = 3;
     try {
-      var resp = await fetch(this.getServerUrl() + '/api/study-data?empid=' + encodeURIComponent(empid));
+      var token = this._getUserToken(empid);
+      var resp = await fetch(this.getServerUrl() + '/api/study-data?empid=' + encodeURIComponent(empid) + '&token=' + encodeURIComponent(token));
       var data = await resp.json();
       if (!data.success) {
         console.log('[Sync] 服务端返回失败 (attempt ' + attempt + '):', data.error);
@@ -206,7 +207,11 @@ const HiEnglish = {
   // 返回 null 表示服务端不可达（调用方应降级用本地数据，切勿用空对象覆盖）。
   async fetchAllStudyData() {
     try {
-      var resp = await fetch(this.getServerUrl() + '/api/all-study-data');
+      var adminToken = sessionStorage.getItem('hi_english_admin_token') || '';
+      var cur = this.getCurrentUser();
+      var stuToken = cur ? this._getUserToken(cur.empid) : '';
+      var token = adminToken || stuToken;
+      var resp = await fetch(this.getServerUrl() + '/api/all-study-data?token=' + encodeURIComponent(token));
       var data = await resp.json();
       if (data.success && data.studyData && Object.keys(data.studyData).length > 0) {
         console.log('[Sync] 拉取全体学习数据成功，共', Object.keys(data.studyData).length, '人');
@@ -307,7 +312,11 @@ const HiEnglish = {
   // ===== Sync users from server (for admin) =====
   async syncUsersFromServer() {
     try {
-      var resp = await fetch(this.getServerUrl() + '/api/users');
+      var adminToken = sessionStorage.getItem('hi_english_admin_token') || '';
+      var cur = this.getCurrentUser();
+      var stuToken = cur ? this._getUserToken(cur.empid) : '';
+      var token = adminToken || stuToken;
+      var resp = await fetch(this.getServerUrl() + '/api/users?token=' + encodeURIComponent(token));
       var data = await resp.json();
       if (data.success && data.users) {
         // 服务端数据为唯一数据源，完全覆盖本地
@@ -801,7 +810,8 @@ const HiEnglish = {
   // 从服务端拉取指定学员的站内信（真实接收时间，跨终端同步）
   async fetchServerMessages(empid) {
     try {
-      var resp = await fetch(this.getServerUrl() + '/api/messages?empid=' + encodeURIComponent(empid));
+      var token = this._getUserToken(empid);
+      var resp = await fetch(this.getServerUrl() + '/api/messages?empid=' + encodeURIComponent(empid) + '&token=' + encodeURIComponent(token));
       var data = await resp.json();
       if (data && data.success && Array.isArray(data.messages)) {
         // 同步到本地缓存
