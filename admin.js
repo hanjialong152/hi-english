@@ -143,7 +143,7 @@ async function importStudents(event) {
 
 // ---- 重置密码 ----
 async function resetStudentPassword(empid, name) {
-  if (!confirm(`确认重置 ${name} 的密码为 123@456.com？`)) return;
+  if (!confirm(`确认重置 ${name} 的密码为系统默认密码？`)) return;
   try {
     const resp = await fetch('/api/reset-password', {
       method: 'POST',
