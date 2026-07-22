@@ -208,7 +208,11 @@
       "mastered": [],
       "monthlyTests": [],
       "readIndex": 11,
-      "speakScores": {},
+      "speakScores": {
+        "11": {
+          "phrase": 80.0
+        }
+      },
       "spellIndex": 0,
       "totalSeconds": 0,
       "weeklyTests": [],
@@ -290,7 +294,7 @@
       },
       {
         "date": "2026-07-22",
-        "seconds": 55,
+        "seconds": 56,
         "completed": false
       }
     ]
