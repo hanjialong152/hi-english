@@ -17,8 +17,16 @@
     "lastIndex": 3,
     "totalStudySeconds": 120,
     "updatedAt": 1782399759372,
-    "basic": {},
-    "business": {},
+    "basic": {
+      "learned": [],
+      "mastered": [],
+      "totalSeconds": 0
+    },
+    "business": {
+      "learned": [],
+      "mastered": [],
+      "totalSeconds": 0
+    },
     "checkIns": []
   },
   "10002": {
@@ -34,8 +42,16 @@
     "totalStudySeconds": 0,
     "createdAt": 1782399759418,
     "updatedAt": 1782399759418,
-    "basic": {},
-    "business": {},
+    "basic": {
+      "learned": [],
+      "mastered": [],
+      "totalSeconds": 0
+    },
+    "business": {
+      "learned": [],
+      "mastered": [],
+      "totalSeconds": 0
+    },
     "checkIns": []
   },
   "10003": {
@@ -51,8 +67,16 @@
     "totalStudySeconds": 0,
     "createdAt": 1782399759418,
     "updatedAt": 1782399759418,
-    "basic": {},
-    "business": {},
+    "basic": {
+      "learned": [],
+      "mastered": [],
+      "totalSeconds": 0
+    },
+    "business": {
+      "learned": [],
+      "mastered": [],
+      "totalSeconds": 0
+    },
     "checkIns": []
   },
   "gw00147407": {
@@ -91,8 +115,16 @@
     "updatedAt": 1782403425466,
     "lastLogin": 1782403422083,
     "loginCount": 7,
-    "basic": {},
-    "business": {},
+    "basic": {
+      "learned": [],
+      "mastered": [],
+      "totalSeconds": 0
+    },
+    "business": {
+      "learned": [],
+      "mastered": [],
+      "totalSeconds": 0
+    },
     "checkIns": []
   },
   "GW0100256": {
@@ -108,8 +140,16 @@
     "totalStudySeconds": 0,
     "createdAt": 1782402576147,
     "updatedAt": 1782402576147,
-    "basic": {},
-    "business": {},
+    "basic": {
+      "learned": [],
+      "mastered": [],
+      "totalSeconds": 0
+    },
+    "business": {
+      "learned": [],
+      "mastered": [],
+      "totalSeconds": 0
+    },
     "checkIns": []
   },
   "GW00058704": {
@@ -125,8 +165,16 @@
     "totalStudySeconds": 0,
     "createdAt": 1782402602907,
     "updatedAt": 1782402602907,
-    "basic": {},
-    "business": {},
+    "basic": {
+      "learned": [],
+      "mastered": [],
+      "totalSeconds": 0
+    },
+    "business": {
+      "learned": [],
+      "mastered": [],
+      "totalSeconds": 0
+    },
     "checkIns": []
   },
   "test002": {
