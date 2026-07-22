@@ -1209,8 +1209,9 @@ def index():
 
 def _is_forbidden_path(path):
     """安全：禁止对外提供敏感文件（源码/数据/配置/版本控制/内部文档）。
-    仅拒绝明确危险的路径；前端必需的 html/js/css/audio/图片/manifest.json 全部放行。
-    修复回滚 aa49e058 时丢失的静态文件防护（公网可下载源码与数据）。"""
+    前端必需的 html/js/css/audio/图片/manifest.json 以及公开词库/课库（data/*.json，非敏感）
+    全部放行；仅拦截含密码哈希、学习记录、管理配置等敏感数据文件与源码/配置。
+    注意：data/ 目录不能整目录禁——前端运行必需 ogden_850_final.json / business_lessons.json。"""
     p = (path or '').replace('\\', '/').strip('/')
     low = p.lower()
     # 1) 源码与部署配置
@@ -1223,14 +1224,20 @@ def _is_forbidden_path(path):
     # 2) 版本控制目录
     if '.git' in low:
         return True
-    # 3) 数据与备份目录（含干净备份 data-clean、audit backup、临时 _tmp）
-    for seg in ('data', 'data-clean', 'backup', '_tmp'):
+    # 3) 内部备份/临时目录（全禁，含干净备份 data-clean）
+    for seg in ('data-clean', 'backup', '_tmp'):
         if low == seg or ('/' + seg + '/') in low or low.startswith(seg + '/'):
             return True
-    # 4) 原始/审计 JSON：除 PWA 清单 manifest.json 外一律禁止直接下载
+    # 4) data/ 目录：放行公开词库/课库等静态数据（ogden_850_final.json、business_lessons.json），
+    #    仅禁敏感数据文件（含密码哈希/学习记录/管理配置），避免保护过度误伤前端加载导致白屏。
+    if low.startswith('data/'):
+        _SENSITIVE = {'users.json', 'admin.json', 'study_data.json', 'groups.json',
+                      'messages.json', 'study_data_backup.json'}
+        return low.split('/')[-1] in _SENSITIVE
+    # 5) 根目录/其他位置的原始 JSON（如内部审计文件）：除 PWA 清单 manifest.json 外一律禁止
     if low.endswith('.json') and low != 'manifest.json':
         return True
-    # 5) 日志/备份/报告/内部文档
+    # 6) 日志/备份/报告/内部文档
     if low.endswith('.log') or low.endswith('.bak') or low.endswith('.bak_bizfix') or low.endswith('.md'):
         return True
     return False
