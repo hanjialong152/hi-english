@@ -19,10 +19,10 @@
     "password_hash": "f2c10d858064905a603f154a127f03d6366cc20b7e04c15a131fb463014c12e9",
     "salt": "a3220c0c5ef9ff55",
     "created_at": 1782400169193,
-    "last_login": 1784688275111,
-    "login_count": 247,
+    "last_login": 1784688308566,
+    "login_count": 248,
     "must_change_password": true,
-    "session_token": "7b9ab31a912d573a8f594dc4ae1dbf0a"
+    "session_token": "37692fda2923bdc862b9c2f1733a9f84"
   },
   "345316": {
     "empid": "345316",
