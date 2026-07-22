@@ -45,7 +45,7 @@ os.makedirs(DATA_DIR, exist_ok=True)
 data_lock = threading.Lock()
 
 DEFAULT_PASSWORD = '123@456.com'
-DEFAULT_ADMIN_PASSWORD = '1234.com'
+DEFAULT_ADMIN_PASSWORD = '1234hi...@com'
 
 # ---- GitHub 数据持久化同步 ----
 # Render 免费版文件系统不持久化，每次重启/部署会重置 data/ 目录
@@ -1062,6 +1062,45 @@ def verify_password(password, stored_hash, salt):
     return hashed == stored_hash
 
 
+# ---- 弱口令修复：统一密码强度校验（2026-07-22 安全扫描） ----
+_WEAK_PASSWORDS = {
+    '123456', '12345678', '123456789', '1234567890', '123123', '123321',
+    '111111', '000000', 'admin', 'admin123', 'password', 'passw0rd',
+    'qwerty', 'abc123', 'letmein', 'welcome', 'monkey', 'dragon',
+    'master', 'shadow', 'sunshine', 'princess', 'football', 'baseball',
+    'iloveyou', 'trustno1', 'qazwsx', 'password123', '123qwe', 'qwe123',
+    '1234.com', '123@456.com', '123456.com', '111111', '654321',
+}
+
+
+def _check_password_strength(password, account=''):
+    """返回 (ok, error_msg)。策略：长度>=8，至少3种字符类型（大写/小写/数字/特殊字符），
+    非常见弱口令，不与账号/工号相同，新旧不同由调用方控制。"""
+    if len(password) < 8:
+        return False, '密码长度至少8位'
+    has_lower = bool(re.search(r'[a-z]', password))
+    has_upper = bool(re.search(r'[A-Z]', password))
+    has_digit = bool(re.search(r'\d', password))
+    has_special = bool(re.search(r'[^a-zA-Z0-9]', password))
+    kinds = sum([has_lower, has_upper, has_digit, has_special])
+    if kinds < 3:
+        return False, '密码必须包含大写字母、小写字母、数字、特殊字符中的至少3种'
+    # 检查常见弱口令（不区分大小写）
+    low = password.lower()
+    if low in _WEAK_PASSWORDS:
+        return False, '该密码过于常见，请更换'
+    # 检查键盘连续、重复字符（简单规则）
+    if re.search(r'(.)\1{3,}', password):
+        return False, '密码中同一字符连续出现超过3次，请更换'
+    if re.search(r'1234|2345|3456|4567|5678|6789|7890|qwer|asdf|zxcv', low):
+        return False, '密码包含连续字符序列，请更换'
+    # 不能与账号/工号相同或包含（忽略大小写）
+    acc = (account or '').strip().lower()
+    if acc and (acc == low or acc in low or low in acc):
+        return False, '密码不能与账号/工号相同或过于相似'
+    return True, ''
+
+
 def _dingtalk_post(webhook, payload):
     """向钉钉 webhook POST 一条消息体，返回是否成功。"""
     try:
@@ -1457,6 +1496,12 @@ def handle_register():
     name = ''.join(c for c in (body.get('name', '') or '') if c not in _BAD_CHARS).strip()[:32]
     group = ''.join(c for c in (body.get('group', '') or '') if c not in _BAD_CHARS).strip()[:32]
     password = (body.get('password') or '').strip() or DEFAULT_PASSWORD
+    is_default_pw = (password == DEFAULT_PASSWORD)
+    # 若管理员手动指定初始密码，同样要满足复杂度
+    if not is_default_pw:
+        ok, err = _check_password_strength(password, empid)
+        if not ok:
+            return jsonify({'success': False, 'error': err}), 400
     if not empid or not name:
         return jsonify({'success': False, 'error': '工号和姓名不能为空'}), 400
     with data_lock:
@@ -1468,7 +1513,7 @@ def handle_register():
             'empid': empid, 'name': name, 'group': group, 'status': 'active',
             'password_hash': hashed, 'salt': salt,
             'created_at': int(time.time() * 1000), 'created_by': 'admin',
-            'last_login': 0, 'login_count': 0, 'must_change_password': False
+            'last_login': 0, 'login_count': 0, 'must_change_password': is_default_pw
         }
         save_json(os.path.join(DATA_DIR, 'users.json'), users)
         study_data = load_json(os.path.join(DATA_DIR, 'study_data.json'))
@@ -1477,7 +1522,8 @@ def handle_register():
             'business': {'readIndex': 0, 'spellIndex': 0, 'learned': [], 'learnedDates': {}, 'mastered': [], 'speakScores': {}, 'weeklyTests': [], 'monthlyTests': [], 'totalSeconds': 0, 'unlocked': False}
         }
         save_json(os.path.join(DATA_DIR, 'study_data.json'), study_data)
-    return jsonify({'success': True, 'message': f'已添加学员 {name}，初始密码 {DEFAULT_PASSWORD}'})
+    msg = f'已添加学员 {name}' + (', 首次登录需修改初始密码' if is_default_pw else '')
+    return jsonify({'success': True, 'message': msg})
 
 
 @app.route('/api/import-students', methods=['POST'])
@@ -1506,7 +1552,7 @@ def handle_import_students():
                 'empid': empid, 'name': name, 'group': group, 'status': 'active',
                 'password_hash': hashed, 'salt': salt,
                 'created_at': int(time.time() * 1000), 'created_by': 'admin',
-                'last_login': 0, 'login_count': 0, 'must_change_password': False
+                'last_login': 0, 'login_count': 0, 'must_change_password': True
             }
             study_data[empid] = {
             'basic': {'readIndex': 0, 'spellIndex': 0, 'learned': [], 'learnedDates': {}, 'mastered': [], 'speakScores': {}, 'weeklyTests': [], 'monthlyTests': [], 'totalSeconds': 0},
@@ -1943,8 +1989,11 @@ def handle_change_password():
     empid = (body.get('empid') or '').strip()
     old_password = body.get('oldPassword', '')
     new_password = body.get('newPassword', '')
-    if len(new_password) < 6:
-        return jsonify({'success': False, 'error': '新密码至少6位'}), 400
+    if old_password == new_password:
+        return jsonify({'success': False, 'error': '新密码不能与原密码相同'}), 400
+    ok, err = _check_password_strength(new_password, empid)
+    if not ok:
+        return jsonify({'success': False, 'error': err}), 400
     with data_lock:
         users = load_json(os.path.join(DATA_DIR, 'users.json'))
         user = users.get(empid)
@@ -1981,7 +2030,8 @@ def handle_reset_password():
         user.pop('password', None)
         user['must_change_password'] = (new_password == DEFAULT_PASSWORD)
         save_json(os.path.join(DATA_DIR, 'users.json'), users)
-    return jsonify({'success': True, 'message': f'已重置密码为 {new_password}'})
+    msg = '已重置为系统默认密码，请通知学员首次登录修改' if (new_password == DEFAULT_PASSWORD) else '密码已重置'
+    return jsonify({'success': True, 'message': msg})
 
 
 # ---- 管理员 API ----
@@ -2013,8 +2063,11 @@ def handle_admin_change_password():
     username = (body.get('username') or 'admin').strip()
     old_password = body.get('oldPassword', '')
     new_password = body.get('newPassword', '')
-    if len(new_password) < 6:
-        return jsonify({'success': False, 'error': '新密码至少6位'}), 400
+    if old_password == new_password:
+        return jsonify({'success': False, 'error': '新密码不能与原密码相同'}), 400
+    ok, err = _check_password_strength(new_password, username)
+    if not ok:
+        return jsonify({'success': False, 'error': err}), 400
     with data_lock:
         admin = load_json(os.path.join(DATA_DIR, 'admin.json'))
         admin_user = admin.get(username)
