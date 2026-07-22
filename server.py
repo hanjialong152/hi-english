@@ -1734,6 +1734,7 @@ def handle_send_message():
     title = (body.get('title') or '').strip()
     content = (body.get('content') or '').strip()
     msg_type = body.get('type', 'reminder')
+    days_map = body.get('daysMap') or {}  # 前端传来的本周打卡天数映射 {empid: days}
     if not targets or not title:
         return jsonify({'success': False, 'error': '缺少参数'}), 400
     # 服务端真实时间戳（毫秒）
@@ -1793,11 +1794,15 @@ def handle_send_message():
                         continue
                     u = users.get(eid) if isinstance(users, dict) else None
                     name = u.get('name', '') if u else eid
-                    sd = study_data_all.get(eid)
-                    days = 0
-                    if isinstance(sd, dict):
-                        checkins = sd.get('checkIns') or []
-                        days = sum(1 for c in checkins if isinstance(c, dict) and c.get('completed'))
+                    # 优先使用前端传来的本周打卡天数，避免服务端按累计天数重算导致口径不一致
+                    days = days_map.get(eid) if isinstance(days_map, dict) else None
+                    if days is None:
+                        sd = study_data_all.get(eid)
+                        if isinstance(sd, dict):
+                            checkins = sd.get('checkIns') or []
+                            days = sum(1 for c in checkins if isinstance(c, dict) and c.get('completed'))
+                        else:
+                            days = 0
                     rows.append((name, eid, days))
                 # 按打卡天数升序（0、1、2…），最该催的排在前面
                 rows.sort(key=lambda r: r[2])
