@@ -213,6 +213,9 @@
       "speakScores": {
         "11": {
           "phrase": 80.0
+        },
+        "12": {
+          "phrase": 49.0
         }
       },
       "spellIndex": 0,
