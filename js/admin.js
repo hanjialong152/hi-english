@@ -623,7 +623,7 @@ function showAddStudentModal() {
   fillGroupSelect('add-group');
   document.getElementById('add-empid').value = '';
   document.getElementById('add-name').value = '';
-  document.getElementById('add-password').value = '123@456.com';
+  document.getElementById('add-password').value = '';
   document.getElementById('add-student-modal').classList.add('show');
 }
 
@@ -635,6 +635,10 @@ function addStudent() {
 
   if (!empid) { showToast('请输入账号'); return; }
   if (!name) { showToast('请输入姓名'); return; }
+  if (password) {
+    var strengthErr = _checkAdminPasswordStrength(password, empid);
+    if (strengthErr) { showToast(strengthErr); return; }
+  }
 
   var users = HiEnglish.getUsers();
   if (users[empid]) { showToast('账号已存在'); return; }
@@ -759,7 +763,7 @@ function batchImportStudents() {
     if (users[row.empid]) { skipCount++; return; }
     var group = row.group || '未分组';
     if (!groups.includes(group)) groups.push(group);
-    users[row.empid] = {empid: row.empid, name: row.name, group: group, status: 'active', password: '123@456.com'};
+    users[row.empid] = {empid: row.empid, name: row.name, group: group, status: 'active'};
     successCount++;
   });
 
@@ -874,14 +878,17 @@ function resetPassword(empid) {
   if (!u) return;
   document.getElementById('reset-pw-empid').value = u.empid;
   document.getElementById('reset-pw-name').value = u.name;
-  document.getElementById('reset-pw-value').value = '123@456.com';
+  document.getElementById('reset-pw-value').value = '';
   document.getElementById('reset-password-modal').classList.add('show');
 }
 
 function confirmResetPassword() {
   var empid = document.getElementById('reset-pw-empid').value;
-  var newPwd = document.getElementById('reset-pw-value').value;
-  if (!newPwd || newPwd.length < 6) { showToast('密码至少6位'); return; }
+  var newPwd = document.getElementById('reset-pw-value').value.trim();
+  if (newPwd) {
+    var strengthErr = _checkAdminPasswordStrength(newPwd, empid);
+    if (strengthErr) { showToast(strengthErr); return; }
+  }
   // 走服务端重置密码，确保学员下次登录只能用新密码（跨终端生效）
   fetch(HiEnglish.getServerUrl() + '/api/reset-password', {
     method: 'POST',
@@ -890,8 +897,8 @@ function confirmResetPassword() {
   }).then(function(resp) { return resp.json(); }).then(function(data) {
     if (data.success) {
       var users = HiEnglish.getUsers();
-      if (users[empid]) { users[empid].password = newPwd; HiEnglish.saveUsers(users); }
-      showToast('密码已重置为：' + newPwd);
+      if (users[empid]) { users[empid].password = newPwd || ''; HiEnglish.saveUsers(users); }
+      showToast(data.message || '密码已重置');
       closeModal('reset-password-modal');
     } else {
       showToast(data.error || '重置失败');
@@ -1447,16 +1454,36 @@ function showAdminChangePasswordModal() {
   document.getElementById('admin-change-password-modal').classList.add('show');
 }
 
+function _checkAdminPasswordStrength(password, account) {
+  if (password.length < 8) return '密码长度至少8位';
+  var hasLower = /[a-z]/.test(password);
+  var hasUpper = /[A-Z]/.test(password);
+  var hasDigit = /\d/.test(password);
+  var hasSpecial = /[^a-zA-Z0-9]/.test(password);
+  if ([hasLower, hasUpper, hasDigit, hasSpecial].filter(Boolean).length < 3) {
+    return '密码必须包含大写字母、小写字母、数字、特殊字符中的至少3种';
+  }
+  var low = password.toLowerCase();
+  var weakDict = ['123456','12345678','123456789','1234567890','123123','111111','000000','admin','admin123','password','passw0rd','qwerty','abc123','letmein','welcome','iloveyou','123qwe','qwe123','1234.com','123@456.com'];
+  if (weakDict.indexOf(low) !== -1) return '该密码过于常见，请更换';
+  if (/(.)(\1){3,}/.test(password)) return '密码中同一字符连续出现超过3次，请更换';
+  if (/1234|2345|3456|4567|5678|6789|7890|qwer|asdf|zxcv/.test(low)) return '密码包含连续字符序列，请更换';
+  var acc = (account || '').toLowerCase();
+  if (acc && (acc === low || low.indexOf(acc) !== -1 || acc.indexOf(low) !== -1)) return '密码不能与账号相同或过于相似';
+  return '';
+}
+
 function changeAdminPassword() {
   var oldPw = document.getElementById('admin-change-pw-old').value;
   var newPw = document.getElementById('admin-change-pw-new').value;
   var confirmPw = document.getElementById('admin-change-pw-confirm').value;
+  var username = sessionStorage.getItem('hi_english_admin_name') || 'admin';
   if (!oldPw) { showToast('请输入当前密码'); return; }
   if (!newPw) { showToast('请输入新密码'); return; }
-  if (newPw.length < 6) { showToast('新密码至少6位'); return; }
+  var strengthErr = _checkAdminPasswordStrength(newPw, username);
+  if (strengthErr) { showToast(strengthErr); return; }
   if (newPw !== confirmPw) { showToast('两次输入的新密码不一致'); return; }
 
-  var username = sessionStorage.getItem('hi_english_admin_name') || 'admin';
   // 关键：调用服务端修改管理员密码（服务端是登录的唯一密码源）
   fetch(HiEnglish.getServerUrl() + '/api/admin-change-password', {
     method: 'POST',
