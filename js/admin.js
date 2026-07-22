@@ -93,6 +93,8 @@ function calcUserScores(empid) {
   // 使用统一打卡数据（与学员端一致）
   var checkIns = sd.checkIns || [];
   var completedDays = checkIns.filter(function(c) { return c.completed; }).length;
+  // 本周完成打卡天数：业务周口径为"上周六00:00~本周五23:59"，与周测/月测归属一致，用于催学"本周不足3天"判定
+  var weeklyCompletedDays = checkIns.filter(function(c) { return c.completed && HiEnglish.isThisWeek(c.date); }).length;
   var checkinRate = checkIns.length > 0 ? Math.round((completedDays / checkIns.length) * 100) : 0;
   // 个人总成绩 = 打卡占比×100×30% + 当月周测均分×30% + 当月月测均分×40%
   // 合并 basic+business 两阶段周测/月测，共用 common.js 统一函数，与学员端完全一致
@@ -103,7 +105,7 @@ function calcUserScores(empid) {
   var monthlyAvg = _sc.monthlyAvg;
 
   return {
-    mastered: mastered, readIndex: basicAudioLearned, completedDays: completedDays,
+    mastered: mastered, readIndex: basicAudioLearned, completedDays: completedDays, weeklyCompletedDays: weeklyCompletedDays,
     weeklyAvg: weeklyAvg, monthlyAvg: monthlyAvg, score: score, checkinRate: checkinRate,
     bizLearned: bizAudioLearned, bizMastered: bizMastered,
     basicLearned: basicAudioLearned,
@@ -146,7 +148,7 @@ function renderReminderTable() {
         '<td style="text-align:center;"><input type="checkbox" data-reminder-empid="' + p.empid + '" ' + checked + ' onchange="onReminderCheck(this,\'' + p.empid + '\')"></td>' +
         '<td>' + p.name + '</td>' +
         '<td>' + p.empid + '</td>' +
-        '<td>' + p.completedDays + ' 天</td>' +
+        '<td>' + p.weeklyCompletedDays + ' 天</td>' +
       '</tr>';
     }).join('') || '<tr><td colspan="4" style="text-align:center;color:var(--text-sub);padding:20px;">暂无需提醒的学员</td></tr>';
   }
@@ -284,9 +286,9 @@ function renderDashboard() {
 
   // Reminders — 按打卡天数升序（0、1、2…），可勾选 + 分页（默认10/页）
   var inactiveStudents = personalScores.filter(function(p) {
-    return p.completedDays < 3 && p.status === 'active';
+    return p.weeklyCompletedDays < 3 && p.status === 'active';
   });
-  inactiveStudents.sort(function(a, b) { return a.completedDays - b.completedDays; });
+  inactiveStudents.sort(function(a, b) { return a.weeklyCompletedDays - b.weeklyCompletedDays; });
   reminderList = inactiveStudents;
   if (reminderList.length === 0) reminderPage = 1;
   else if (reminderPage > Math.ceil(reminderList.length / reminderPageSize)) reminderPage = 1;
@@ -412,7 +414,7 @@ function sendStudyReminder() {
     return Object.values(users).map(function(u) {
       if (u.status !== 'active') return null;
       var s = calcUserScores(u.empid);
-      return (s.completedDays < 3) ? Object.assign({ empid: u.empid, name: u.name, group: u.group, status: u.status }, s) : null;
+      return (s.weeklyCompletedDays < 3) ? Object.assign({ empid: u.empid, name: u.name, group: u.group, status: u.status }, s) : null;
     }).filter(Boolean).sort(function(a, b) { return a.completedDays - b.completedDays; });
   })();
 
