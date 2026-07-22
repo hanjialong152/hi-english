@@ -13,8 +13,8 @@
 // v48: 补卡2项UI修复（日历选中框跟随点击日期/去补卡按钮日期字体缩小防换行）
 // v47: 4项Bug修复（补卡入口/禁用拦截/状态标签/报表日期联动）强制刷新缓存
 
-var CACHE_VERSION = 'hi-english-v67';
-var CORE_CACHE = 'hi-english-core-v67';
+var CACHE_VERSION = 'hi-english-v68';
+var CORE_CACHE = 'hi-english-core-v68';
 var AUDIO_CACHE = 'hi-english-audio-v31';
 
 var CORE_FILES = [
