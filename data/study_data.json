@@ -218,10 +218,10 @@
           "phrase": 100.0
         },
         "12": {
-          "phrase": 100
+          "phrase": 100.0
         }
       },
-      "spellIndex": 0,
+      "spellIndex": 1,
       "totalSeconds": 0,
       "weeklyTests": [],
       "audioDone": {
