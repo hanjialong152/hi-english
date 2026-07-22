@@ -1190,7 +1190,14 @@ function startVoiceInput(mode, arg, isTouch) {
     var word = words.find(function(w){ return String(w.id) === String(wordId); });
     if (!word) return;
     // 剥离HTML标签，只保留纯英文文本用于语音对比
-    targetText = getSpeakContent(word, speakTarget).en.replace(/<[^>]*>/g, '').trim();
+    // 2026-07-22 修复：getSpeakContent 的 phrase 字段会把中文翻译拼进 en，
+    // 仅去 HTML 标签会残留中文，导致评分目标混入中文、覆盖率下降、分数偏低。
+    // 这里额外去掉所有非 ASCII 字符（中文/乱码），只保留英文用于比对。
+    targetText = getSpeakContent(word, speakTarget).en
+      .replace(/<[^>]*>/g, '')
+      .replace(/[^\u0000-\u007F]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
   } else if (mode === 'learn-biz') {
     var sentIdx = parseInt(arg, 10);
     var lesson = lessons[currentIndex];
