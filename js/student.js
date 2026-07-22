@@ -821,6 +821,7 @@ function renderWordLearnCard() {
   var word = words[currentIndex];
   var stageData = studyData.basic;
   var scores = stageData.speakScores[word.id] || {};
+  var isWordMastered = (stageData.mastered || []).map(String).indexOf(String(word.id)) >= 0;
   var masteredCount = getMasteredCount('basic');
 
   // Check-in progress bar — 使用统一打卡数据（补卡时按 makeupDate 计算，显示层与计时器日期一致）
@@ -843,7 +844,7 @@ function renderWordLearnCard() {
       '<div class="timer-ring">' +
         '<svg width="72" height="72">' +
           '<circle cx="36" cy="36" r="30" fill="none" stroke="#E8E8E8" stroke-width="6"/>' +
-          '<circle cx="36" cy="36" r="30" fill="none" stroke="#52C41A" stroke-width="6" stroke-dasharray="' + circumference + '" stroke-dashoffset="' + checkOffset + '"/>' +
+          '<circle cx="36" cy="36" r="30" fill="none" stroke="' + (todayCheckIn && todayCheckIn.completed ? '#52C41A' : '#4A90D9') + '" stroke-width="6" stroke-dasharray="' + circumference + '" stroke-dashoffset="' + checkOffset + '"/>' +
         '</svg>' +
         '<span class="pct">' + checkProgress + '%</span>' +
       '</div>' +
@@ -914,10 +915,10 @@ function renderWordLearnCard() {
     '<div class="learn-section">' +
       '<h4>🎤 跟读练习（词组+3例句均需80分以上）</h4>' +
       '<div class="speak-target-btns">' +
-        '<button class="speak-target-btn ' + (speakTarget === 'phrase' ? 'active' : '') + '" onclick="setSpeakTarget(this,\'phrase\',\'' + word.id + '\')">词组 ' + scoreHTML(phraseScore) + '</button>' +
-        '<button class="speak-target-btn ' + (speakTarget === 'ex1' ? 'active' : '') + '" onclick="setSpeakTarget(this,\'ex1\',\'' + word.id + '\')">例句1 ' + scoreHTML(ex1Score) + '</button>' +
-        '<button class="speak-target-btn ' + (speakTarget === 'ex2' ? 'active' : '') + '" onclick="setSpeakTarget(this,\'ex2\',\'' + word.id + '\')">例句2 ' + scoreHTML(ex2Score) + '</button>' +
-        '<button class="speak-target-btn ' + (speakTarget === 'ex3' ? 'active' : '') + '" onclick="setSpeakTarget(this,\'ex3\',\'' + word.id + '\')">例句3 ' + scoreHTML(ex3Score) + '</button>' +
+        '<button class="speak-target-btn ' + (speakTarget === 'phrase' ? 'active' : '') + '" onclick="setSpeakTarget(this,\'phrase\',\'' + word.id + '\')">词组 ' + scoreHTML(phraseScore, isWordMastered) + '</button>' +
+        '<button class="speak-target-btn ' + (speakTarget === 'ex1' ? 'active' : '') + '" onclick="setSpeakTarget(this,\'ex1\',\'' + word.id + '\')">例句1 ' + scoreHTML(ex1Score, isWordMastered) + '</button>' +
+        '<button class="speak-target-btn ' + (speakTarget === 'ex2' ? 'active' : '') + '" onclick="setSpeakTarget(this,\'ex2\',\'' + word.id + '\')">例句2 ' + scoreHTML(ex2Score, isWordMastered) + '</button>' +
+        '<button class="speak-target-btn ' + (speakTarget === 'ex3' ? 'active' : '') + '" onclick="setSpeakTarget(this,\'ex3\',\'' + word.id + '\')">例句3 ' + scoreHTML(ex3Score, isWordMastered) + '</button>' +
       '</div>' +
       '<div id="speak-content-preview" style="background:var(--primary-light);border-radius:10px;padding:14px;margin-bottom:12px;">' +
         '<div id="speak-en" style="font-size:15px;font-weight:600;color:var(--text);line-height:1.6;">' + getSpeakContent(word, speakTarget).en + '</div>' +
@@ -977,7 +978,7 @@ function renderLessonLearnCard() {
       '<div class="timer-ring">' +
         '<svg width="72" height="72">' +
           '<circle cx="36" cy="36" r="30" fill="none" stroke="#E8E8E8" stroke-width="6"/>' +
-          '<circle cx="36" cy="36" r="30" fill="none" stroke="#52C41A" stroke-width="6" stroke-dasharray="' + circumference + '" stroke-dashoffset="' + checkOffset + '"/>' +
+          '<circle cx="36" cy="36" r="30" fill="none" stroke="' + (todayCheckIn && todayCheckIn.completed ? '#52C41A' : '#4A90D9') + '" stroke-width="6" stroke-dasharray="' + circumference + '" stroke-dashoffset="' + checkOffset + '"/>' +
         '</svg>' +
         '<span class="pct">' + checkProgress + '%</span>' +
       '</div>' +
@@ -1011,6 +1012,7 @@ function renderLessonLearnCard() {
 
   // Speak practice section — one recording button per sentence
   var lessonScores = stageData.speakScores[lesson.id] || {};
+  var isLessonMastered = (stageData.mastered || []).map(String).indexOf(String(lesson.id)) >= 0;
   var speakPracticeHTML =
     '<div class="learn-section">' +
       '<h4>🎤 跟读练习（每句均需80分以上才算掌握）</h4>';
@@ -1021,7 +1023,7 @@ function renderLessonLearnCard() {
       '<div style="margin-bottom:14px;padding:12px;background:var(--bg);border-radius:8px;">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">' +
           '<span style="font-size:13px;color:var(--primary);font-weight:600;">' + (s.speaker === 'A' ? '👤 A' : '👤 B') + ' · 句' + (i + 1) + '</span>' +
-          scoreHTML(sentScore) +
+          scoreHTML(sentScore, isLessonMastered) +
         '</div>' +
         '<div style="font-size:14px;margin-bottom:8px;line-height:1.5;">' + s.en + '</div>' +
         '<div id="voice-area-biz-' + i + '" style="text-align:center;">' +
@@ -1058,10 +1060,17 @@ function escapeQuotes(str) {
   return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 }
 
-function scoreHTML(score) {
-  if (!score) return '<span style="font-size:11px;color:var(--text-sub);">未测</span>';
-  var cls = score >= 80 ? 'score-pass' : 'score-fail';
-  return '<span class="score-mark ' + cls + '">' + score + '</span>';
+function scoreHTML(score, isMastered) {
+  if (score) {
+    var cls = score >= 80 ? 'score-pass' : 'score-fail';
+    return '<span class="score-mark ' + cls + '">' + score + '</span>';
+  }
+  // 无分数时：已掌握词显示绿色"✓ 已通过"（兜底，避免"已掌握却未测"像bug）；
+  // 未掌握词仍显示灰色"未测"。真实分数会以红绿数字显示（≥80绿 / <80红）。
+  if (isMastered) {
+    return '<span style="font-size:11px;color:#52C41A;font-weight:600;">✓ 已通过</span>';
+  }
+  return '<span style="font-size:11px;color:var(--text-sub);">未测</span>';
 }
 
 function getSpeakContent(word, target) {
