@@ -19,10 +19,10 @@
     "password_hash": "f2c10d858064905a603f154a127f03d6366cc20b7e04c15a131fb463014c12e9",
     "salt": "a3220c0c5ef9ff55",
     "created_at": 1782400169193,
-    "last_login": 1784679363179,
-    "login_count": 252,
+    "last_login": 1784688275111,
+    "login_count": 247,
     "must_change_password": true,
-    "session_token": "946845d957a256cded9b23f236b09d71"
+    "session_token": "7b9ab31a912d573a8f594dc4ae1dbf0a"
   },
   "345316": {
     "empid": "345316",
@@ -263,10 +263,9 @@
     "salt": "dcc21bd611b003a0",
     "created_at": 1784251470298,
     "created_by": "admin",
-    "last_login": 1784680410971,
-    "login_count": 2,
-    "must_change_password": false,
-    "session_token": "aa18481e67f5b10fb489428630261c31"
+    "last_login": 1784256476591,
+    "login_count": 1,
+    "must_change_password": false
   },
   "230959": {
     "empid": "230959",
