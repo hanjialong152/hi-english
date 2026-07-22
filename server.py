@@ -76,12 +76,12 @@ _gh_sig_lock = threading.Lock()
 # ============================================================
 # 7/21 坏部署前的干净学习记录备份 commit（data-sync 分支）
 _CLEAN_STUDY_DATA_REF = 'f1a5eed7041937312636fa51e56f1709557d2c70'
-# 紧急：暂停 study_data.json 向 GitHub data-sync 的自动回写，防止旧客户端/扫描器持续污染远程备份。
-# 本地文件仍正常保存，服务运行期间数据可用；恢复同步前需先确认客户端已全部刷新且打卡数据正常。
+# 2026-07-21 后恢复：study_data 恢复向 GitHub data-sync 自动回写（作为 Supabase 之外的二级兜底）。
 _PAUSE_STUDY_DATA_GH_SYNC = False
-# 永久关闭 Supabase：扫描器已污染 Supabase 库，且 Supabase 在国内访问不稳定、DNS 偶发失效。
-# 关闭后所有读写走本地文件 + GitHub data-sync 兜底，不再依赖 Supabase。
-_DISABLE_SUPABASE_WRITE = True
+# 2026-07-21 后恢复：Supabase 作为学习数据主持久层（按学员单行 UPSERT，并发安全、部署存活）。
+# 安全约束（7/21 教训）：Supabase 仅写穿 + 启动读取时逐行去污染校验；绝不作为"覆盖干净备份"的权威源。
+# 国内 DNS 偶发不稳 → 代码已做连通性探针 + 静默降级（Supabase 不可达时自动退回本地+GitHub）。
+_DISABLE_SUPABASE_WRITE = False
 
 # 本地干净备份目录（随代码部署到 Render，不依赖外网访问 GitHub）
 CLEAN_BACKUP_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data-clean')
@@ -193,7 +193,105 @@ def sb_get_config(key, default=None):
             return res.data[0]['value']
     except Exception as e:
         print(f'[Supabase] get config {key} 失败: {e}', flush=True)
-    return default
+        return default
+
+
+_study_load_debug = ''
+
+def _ci_to_dict(rec):
+    """把 checkIns（可能是 list 或 dict）统一成 {date: entry}。"""
+    c = rec.get('checkIns') if isinstance(rec, dict) else None
+    if isinstance(c, dict):
+        return c
+    if isinstance(c, list):
+        d = {}
+        for it in c:
+            if isinstance(it, dict) and it.get('date'):
+                d[it['date']] = it
+        return d
+    return {}
+
+def _merge_records(base, ov):
+    """两条学习记录的并集合并：checkIns 按日期合并(叠加层覆盖同日)、
+    learned/mastered 取并集去重、totalSeconds 取最大。确保叠加层为空时基线数据不丢。"""
+    if not base:
+        return ov
+    if not ov:
+        return base
+    out = dict(base)
+    bc, oc = _ci_to_dict(base), _ci_to_dict(ov)
+    merged_ci = dict(bc)
+    merged_ci.update(oc)  # 叠加层同日覆盖，基线独有日期保留
+    out['checkIns'] = merged_ci
+    for stage in ('basic', 'business'):
+        bs = base.get(stage) if isinstance(base.get(stage), dict) else {}
+        os_ = ov.get(stage) if isinstance(ov.get(stage), dict) else {}
+        ms = dict(bs)
+        for key in ('learned', 'mastered'):
+            bv = bs.get(key) if isinstance(bs.get(key), list) else []
+            ovv = os_.get(key) if isinstance(os_.get(key), list) else []
+            ms[key] = list(dict.fromkeys(list(bv) + list(ovv)))
+        ms['totalSeconds'] = max(int(bs.get('totalSeconds', 0) or 0), int(os_.get('totalSeconds', 0) or 0))
+        out[stage] = ms
+    return out
+
+def _load_study_authoritative():
+    """学习数据启动加载：以本地 data-clean/study_data.json 为唯一硬基线，
+    不可变 7/20 commit 仅作本地缺失时的兜底。GitHub data-sync 运行期数据作为叠加层并集合并。
+
+    设计要点（根治 7/21 空加载）：
+    - 本地 data-clean 随代码部署，零网络依赖，永远是当前 master 指定的富基线。
+    - 不比较 weight、不选最富：本地存在即用本地，避免网络抖动/空 commit 污染选中。
+    - 叠加层仅 additive（并集合并），空叠加层不会清空基线用户的数据。"""
+    global _study_load_debug
+    # 1) 硬基线：本地 data-clean（零网络）
+    base = {}
+    _lc = os.path.join(CLEAN_BACKUP_DIR, 'study_data.json')
+    if os.path.exists(_lc):
+        try:
+            with open(_lc, 'r', encoding='utf-8') as f:
+                base = json.load(f) or {}
+            if not isinstance(base, dict):
+                base = {}
+        except Exception as e:
+            print(f'[加载] 本地 data-clean 读取失败: {e}', flush=True)
+            base = {}
+    # 本地缺失/损坏时，用不可变 commit 兜底
+    if not base and GITHUB_TOKEN:
+        _cc = github_api_get_commit('data/study_data.json', _CLEAN_STUDY_DATA_REF)
+        if isinstance(_cc, dict):
+            base = _cc
+            print('[加载] 本地 data-clean 不可用，已回退到不可变 commit 基线', flush=True)
+    # 2) 叠加层：Supabase（如启用）+ GitHub data-sync 运行期写穿
+    overlay = {}
+    if supabase:
+        try:
+            rows = sb_get_all_study()
+            for empid, data in (rows or {}).items():
+                try:
+                    raw = json.dumps(data, ensure_ascii=False)
+                except Exception:
+                    continue
+                if _is_suspicious_str(raw):
+                    continue
+                v = _validate_study_data(data)
+                if v:
+                    overlay[empid] = v
+        except Exception as e:
+            print(f'[加载] Supabase 读取失败: {e}', flush=True)
+    gh = github_api_get('data/study_data.json')
+    if isinstance(gh, dict):
+        for empid, data in gh.items():
+            if data:
+                overlay[empid] = data
+    # 3) 合并：基线打底，叠加层按并集合并（空叠加层不清空基线）
+    result = dict(base)
+    for empid, d in overlay.items():
+        if d:
+            result[empid] = _merge_records(base.get(empid), d)
+    _study_load_debug = f'底线={len(base)} 叠加={len(overlay)} 结果={len(result)}'
+    print(f'[加载] 学习数据：底线 {len(base)} + 叠加 {len(overlay)} = 结果 {len(result)} 用户', flush=True)
+    return result
 
 
 # ============================================================
@@ -496,55 +594,80 @@ def _validate_study_data(sd):
     return out
 
 
-def github_api_get(path):
-    """从 GitHub data-sync 分支获取文件内容"""
-    if not GITHUB_TOKEN:
-        return None
-    url = f'https://api.github.com/repos/{GITHUB_REPO}/contents/{path}?ref={GITHUB_DATA_BRANCH}'
+def _github_fetch_once(url, timeout=15):
+    """单次 GitHub API 拉取，返回 (ok, result_or_error)。"""
     req = urllib.request.Request(url)
     req.add_header('Authorization', f'token {GITHUB_TOKEN}')
     req.add_header('Accept', 'application/vnd.github.v3+json')
     try:
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            result = json.loads(resp.read().decode('utf-8'))
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            return True, json.loads(resp.read().decode('utf-8'))
+    except Exception as e:
+        return False, e
+
+
+def github_api_get(path):
+    """从 GitHub data-sync 分支获取文件内容（带重试，克服启动期 SSL 抖动）。"""
+    if not GITHUB_TOKEN:
+        return None
+    url = f'https://api.github.com/repos/{GITHUB_REPO}/contents/{path}?ref={GITHUB_DATA_BRANCH}'
+    last_err = None
+    for attempt in range(3):
+        if attempt > 0:
+            time.sleep(0.5 * attempt)
+        ok, result = _github_fetch_once(url, timeout=15 + attempt * 5)
+        if ok:
             sha = result.get('sha', '')
             content = result.get('content', '')
             if content:
-                # GitHub 返回的 content 是 base64 编码的（可能含换行）
-                content_clean = content.replace('\n', '')
-                decoded = base64.b64decode(content_clean).decode('utf-8')
-                _file_sha_cache[path] = sha
-                return json.loads(decoded)
-    except urllib.error.HTTPError as e:
-        if e.code == 404:
-            print(f'[Sync] {path} 远程不存在（首次部署，正常）', flush=True)
+                try:
+                    content_clean = content.replace('\n', '')
+                    decoded = base64.b64decode(content_clean).decode('utf-8')
+                    _file_sha_cache[path] = sha
+                    return json.loads(decoded)
+                except Exception as e:
+                    print(f'[Sync] {path} base64 解码异常: {e}', flush=True)
+                    return None
+            return None
+        last_err = result
+        if isinstance(result, urllib.error.HTTPError):
+            if result.code == 404:
+                print(f'[Sync] {path} 远程不存在（首次部署，正常）', flush=True)
+                return None
+            print(f'[Sync] 获取 {path} 失败: HTTP {result.code} (attempt {attempt + 1})', flush=True)
         else:
-            print(f'[Sync] 获取 {path} 失败: HTTP {e.code}', flush=True)
-    except Exception as e:
-        print(f'[Sync] 获取 {path} 异常: {e}', flush=True)
+            print(f'[Sync] 获取 {path} 异常 (attempt {attempt + 1}): {result}', flush=True)
+    print(f'[Sync] 获取 {path} 最终失败: {last_err}', flush=True)
     return None
 
 
 def github_api_get_commit(path, ref):
-    """从 GitHub 指定 commit/ref 获取文件内容（用于数据恢复，绕过当前被污染的 data-sync HEAD）"""
+    """从 GitHub 指定 commit/ref 获取文件内容（带重试，用于数据恢复）。"""
     if not GITHUB_TOKEN:
         return None
     url = f'https://api.github.com/repos/{GITHUB_REPO}/contents/{path}?ref={ref}'
-    req = urllib.request.Request(url)
-    req.add_header('Authorization', f'token {GITHUB_TOKEN}')
-    req.add_header('Accept', 'application/vnd.github.v3+json')
-    try:
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            result = json.loads(resp.read().decode('utf-8'))
+    last_err = None
+    for attempt in range(3):
+        if attempt > 0:
+            time.sleep(0.5 * attempt)
+        ok, result = _github_fetch_once(url, timeout=15 + attempt * 5)
+        if ok:
             content = result.get('content', '')
             if content:
-                content_clean = content.replace('\n', '')
-                decoded = base64.b64decode(content_clean).decode('utf-8')
-                return json.loads(decoded)
-    except urllib.error.HTTPError as e:
-        print(f'[Sync] 获取 {path}@{ref} 失败: HTTP {e.code}', flush=True)
-    except Exception as e:
-        print(f'[Sync] 获取 {path}@{ref} 异常: {e}', flush=True)
+                try:
+                    content_clean = content.replace('\n', '')
+                    decoded = base64.b64decode(content_clean).decode('utf-8')
+                    return json.loads(decoded)
+                except Exception as e:
+                    print(f'[Sync] {path}@{ref} base64 解码异常: {e}', flush=True)
+                    return None
+            return None
+        last_err = result
+        if isinstance(result, urllib.error.HTTPError):
+            print(f'[Sync] 获取 {path}@{ref} 失败: HTTP {result.code} (attempt {attempt + 1})', flush=True)
+        else:
+            print(f'[Sync] 获取 {path}@{ref} 异常 (attempt {attempt + 1}): {result}', flush=True)
+    print(f'[Sync] 获取 {path}@{ref} 最终失败: {last_err}', flush=True)
     return None
 
 
@@ -998,7 +1121,7 @@ def init_data_files():  # v-restart-trigger-20260711
         if _gh is not None:
             return _gh
         return github_api_get(f'data/{name}.json')
-    _clean_sd = _load_clean('study_data') or {}
+    _clean_sd = _load_study_authoritative() or {}
     with open(os.path.join(DATA_DIR, 'study_data.json'), 'w', encoding='utf-8') as f:
         json.dump(_clean_sd, f, ensure_ascii=False, indent=2)
     for key in ['users', 'admin', 'groups', 'messages', 'dingtalk', 'beta']:
@@ -1080,9 +1203,42 @@ def after_request(response):
 def index():
     return send_from_directory('.', 'index.html')
 
+
+def _is_forbidden_path(path):
+    """安全：禁止对外提供敏感文件（源码/数据/配置/版本控制/内部文档）。
+    仅拒绝明确危险的路径；前端必需的 html/js/css/audio/图片/manifest.json 全部放行。
+    修复回滚 aa49e058 时丢失的静态文件防护（公网可下载源码与数据）。"""
+    p = (path or '').replace('\\', '/').strip('/')
+    low = p.lower()
+    # 1) 源码与部署配置
+    if low.endswith('.py'):
+        return True
+    if low in ('requirements.txt', 'procfile', 'render.yaml', 'netlify.toml', 'supabase_schema.sql'):
+        return True
+    if low.endswith('.env') or low.endswith('.pem') or low.endswith('.key') or low.endswith('.sql'):
+        return True
+    # 2) 版本控制目录
+    if '.git' in low:
+        return True
+    # 3) 数据与备份目录（含干净备份 data-clean、audit backup、临时 _tmp）
+    for seg in ('data', 'data-clean', 'backup', '_tmp'):
+        if low == seg or ('/' + seg + '/') in low or low.startswith(seg + '/'):
+            return True
+    # 4) 原始/审计 JSON：除 PWA 清单 manifest.json 外一律禁止直接下载
+    if low.endswith('.json') and low != 'manifest.json':
+        return True
+    # 5) 日志/备份/报告/内部文档
+    if low.endswith('.log') or low.endswith('.bak') or low.endswith('.bak_bizfix') or low.endswith('.md'):
+        return True
+    return False
+
+
 @app.route('/<path:path>')
 def serve_static(path):
     """提供所有静态文件（HTML/JS/CSS/Audio/图片等）"""
+    # 安全防线：拒绝源码/数据/配置等敏感文件对外下载（防公网泄露）
+    if _is_forbidden_path(path):
+        return jsonify({'error': 'Forbidden'}), 403
     # 尝试从项目根目录提供文件
     file_path = os.path.join(WEB_ROOT, path)
     if os.path.isfile(file_path) and not path.startswith('api'):
@@ -1482,13 +1638,15 @@ def handle_toggle_user():
 # ---- Supabase 连接诊断接口（只读，不碰任何数据）----
 @app.route('/api/sb-diag', methods=['GET'])
 def handle_sb_diag():
-    """Supabase 诊断接口（只读）：2026-07-21 起 Supabase 已永久关闭，仅返回禁用状态供审计。"""
+    """Supabase 诊断接口（只读）：2026-07-21 后恢复为学习数据主持久层，返回真实连接状态。"""
     return jsonify({
-        'disabled': True,
-        'disabled_reason': '2026-07-21 安全事件后永久关闭 Supabase，使用本地文件 + GitHub data-sync 兜底',
+        'disabled': bool(_DISABLE_SUPABASE_WRITE) or (not supabase),
+        'role': 'study_data 主持久层（写穿 + 启动逐行去污染读取），GitHub data-sync 为二级兜底',
         'url_set': bool(SUPABASE_URL),
         'key_set': bool(SUPABASE_KEY),
-        'connected_at_startup': False,
+        'connected_at_startup': bool(supabase),
+        'study_gh_sync_paused': bool(_PAUSE_STUDY_DATA_GH_SYNC),
+        'study_load_debug': _study_load_debug,
         'startup_error': SB_PROBE_ERROR,
     })
 
@@ -1601,6 +1759,14 @@ def handle_save_study_data():
     except Exception as e2:
         err_detail = (err_detail or '') + f'; GitHub回退异常:{e2}'
         print(f'[GitHub回退] study_data 失败: {e2}', flush=True)
+    # 写穿 Supabase（主持久层，7/21 后恢复）：同步写入，确保 200 前已落地，Render 休眠/部署不丢。
+    if supabase and not _DISABLE_SUPABASE_WRITE:
+        try:
+            sb_upsert_study(empid, all_data.get(empid))
+            persisted = True
+        except Exception as e:
+            err_detail = (err_detail or '') + f'; Supabase写穿失败:{e}'
+            print(f'[Supabase] 写穿失败(本地+GitHub已兜底): {e}', flush=True)
     return jsonify({'success': True, 'persisted': bool(persisted), 'dataVersion': _STUDY_DATA_VERSION, 'sb_debug': err_detail, 'sb_connected': bool(supabase)})
 
 
@@ -1631,6 +1797,9 @@ def handle_change_password():
 @app.route('/api/reset-password', methods=['POST'])
 def handle_reset_password():
     body = request.json or {}
+    # 安全：重置他人密码属管理员操作，必须校验 admin session_token，否则任意人可接管账号
+    if not _is_valid_admin_token((body.get('token') or '').strip()):
+        return jsonify({'success': False, 'error': '未授权，请先登录管理后台'}), 401
     empid = (body.get('empid') or '').strip()
     # 管理员可指定新密码；未指定则重置为默认密码
     new_password = (body.get('newPassword') or '').strip() or DEFAULT_PASSWORD
@@ -1655,6 +1824,11 @@ def handle_admin_login():
     body = request.json or {}
     username = (body.get('username') or '').strip()
     password = body.get('password', '')
+    # 防爆破：按 IP 滑动窗口限流（宽松，不误伤本人）
+    client_ip = request.headers.get('X-Forwarded-For', request.remote_addr or '').split(',')[0].strip() or 'unknown'
+    allowed, retry = check_rate_limit('adminlogin:' + client_ip, max_per_second=1, max_per_minute=10)
+    if not allowed:
+        return jsonify({'success': False, 'error': f'登录过于频繁，请 {retry} 秒后再试'}), 429
     admin = load_json(os.path.join(DATA_DIR, 'admin.json'))
     admin_user = admin.get(username)
     if not admin_user or not verify_password(password, admin_user['password_hash'], admin_user['salt']):
@@ -1664,7 +1838,7 @@ def handle_admin_login():
         admin_user['session_token'] = token
         admin_user['last_login'] = int(time.time() * 1000)
         save_json(os.path.join(DATA_DIR, 'admin.json'), admin)
-    return jsonify({'success': True, 'token': token})
+    return jsonify({'success': True, 'token': token, 'mustChangePassword': bool(admin_user.get('must_change_password', False))})
 
 
 @app.route('/api/admin-change-password', methods=['POST'])
@@ -1686,6 +1860,7 @@ def handle_admin_change_password():
         admin_user['password_hash'] = hashed
         admin_user['salt'] = salt
         admin_user['last_password_change'] = int(time.time() * 1000)
+        admin_user['must_change_password'] = False
         save_json(os.path.join(DATA_DIR, 'admin.json'), admin)
     return jsonify({'success': True, 'message': '密码修改成功'})
 
