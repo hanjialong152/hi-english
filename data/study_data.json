@@ -475,7 +475,7 @@
           "ex3": 84.0
         },
         "11": {
-          "phrase": 100
+          "phrase": 100.0
         }
       },
       "spellIndex": 10,
@@ -1002,7 +1002,7 @@
       },
       {
         "date": "2026-07-23",
-        "seconds": 7,
+        "seconds": 8,
         "completed": false
       }
     ]
