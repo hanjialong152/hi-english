@@ -216,6 +216,9 @@
       "speakScores": {
         "11": {
           "phrase": 100.0
+        },
+        "12": {
+          "phrase": 100
         }
       },
       "spellIndex": 0,
@@ -299,7 +302,7 @@
       },
       {
         "date": "2026-07-22",
-        "seconds": 177,
+        "seconds": 180,
         "completed": false
       }
     ]
