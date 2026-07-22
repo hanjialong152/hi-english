@@ -908,6 +908,11 @@
         "date": "2026-07-21",
         "seconds": 223,
         "completed": false
+      },
+      {
+        "date": "2026-07-22",
+        "seconds": 0,
+        "completed": false
       }
     ]
   },
