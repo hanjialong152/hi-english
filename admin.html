@@ -261,7 +261,8 @@ body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Mi
     </div>
     <div class="form-group">
       <label>初始密码</label>
-      <input type="text" id="add-password" value="123@456.com">
+      <input type="text" id="add-password" placeholder="留空使用系统默认密码，首次登录需修改">
+      <div style="font-size:12px;color:var(--text-sub);margin-top:4px;">自定义密码需至少8位且包含3种字符类型</div>
     </div>
     <div class="modal-actions">
       <button class="btn btn-outline" onclick="closeModal('add-student-modal')">取消</button>
@@ -311,10 +312,9 @@ body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Mi
     <div class="form-group">
       <label>新密码</label>
       <div style="display:flex;gap:8px;">
-        <input type="text" id="reset-pw-value" value="123@456.com" style="flex:1;">
-        <button class="btn btn-outline" style="padding:10px;font-size:13px;" onclick="document.getElementById('reset-pw-value').value='123@456.com';showToast('已恢复默认密码')">恢复默认</button>
+        <input type="text" id="reset-pw-value" placeholder="留空则使用系统默认密码，首次登录需修改" style="flex:1;">
       </div>
-      <div style="font-size:12px;color:var(--text-sub);margin-top:4px;">默认密码：123@456.com，管理员可自定义</div>
+      <div style="font-size:12px;color:var(--text-sub);margin-top:4px;">自定义密码需至少8位且包含3种字符类型</div>
     </div>
     <div class="modal-actions">
       <button class="btn btn-outline" onclick="closeModal('reset-password-modal')">取消</button>
@@ -339,6 +339,7 @@ body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Mi
       <label>确认新密码</label>
       <input type="password" id="admin-change-pw-confirm" placeholder="请再次输入新密码" autocomplete="new-password">
     </div>
+    <div style="font-size:12px;color:var(--text-sub);margin-bottom:8px;">新密码至少8位，且需包含大写字母、小写字母、数字、特殊字符中的至少3种</div>
     <div class="modal-actions">
       <button class="btn btn-outline" onclick="closeModal('admin-change-password-modal')">取消</button>
       <button class="btn btn-primary" onclick="changeAdminPassword()">确认修改</button>
