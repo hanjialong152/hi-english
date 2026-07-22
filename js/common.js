@@ -159,12 +159,14 @@ const HiEnglish = {
       var serverVersion = parseInt(data.dataVersion || '0', 10);
       var all = JSON.parse(localStorage.getItem('hi_english_study') || '{}');
 
-      // 服务端数据版本更新：用服务端权威数据完全覆盖本地（解决回滚/清洗后客户端仍保留脏数据的问题）
-      if (serverVersion > localVersion) {
-        all[empid] = data.studyData || {};
+      // 服务端数据优先：只要服务端版本 >= 本地（含相等），即以服务端权威数据覆盖本地
+      // 修复：回滚/数据清洗后，老设备本地 dataVersion 已与服务端相等，原“>”判断不触发更新，
+      // 导致昨天错误的本地脏数据残留、跨设备显示不一致。改为“>=”，服务端权威覆盖本地。
+      if (serverVersion >= localVersion && data.studyData) {
+        all[empid] = data.studyData;
         localStorage.setItem('hi_english_study', JSON.stringify(all));
         localStorage.setItem('hi_english_data_version', String(serverVersion));
-        console.log('[Sync] 服务端数据版本更新 (' + localVersion + '->' + serverVersion + ')，已用服务端权威数据覆盖本地');
+        console.log('[Sync] 服务端数据版本 >= 本地 (' + localVersion + '->' + serverVersion + ')，已用服务端权威数据覆盖本地');
         return all[empid];
       }
 
@@ -780,7 +782,7 @@ const HiEnglish = {
     fetch(this.getServerUrl() + '/api/groups', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ groups: groups })
+      body: JSON.stringify({ groups: groups, token: sessionStorage.getItem('hi_english_admin_token') || '' })
     }).catch(function(e) { console.log('[Sync] 分组同步失败:', e.message); });
   },
 
