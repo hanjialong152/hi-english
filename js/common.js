@@ -161,10 +161,12 @@ const HiEnglish = {
       var serverVersion = parseInt(data.dataVersion || '0', 10);
       var all = JSON.parse(localStorage.getItem('hi_english_study') || '{}');
 
-      // 服务端数据优先：只要服务端版本 >= 本地（含相等），即以服务端权威数据覆盖本地
-      // 修复：回滚/数据清洗后，老设备本地 dataVersion 已与服务端相等，原“>”判断不触发更新，
-      // 导致昨天错误的本地脏数据残留、跨设备显示不一致。改为“>=”，服务端权威覆盖本地。
-      if (serverVersion >= localVersion && data.studyData) {
+      // 服务端数据优先：仅当服务端版本 > 本地时，才用服务端权威数据覆盖本地。
+      // 原因：_STUDY_DATA_VERSION 是全局常量（当前为4）。若用“>=”，第一次登录后本地版本=4，
+      // 此后每次登录服务端(4)都>=本地(4)，会把服务端旧快照整体覆盖本地最新进度，
+      // 导致当天打卡时长/已完成状态/跟读分数在退出重登后丢失。
+      // 回滚/清洗场景只需 bump _STUDY_DATA_VERSION（如4→5），即可触发“>”覆盖，清除脏数据。
+      if (serverVersion > localVersion && data.studyData) {
         all[empid] = data.studyData;
         localStorage.setItem('hi_english_study', JSON.stringify(all));
         localStorage.setItem('hi_english_data_version', String(serverVersion));
