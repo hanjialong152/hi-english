@@ -1476,6 +1476,12 @@ def handle_login():
     body = request.json or {}
     empid = (body.get('empid') or '').strip()
     password = body.get('password', '')
+    # 防爆破（2026-07-23 漏洞修复：密码暴力破解）：按 IP 滑动窗口限流，
+    # 与 /api/admin-login 同口径（1秒1次、1分钟10次），不误伤正常学员。
+    client_ip = request.headers.get('X-Forwarded-For', request.remote_addr or '').split(',')[0].strip() or 'unknown'
+    allowed, retry = check_rate_limit('login:' + client_ip, max_per_second=1, max_per_minute=10)
+    if not allowed:
+        return jsonify({'success': False, 'error': f'登录过于频繁，请 {retry} 秒后再试'}), 429
     users = load_json(os.path.join(DATA_DIR, 'users.json'))
     user = users.get(empid)
     # 安全（2026-07-22 漏洞修复 v6）：统一认证失败响应，防用户名猜解/枚举。
