@@ -1186,6 +1186,20 @@ function setSpeakTarget(btn, target, wordId) {
 // 后端API地址
 var TRANSCRIBE_API = 'https://hi-english.onrender.com/api/transcribe';
 
+// 方案A（2026-07-23）：已知 Whisper-tiny 确定性识别失败（空/截断）的 5 个句子白名单。
+// 仅对白名单内的 (wordId|target) 做定向宽松：朗读即放行80，不外推到全局，避免放水/作弊扩大。
+var WHITELIST_LENIENT = {
+  '63|phrase': 1,  // tested but not sold
+  '63|ex1': 1,     // The car was tested but not sold.
+  '63|ex3': 1,     // We want to expand overseas, but the budget is limited.
+  '23|ex1': 1,     // We selected the best supplier among five candidates.
+  '732|ex2': 1     // We hold frequent review meetings with key suppliers.
+};
+function _isWhitelistedLenient() {
+  var key = (recState.wordId || '') + '|' + (speakTarget || '');
+  return !!WHITELIST_LENIENT[key];
+}
+
 var recState = {
   active: false,
   mode: null,
@@ -1567,9 +1581,15 @@ function uploadAndTranscribe() {
           showScoreModal(80, '朗读通过');
           _recApplyScore(recState.mode, 80);
         } else {
-          var score = dur >= 1.5 ? 35 : 25;
-          showScoreModal(score, '语音识别未成功，请清晰朗读英文后重试');
-          _recApplyScore(recState.mode, score);
+          // 方案A：白名单句，识别引擎确定性返回空——朗读即放行80（需满足最短时长，防静音误触）
+          if (_isWhitelistedLenient() && dur >= 0.8) {
+            showScoreModal(80, '该句已通过（识别引擎兼容处理）');
+            _recApplyScore(recState.mode, 80);
+          } else {
+            var score = dur >= 1.5 ? 35 : 25;
+            showScoreModal(score, '语音识别未成功，请清晰朗读英文后重试');
+            _recApplyScore(recState.mode, score);
+          }
         }
       }
     })
@@ -1673,6 +1693,13 @@ function _evaluateSpeaking(recognized) {
   var target = _normalizeForScoring(_toSpokenForm(targetRaw));
   recognized = (recognized || '').toLowerCase().trim();
   var recNorm = _normalizeForScoring(_toSpokenForm(recognized));
+
+  // 方案A：白名单句——识别到的文本是目标句的子串/后缀（学员至少读出这部分）即放行80
+  if (_isWhitelistedLenient() && recNorm && target && (target.indexOf(recNorm) >= 0 || recNorm.indexOf(target) >= 0)) {
+    showScoreModal(80, '该句已通过（识别引擎兼容处理）');
+    _recApplyScore(recState.mode, 80);
+    return;
+  }
 
   var score = 0;
   var detail = '';
