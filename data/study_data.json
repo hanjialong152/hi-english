@@ -473,16 +473,17 @@
           "ex1": 86.0,
           "ex2": 82.0,
           "ex3": 84.0,
-          "phrase": 100.0
+          "phrase": 100
         },
         "11": {
-          "ex1": 100.0,
+          "ex1": 100,
           "ex2": 81.0,
           "ex3": 87.0,
-          "phrase": 100.0
+          "phrase": 100
         },
         "12": {
-          "phrase": 48.0
+          "phrase": 100,
+          "ex1": 34.0
         }
       },
       "spellIndex": 10,
@@ -1009,7 +1010,7 @@
       },
       {
         "date": "2026-07-23",
-        "seconds": 239,
+        "seconds": 286,
         "completed": false
       }
     ]
@@ -1783,7 +1784,7 @@
   },
   "115174": {
     "basic": {
-      "readIndex": 4,
+      "readIndex": 0,
       "spellIndex": 2,
       "learned": [
         "1",
@@ -1791,12 +1792,7 @@
         "3",
         "4"
       ],
-      "learnedDates": {
-        "1": "2026-07-23",
-        "2": "2026-07-23",
-        "3": "2026-07-23",
-        "4": "2026-07-23"
-      },
+      "learnedDates": {},
       "mastered": [],
       "speakScores": {},
       "weeklyTests": [],
