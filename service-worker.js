@@ -14,11 +14,11 @@
 // v48: 补卡2项UI修复（日历选中框跟随点击日期/去补卡按钮日期字体缩小防换行）
 // v47: 4项Bug修复（补卡入口/禁用拦截/状态标签/报表日期联动）强制刷新缓存
 
-// v77: 方案A白名单评分(5句确定性识别失败定向宽松)+9处内容自然度修复+营销改写词库；SW bump 强制客户端刷新 JS 与音频缓存
-// redeploy-trigger-20260723T2140: force Render rebuild after batch commits
-var CACHE_VERSION = 'hi-english-v77';
-var CORE_CACHE = 'hi-english-core-v77';
-var AUDIO_CACHE = 'hi-english-audio-v33';
+// v78: 回退 dirty phrase 为 dirty surface defect、green phrase 保持 green energy strategy；对应音频重生成；SW bump 强制客户端刷新 JS 与音频缓存
+// redeploy-trigger-20260723T2230: force Render rebuild after phrase rollback
+var CACHE_VERSION = 'hi-english-v78';
+var CORE_CACHE = 'hi-english-core-v78';
+var AUDIO_CACHE = 'hi-english-audio-v34';
 
 var CORE_FILES = [
   './',
