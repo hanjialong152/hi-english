@@ -416,7 +416,7 @@
         "13"
       ],
       "monthlyTests": [],
-      "readIndex": 22,
+      "readIndex": 1,
       "speakScores": {
         "1": {
           "ex1": 89.0,
@@ -476,17 +476,17 @@
           "ex1": 86.0,
           "ex2": 82.0,
           "ex3": 84.0,
-          "phrase": 100
+          "phrase": 100.0
         },
         "11": {
-          "ex1": 100,
+          "ex1": 100.0,
           "ex2": 81.0,
           "ex3": 87.0,
-          "phrase": 100
+          "phrase": 100.0
         },
         "12": {
           "ex1": 80.0,
-          "phrase": 100,
+          "phrase": 100.0,
           "ex2": 84.0,
           "ex3": 48.0
         },
@@ -504,7 +504,7 @@
           "ex1": 17.0
         },
         "24": {
-          "phrase": 100
+          "phrase": 100.0
         }
       },
       "spellIndex": 10,
@@ -752,7 +752,7 @@
         "6"
       ],
       "monthlyTests": [],
-      "readIndex": 8,
+      "readIndex": 7,
       "speakScores": {
         "4": {
           "s0": 100.0,
