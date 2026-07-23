@@ -1758,8 +1758,59 @@ function _numWord(n) {
   return String(n);
 }
 
+// 大数转英文词（≥100），用于跟读评分对齐 edge-tts 读音（2026-07-23 修复盲区）
+function _numToWords(n) {
+  n = parseInt(n, 10);
+  if (isNaN(n) || n < 0) return String(n);
+  if (n < 100) return _numWord(n);
+  var ones = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
+  var teens = ['ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+  var tens = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
+  function two(x) {
+    if (x < 10) return ones[x];
+    if (x < 20) return teens[x - 10];
+    return tens[Math.floor(x / 10)] + (x % 10 ? ' ' + ones[x % 10] : '');
+  }
+  function three(x) {
+    if (x === 0) return '';
+    var h = Math.floor(x / 100), r = x % 100;
+    return (h ? ones[h] + ' hundred' : '') + (r ? (h ? ' ' : '') + two(r) : '');
+  }
+  var parts = [];
+  var b = Math.floor(n / 1000000000);
+  if (b) { parts.push(_numToWords(b) + ' billion'); n %= 1000000000; }
+  var m = Math.floor(n / 1000000);
+  if (m) { parts.push(_numToWords(m) + ' million'); n %= 1000000; }
+  var t = Math.floor(n / 1000);
+  if (t) { parts.push(_numToWords(t) + ' thousand'); n %= 1000; }
+  if (n) parts.push(three(n));
+  return parts.join(' ');
+}
+
+// 序数转英文词（50th -> fiftieth / 21st -> twenty-first）
+function _ordinalToWords(num) {
+  num = parseInt(num, 10);
+  var base = _numToWords(num);
+  if (/ty$/.test(base)) return base.replace(/y$/, 'ieth');        // twenty->twentieth, fifty->fiftieth
+  if (/one$/.test(base)) return base.replace(/one$/, 'first');    // twenty-one->twenty-first
+  if (/two$/.test(base)) return base.replace(/two$/, 'second');
+  if (/three$/.test(base)) return base.replace(/three$/, 'third');
+  if (/five$/.test(base)) return base.replace(/five$/, 'fifth');
+  if (/eight$/.test(base)) return base.replace(/eight$/, 'eighth');
+  if (/nine$/.test(base)) return base.replace(/nine$/, 'ninth');
+  if (/twelve$/.test(base)) return base.replace(/twelve$/, 'twelfth');
+  return base + 'th';
+}
+
+// 把字母串拆成空格分隔的小写字母（IATF -> i a t f），与 edge-tts 拼写读音对齐
+function _expandLetters(w) {
+  return w.split('').join(' ').toLowerCase();
+}
+
 function _toSpokenForm(s) {
   if (!s) return s;
+  // 0. 去千位逗号（100,000 -> 100000），避免分隔符干扰后续数字转写
+  s = s.replace(/(\d),(\d)/g, '$1$2');
   // 1. 时间表达 H.MM a.m./p.m. -> "H MM a m / p m"（Whisper 读成 five thirty p m）
   s = s.replace(/(\d{1,2})\.(\d{1,2})\s*([ap])\.?\s*m\.?/gi, function (m, h, mm, ap) {
     return ' ' + _numWord(h) + ' ' + _numWord(mm) + ' ' + ap.toLowerCase() + ' m ';
@@ -1772,15 +1823,39 @@ function _toSpokenForm(s) {
   s = s.replace(/%/g, ' percent ');
   // 5. / -> 空格（24/7 -> 24 7）
   s = s.replace(/\//g, ' ');
-  // 6. 普通小数 X.Y -> X point Y
+  // 6. 货币 $数字 -> 数字(英文) dollars（与 edge-tts 读音对齐，顺序为"数字 dollars"）
+  s = s.replace(/\$\s*([\d,]+)/g, function (m, num) {
+    return _numToWords(num.replace(/,/g, '')) + ' dollars ';
+  });
+  // 7. 普通小数 X.Y -> X point Y
   s = s.replace(/(\d+)\.(\d+)/g, function (m, a, b) {
     return ' ' + _numWord(a) + ' point ' + _numWord(b) + ' ';
   });
-  // 7. 整数 0-99 -> 英文词
+  // 8. 序数 数字+st/nd/rd/th -> 英文序数词
+  s = s.replace(/\b(\d{1,3})(st|nd|rd|th)\b/gi, function (m, num) {
+    return _ordinalToWords(num);
+  });
+  // 9. 大数（≥100 整数）-> 英文词
+  s = s.replace(/\b(\d{3,})\b/g, function (m, n) {
+    return _numToWords(n);
+  });
+  // 10. 字母+数字混合 token（3D / B2B / Q3）-> 数字转词 + 字母拆开
+  s = s.replace(/\b([A-Za-z]+)(\d+)\b/gi, function (m, letters, digits) {
+    return _expandLetters(letters) + ' ' + _numToWords(digits);
+  });
+  s = s.replace(/\b(\d+)([A-Za-z]+)\b/gi, function (m, digits, letters) {
+    return _numToWords(digits) + ' ' + _expandLetters(letters);
+  });
+  // 11. 纯全大写缩写（2+ 字母，如 IATF / CAD / SUV）-> 拆成单字母（与 edge-tts 拼写读音对齐）
+  s = s.replace(/\b([A-Z]{2,})\b/g, function (m, w) {
+    if (w === 'OK' || w === 'OKAY') return w.toLowerCase();
+    return _expandLetters(w);
+  });
+  // 12. 整数 0-99 -> 英文词（补扫剩余小数字）
   s = s.replace(/\b(\d{1,2})\b/g, function (m, n) {
     return ' ' + _numWord(n) + ' ';
   });
-  // 8. 清掉残留标点/多余空格
+  // 13. 清掉残留标点/多余空格
   s = s.replace(/[.,!?;:]/g, ' ');
   s = s.replace(/\s+/g, ' ').trim();
   return s;
