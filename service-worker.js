@@ -14,10 +14,10 @@
 // v48: 补卡2项UI修复（日历选中框跟随点击日期/去补卡按钮日期字体缩小防换行）
 // v47: 4项Bug修复（补卡入口/禁用拦截/状态标签/报表日期联动）强制刷新缓存
 
-// v75: /api/login 增加 IP 滑动窗口限流（防密码暴力破解），server.py 仅服务端改动，SW bump 强制客户端刷新缓存
-var CACHE_VERSION = 'hi-english-v75';
-var CORE_CACHE = 'hi-english-core-v75';
-var AUDIO_CACHE = 'hi-english-audio-v31';
+// v76: 跟读评分器扩展（大数/年份/序数/全大写缩写/字母数字混合/货币归一化，修复读对低分）+ 营销改写词库上线；SW bump 强制客户端刷新 JS 与音频缓存
+var CACHE_VERSION = 'hi-english-v76';
+var CORE_CACHE = 'hi-english-core-v76';
+var AUDIO_CACHE = 'hi-english-audio-v32';
 
 var CORE_FILES = [
   './',
