@@ -2098,7 +2098,7 @@
   "500156": {
     "basic": {
       "readIndex": 1,
-      "spellIndex": 4,
+      "spellIndex": 5,
       "learned": [
         "1"
       ],
@@ -2146,7 +2146,7 @@
     "checkIns": [
       {
         "date": "2026-07-24",
-        "seconds": 54,
+        "seconds": 56,
         "completed": false
       }
     ]
