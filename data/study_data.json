@@ -2097,13 +2097,15 @@
   },
   "500156": {
     "basic": {
-      "readIndex": 1,
+      "readIndex": 2,
       "spellIndex": 9,
       "learned": [
-        "1"
+        "1",
+        "2"
       ],
       "learnedDates": {
-        "1": "2026-07-24"
+        "1": "2026-07-24",
+        "2": "2026-07-24"
       },
       "mastered": [],
       "speakScores": {
