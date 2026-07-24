@@ -2109,6 +2109,9 @@
       "speakScores": {
         "1": {
           "phrase": 100.0
+        },
+        "2": {
+          "phrase": 85.0
         }
       },
       "weeklyTests": [],
@@ -2143,7 +2146,7 @@
     "checkIns": [
       {
         "date": "2026-07-24",
-        "seconds": 47,
+        "seconds": 48,
         "completed": false
       }
     ]
