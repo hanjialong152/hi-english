@@ -1334,6 +1334,11 @@
         "date": "2026-07-15",
         "seconds": 51,
         "completed": false
+      },
+      {
+        "date": "2026-07-24",
+        "seconds": 0,
+        "completed": false
       }
     ]
   },
