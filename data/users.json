@@ -44,8 +44,9 @@
     "password_hash": "f67b0ca71287fbb18f3da761cd394550f2ddc2f2099213e4169dc8739a3c1412",
     "salt": "f122fb51d7001cb6",
     "created_at": 1782402576147,
-    "last_login": 1784094230650,
-    "login_count": 18
+    "last_login": 1784877569758,
+    "login_count": 19,
+    "session_token": "60358228c07dc8d609eb70529aa837c8"
   },
   "058704": {
     "empid": "058704",
