@@ -2123,6 +2123,9 @@
           "e2": true,
           "e3": true,
           "p": true
+        },
+        "2": {
+          "p": true
         }
       },
       "audioDoneDate": {
@@ -2146,7 +2149,7 @@
     "checkIns": [
       {
         "date": "2026-07-24",
-        "seconds": 67,
+        "seconds": 69,
         "completed": false
       }
     ]
