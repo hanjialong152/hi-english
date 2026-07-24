@@ -2102,7 +2102,11 @@
       "learned": [],
       "learnedDates": {},
       "mastered": [],
-      "speakScores": {},
+      "speakScores": {
+        "1": {
+          "phrase": 0
+        }
+      },
       "weeklyTests": [],
       "monthlyTests": [],
       "totalSeconds": 0,
@@ -2126,7 +2130,7 @@
     "checkIns": [
       {
         "date": "2026-07-24",
-        "seconds": 1,
+        "seconds": 3,
         "completed": false
       }
     ]
