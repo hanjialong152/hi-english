@@ -2104,7 +2104,7 @@
       "mastered": [],
       "speakScores": {
         "1": {
-          "phrase": 0
+          "phrase": 0.0
         }
       },
       "weeklyTests": [],
@@ -2130,7 +2130,7 @@
     "checkIns": [
       {
         "date": "2026-07-24",
-        "seconds": 3,
+        "seconds": 4,
         "completed": false
       }
     ]
