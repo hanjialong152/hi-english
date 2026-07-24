@@ -2113,7 +2113,8 @@
       "audioDone": {
         "1": {
           "e1": true,
-          "e2": true
+          "e2": true,
+          "e3": true
         }
       },
       "audioDoneDate": {}
@@ -2135,7 +2136,7 @@
     "checkIns": [
       {
         "date": "2026-07-24",
-        "seconds": 15,
+        "seconds": 17,
         "completed": false
       }
     ]
