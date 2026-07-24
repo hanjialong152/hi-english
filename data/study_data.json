@@ -2114,10 +2114,13 @@
         "1": {
           "e1": true,
           "e2": true,
-          "e3": true
+          "e3": true,
+          "p": true
         }
       },
-      "audioDoneDate": {}
+      "audioDoneDate": {
+        "1": "2026-07-24"
+      }
     },
     "business": {
       "readIndex": 0,
@@ -2136,7 +2139,7 @@
     "checkIns": [
       {
         "date": "2026-07-24",
-        "seconds": 18,
+        "seconds": 19,
         "completed": false
       }
     ]
