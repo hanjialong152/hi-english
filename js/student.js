@@ -1165,7 +1165,7 @@ function getSpeakHint(p, e1, e2, e3) {
   if (!e2 || e2 < 80) missing.push('例句2');
   if (!e3 || e3 < 80) missing.push('例句3');
   if (missing.length === 0) return '✅ 全部通过，单词已掌握';
-  return '所有' + missing.join('、') + '未达80分，请继续完成';
+  return missing.join('、') + '未达80分，请继续完成';
 }
 
 function setSpeakTarget(btn, target, wordId) {
