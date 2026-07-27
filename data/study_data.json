@@ -432,7 +432,7 @@
         "14"
       ],
       "monthlyTests": [],
-      "readIndex": 2,
+      "readIndex": 12,
       "speakScores": {
         "1": {
           "ex1": 89.0,
@@ -558,6 +558,12 @@
           "avgScore": 0,
           "passed": 0,
           "total": 10
+        },
+        {
+          "date": "2026-07-27",
+          "avgScore": 88,
+          "passed": 1,
+          "total": 1
         }
       ],
       "audioDone": {
@@ -813,7 +819,7 @@
         "6"
       ],
       "monthlyTests": [],
-      "readIndex": 8,
+      "readIndex": 7,
       "speakScores": {
         "4": {
           "s0": 100.0,
