@@ -1,6 +1,6 @@
 {
-  "basicWeekly": 3,
-  "basicMonthly": 3,
-  "bizWeekly": 3,
-  "bizMonthly": 3
+  "basicWeekly": 10,
+  "basicMonthly": 20,
+  "bizWeekly": 10,
+  "bizMonthly": 20
 }
