@@ -2794,6 +2794,12 @@ async function renderReport() {
   var progressPercent = totalItems > 0 ? Math.floor((learnedCount / totalItems) * 100) : 0;
   var totalSeconds = allCheckIns.reduce(function(s, c){return s + (c.seconds || 0);}, 0);
   var totalMinutes = Math.floor(totalSeconds / 60);
+  function fmtStudy(min){
+    if (min < 60) return min + '分';
+    if (min < 1440) { var h = Math.floor(min / 60), m = min % 60; return m > 0 ? (h + '小时' + m + '分') : (h + '小时'); }
+    var d = Math.floor(min / 1440), h2 = Math.floor((min % 1440) / 60);
+    return h2 > 0 ? (d + '天' + h2 + '小时') : (d + '天');
+  }
 
   // 计算总成绩（合并 basic+business 两阶段周测/月测，共用 common.js 统一函数）
   var curMonth = HiEnglish.today().slice(0, 7); // 当前自然月 "YYYY-MM"
@@ -2814,7 +2820,7 @@ async function renderReport() {
       '<div class="stat-card"><div class="stat-val">' + learnedCount + '</div><div class="stat-key">已学</div></div>' +
       '<div class="stat-card"><div class="stat-val">' + masteredCount + '</div><div class="stat-key">已掌握</div></div>' +
       '<div class="stat-card"><div class="stat-val">' + progressPercent + '%</div><div class="stat-key">学习进度</div></div>' +
-      '<div class="stat-card"><div class="stat-val">' + totalMinutes + '分</div><div class="stat-key">累计学习</div></div>' +
+      '<div class="stat-card"><div class="stat-val">' + fmtStudy(totalMinutes) + '</div><div class="stat-key">累计学习</div></div>' +
       '<div class="stat-card"><div class="stat-val">' + completedDays + '</div><div class="stat-key">学习天数</div></div>' +
       '<div class="stat-card"><div class="stat-val">' + (stageData.weeklyTests.length > 0 ? Math.round(stageData.weeklyTests.reduce(function(s,t){return s+(t.avgScore||0);},0)/stageData.weeklyTests.length) : 0) + '</div><div class="stat-key">周测均分</div></div>' +
     '</div>';
