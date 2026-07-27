@@ -936,7 +936,14 @@
       "spellIndex": 2,
       "totalSeconds": 0,
       "unlocked": true,
-      "weeklyTests": [],
+      "weeklyTests": [
+        {
+          "date": "2026-07-27",
+          "avgScore": 0,
+          "passed": 0,
+          "total": 1
+        }
+      ],
       "audioDone": {
         "32": {
           "b_32_0": true,
