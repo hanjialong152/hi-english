@@ -2718,27 +2718,31 @@ function _testPeriodBestScore(type) {
   var arr = type === 'weekly' ? (stageData.weeklyTests || []) : (stageData.monthlyTests || []);
   if (!arr.length) return null;
   var now = new Date();
-  var startStr, endStr;
+  var curMonth = HiEnglish.today().slice(0, 7); // 当前自然月 "YYYY-MM"
+  var best = null;
   if (type === 'weekly') {
+    // 周测窗口维持原有逻辑（上周六 00:00 ~ 本周五 23:59）
     var d = now.getDay(); // 0=Sun,6=Sat
     var lastSat = new Date(now);
     if (d === 6) { /* 今天周六 */ }
     else { var diff = d === 0 ? 1 : d + 1; lastSat.setDate(now.getDate() - diff); }
     lastSat.setHours(0, 0, 0, 0);
     var fri = new Date(lastSat); fri.setDate(lastSat.getDate() + 6); fri.setHours(23, 59, 59, 999);
-    startStr = formatDateStr(lastSat); endStr = formatDateStr(fri);
+    var startStr = formatDateStr(lastSat); var endStr = formatDateStr(fri);
+    arr.forEach(function(r) {
+      if (r.date >= startStr && r.date <= endStr) {
+        if (best === null || (r.avgScore || 0) > best) best = r.avgScore || 0;
+      }
+    });
   } else {
-    // 月测在当月 1~5 日进行，记录日期落在当月；按"当月测试窗口"取最高分
-    var mStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    var mEnd = new Date(now.getFullYear(), now.getMonth(), 5); mEnd.setHours(23, 59, 59, 999);
-    startStr = formatDateStr(mStart); endStr = formatDateStr(mEnd);
+    // 月测"本期"：归属当前自然月，或 考试日落在当前月1~5日（正式模式当月考当月看）；取最高分
+    arr.forEach(function(r) {
+      var day = parseInt(String(r.date).slice(8, 10), 10);
+      var sameMonthEarly = (String(r.date).slice(0, 7) === curMonth && day >= 1 && day <= 5);
+      var belongsCurMonth = (HiEnglish.monthlyTestMonthKey(r.date) === curMonth);
+      if ((belongsCurMonth || sameMonthEarly) && (best === null || (r.avgScore || 0) > best)) best = r.avgScore || 0;
+    });
   }
-  var best = null;
-  arr.forEach(function(r) {
-    if (r.date >= startStr && r.date <= endStr) {
-      if (best === null || r.avgScore > best) best = r.avgScore;
-    }
-  });
   return best;
 }
 
