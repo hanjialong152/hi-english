@@ -529,7 +529,7 @@ var currentPage = 'home';
 function sNav(page) {
   currentPage = page;
   // 任何页面切换都强制重置录音状态，避免底部导航/返回切页后麦克风卡死（E 修复加强）
-  _recReset();
+  _recHardReset();
   // Always refresh user info when navigating (picks up admin changes)
   refreshUserInfo();
   document.querySelectorAll('#student-app .page').forEach(function(p){ p.classList.remove('active'); });
@@ -549,7 +549,7 @@ function backHome() {
     cancelVoiceInput();
   }
   // 强制重置录音状态，避免跨测试（如先周测再月测）麦克风卡死
-  _recReset();
+  _recHardReset();
   isAudioActive = false;
   stopStudyTimer();
   saveStudyData();
@@ -573,6 +573,8 @@ function goSpell() {
 }
 
 function goWeeklyTest() {
+  // 每次进入测试入口都强制清录音态，根治先周测后月测麦克风卡死（E 修复加强）
+  _recHardReset();
   // 周测仅每周六、周日可以测试（众测模式下不受时间限制）
   var dayOfWeek = new Date().getDay(); // 0=Sun, 6=Sat
   if (!BETA_MODE && dayOfWeek !== 6 && dayOfWeek !== 0) {
@@ -588,6 +590,8 @@ function goWeeklyTest() {
 }
 
 function goMonthlyTest() {
+  // 每次进入测试入口都强制清录音态，根治先周测后月测麦克风卡死（E 修复加强）
+  _recHardReset();
   // 月测仅每月1日至5日可以测试（众测模式下不受时间限制）
   var dayOfMonth = new Date().getDate();
   if (!BETA_MODE && (dayOfMonth < 1 || dayOfMonth > 5)) {
@@ -2187,22 +2191,21 @@ function _recReset() {
   recState.micStarting = false;
   recState.userReleased = false;
   recState.evaluatedAlready = false;
-  // 注意：cancelled 不在此处重置，只由 startVoiceInput 重置
-  // 这样 cancelVoiceInput 设置的 cancelled=true 能被异步 onstop 检测到
+  recState.cancelled = false;
   recState.usingTouch = false;
   if (recState.maxTimer) { clearTimeout(recState.maxTimer); recState.maxTimer = null; }
   if (recState.uploadTimer) { clearTimeout(recState.uploadTimer); recState.uploadTimer = null; }
   if (recState.onstopSafetyTimer) { clearTimeout(recState.onstopSafetyTimer); recState.onstopSafetyTimer = null; }
-  if (recState.mediaStream) {
-    recState.mediaStream.getTracks().forEach(function(t) { t.stop(); });
-    recState.mediaStream = null;
-  }
-  if (recState.mediaRecorder) {
-    try { recState.mediaRecorder.stop(); } catch(e) {}
-    recState.mediaRecorder = null;
-  }
-  isAudioActive = false;
+  _cleanupMic();
   _removeReleaseListeners();
+  isAudioActive = false;
+}
+
+// 彻底重置：连 cooldown 也清，用于页面切换/进入测试等硬切换场景
+function _recHardReset() {
+  _recReset();
+  if (recState.cooldownTimer) { clearTimeout(recState.cooldownTimer); recState.cooldownTimer = null; }
+  recState.cooldown = false;
 }
 
 // ===== Event delegation for recording buttons =====
@@ -2435,7 +2438,7 @@ function prevSpell() {
 // ===== Tests =====
 function prepareTest(type) {
   // 进入测试前强制重置录音状态，避免残留态导致麦克风卡死（E 修复）
-  _recReset();
+  _recHardReset();
   var pool;
 
   var weeklyN = currentStage === 'basic' ? TEST_CONFIG.basicWeekly : TEST_CONFIG.bizWeekly;
@@ -2677,6 +2680,8 @@ function renderTestCard(type, content) {
   content.innerHTML = intro + cardHTML + nav;
   _setupRecEventDelegation();
   _updateTestNavState(); // 依据当前词所有子项是否已录音，启用/禁用下一题（A' 门禁）
+  // 每道题渲染后确保录音态完全干净，防止任何异步残留导致按钮点不动
+  _recHardReset();
 }
 
 // 计算本周期历史最高分（用于测试页顶部提示）
