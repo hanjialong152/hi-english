@@ -431,7 +431,14 @@
         "13",
         "14"
       ],
-      "monthlyTests": [],
+      "monthlyTests": [
+        {
+          "date": "2026-07-27",
+          "avgScore": 0,
+          "passed": 0,
+          "total": 3
+        }
+      ],
       "readIndex": 2,
       "speakScores": {
         "1": {
@@ -564,6 +571,12 @@
           "date": "2026-07-27",
           "passed": 1,
           "total": 1
+        },
+        {
+          "date": "2026-07-27",
+          "avgScore": 0,
+          "passed": 0,
+          "total": 3
         }
       ],
       "audioDone": {
