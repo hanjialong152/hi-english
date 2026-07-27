@@ -2878,7 +2878,7 @@ async function renderReport() {
   document.getElementById('s-report-content').innerHTML = scoreHTML + statsHTML +
     '<div class="section-title">🏆 个人学习排行榜</div>' +
     '<div class="rank-list">' + (personalRankHTML || '<div style="text-align:center;padding:20px;color:var(--text-sub);">暂无排行数据</div>') + '</div>' +
-    '<div class="section-title">🏆 小组学习排行榜</div>' +
+    '<div class="section-title">🏆 团队学习排行榜</div>' +
     '<div class="rank-list">' + (groupRankHTML || '<div style="text-align:center;padding:20px;color:var(--text-sub);">暂无排行数据</div>') + '</div>' +
     scoreBreakdownHTML;
 }
