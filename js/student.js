@@ -2796,9 +2796,9 @@ async function renderReport() {
   var totalMinutes = Math.floor(totalSeconds / 60);
   function fmtStudy(min){
     if (min < 60) return min + '分';
-    if (min < 1440) { var h = Math.floor(min / 60), m = min % 60; return m > 0 ? (h + '小时' + m + '分') : (h + '小时'); }
-    var d = Math.floor(min / 1440), h2 = Math.floor((min % 1440) / 60);
-    return h2 > 0 ? (d + '天' + h2 + '小时') : (d + '天');
+    if (min < 1440) { var h = min / 60; return (h % 1 === 0 ? String(Math.round(h)) : h.toFixed(1).replace(/\.0$/, '')) + '小时'; }
+    var d = min / 1440;
+    return (d % 1 === 0 ? String(Math.round(d)) : d.toFixed(1).replace(/\.0$/, '')) + '天';
   }
 
   // 计算总成绩（合并 basic+business 两阶段周测/月测，共用 common.js 统一函数）
