@@ -18,6 +18,8 @@ var isAudioActive = false;
 // Test sub-items for current test word
 var testSubItems = [];
 var testSubScores = {};
+var testWordSubScores = {}; // H: 每词子项分快照，回退上一题时恢复显示历史分数
+var currentTestType = 'weekly'; // 当前测试类型（weekly/monthly），用于隔离周测/月测 DOM id 防冲突
 var bizSpellTarget = ''; // Current business spell practice target word
 var BETA_MODE = false; // 众测模式：开启后商务英语对所有人解锁 + 周测/月测不受时间限制
 var BUSINESS_UNLOCK_ALL = false; // 服务端商务全局解锁标志（管理员单按钮控制）
@@ -1279,7 +1281,9 @@ function _getRecIds(mode, idx) {
   } else if (mode === 'learn-biz') {
     return { area: 'voice-area-biz-' + idx, label: 'rec-label-biz-' + idx, score: 'rec-score-biz-' + idx };
   } else {
-    return { area: 'voice-area-test-' + idx, label: 'rec-label-test-' + idx, score: 'rec-score-test-' + idx };
+    // 测试 id 加 type 前缀（weekly/monthly），隔离周测/月测 DOM 防冲突
+    var t = currentTestType || 'weekly';
+    return { area: 'voice-area-' + t + '-test-' + idx, label: 'rec-label-' + t + '-test-' + idx, score: 'rec-score-' + t + '-test-' + idx };
   }
 }
 
@@ -2094,6 +2098,9 @@ function _recApplyScore(mode, score) {
   } else if (mode === 'test') {
     var testIdxSaved = recState.testIdx;
     testSubScores[testIdxSaved] = score;
+    // H: 保存到词级快照，回退上一题时恢复显示历史分数
+    if (!testWordSubScores[testWordIndex]) testWordSubScores[testWordIndex] = [];
+    testWordSubScores[testWordIndex][testIdxSaved] = score;
     _recReset();
     _recStartCooldown();
     _updateRecButtonUI(mode, testIdxSaved, false);
@@ -2118,15 +2125,18 @@ function _checkTestAllPass() {
     totalScore += testSubScores[i];
     count++;
   }
-  if (allPass && count > 0) {
+  if (count > 0) {
+    // A 真平均分：不论是否全部通过，都记录本题子项均分，没过的词也拉低总平均
     var avgScore = Math.round(totalScore / count);
     testScores[testWordIndex] = avgScore;
-    var passEl = document.getElementById('test-all-pass');
-    if (passEl) {
-      passEl.style.display = 'block';
-      passEl.textContent = '✅ 全部通过！平均分 ' + avgScore + '，点击「下一题」继续';
+    if (allPass) {
+      var passEl = document.getElementById('test-all-pass-' + (currentTestType || 'weekly'));
+      if (passEl) {
+        passEl.style.display = 'block';
+        passEl.textContent = '✅ 全部通过！平均分 ' + avgScore + '，点击「下一题」继续';
+      }
+      showToast('本题全部通过！' + avgScore + '分');
     }
-    showToast('本题全部通过！' + avgScore + '分');
   }
   // 每次录音后刷新下一题/交卷按钮的可用态（A' 门禁）
   _updateTestNavState();
@@ -2463,6 +2473,7 @@ function prepareTest(type) {
   testScores = {};
   testSubItems = [];
   testSubScores = {};
+  testWordSubScores = {};
   sNav(type);
   if (type === 'weekly') renderWeeklyTest(false);
   else renderMonthlyTest(false);
@@ -2603,6 +2614,7 @@ function renderMonthlyTest(locked) {
 }
 
 function renderTestCard(type, content) {
+  currentTestType = type; // 隔离周测/月测 DOM id
   var totalCount = testWords.length;
   var testItem = testWords[testWordIndex];
   if (!testItem) {
@@ -2652,10 +2664,10 @@ function renderTestCard(type, content) {
     return '<div class="test-sub-card">' +
       '<div style="font-size:13px;color:var(--primary);font-weight:600;margin-bottom:6px;">' + item.label + '（看中文说英文）</div>' +
       '<div style="font-size:17px;color:var(--text);margin-bottom:10px;line-height:1.6;">' + item.zh + '</div>' +
-      '<div id="voice-area-test-' + idx + '" style="text-align:center;">' +
+      '<div id="voice-area-' + type + '-test-' + idx + '" style="text-align:center;">' +
         '<button class="rec-btn-sm" data-mode="test" data-arg="' + idx + '">🎤</button>' +
-        '<div class="rec-label" id="rec-label-test-' + idx + '">长按麦克风朗读，松手评分</div>' +
-        '<div class="rec-score" id="rec-score-test-' + idx + '" style="display:none;"></div>' +
+        '<div class="rec-label" id="rec-label-' + type + '-test-' + idx + '">长按麦克风朗读，松手评分</div>' +
+        '<div class="rec-score" id="rec-score-' + type + '-test-' + idx + '" style="display:none;"></div>' +
       '</div>' +
     '</div>';
   }).join('');
@@ -2664,22 +2676,38 @@ function renderTestCard(type, content) {
     '<div class="test-card">' +
       '<div class="test-num">第 ' + (testWordIndex + 1) + ' / ' + totalCount + ' 题' + (currentStage === 'business' ? ' · ' + testItem.title : '') + '</div>' +
       itemsHTML +
-      '<div id="test-all-pass" style="display:none;text-align:center;padding:12px;background:var(--success-light);border-radius:8px;margin-top:12px;font-size:14px;color:var(--success);font-weight:600;"></div>' +
+      '<div id="test-all-pass-' + type + '" style="display:none;text-align:center;padding:12px;background:var(--success-light);border-radius:8px;margin-top:12px;font-size:14px;color:var(--success);font-weight:600;"></div>' +
     '</div>';
 
   var isLast = (testWordIndex + 1 === totalCount);
   var nextLabel = isLast ? '📋 交卷' : '下一题 ›';
   var nav =
     '<div style="display:flex;gap:8px;padding:12px;">' +
+      '<button id="test-nav-prev-' + type + '" class="btn btn-outline" style="flex:1;' + (testWordIndex > 0 ? '' : 'display:none;') + '" onclick="prevTestWord(\'' + type + '\')">‹ 上一题</button>' +
       '<button class="btn btn-outline" style="flex:1;" onclick="backHome()">退出测试</button>' +
-      '<button id="test-nav-next" class="btn btn-primary" style="flex:1;" onclick="nextTestWord(\'' + type + '\')">' + nextLabel + '</button>' +
+      '<button id="test-nav-next-' + type + '" class="btn btn-primary" style="flex:1;" onclick="nextTestWord(\'' + type + '\')">' + nextLabel + '</button>' +
     '</div>' +
-    '<div id="test-record-hint" style="display:none;margin:0 12px 12px;padding:10px;border-radius:8px;background:#FFF7E6;border:1px solid #FFD591;color:#D46B08;font-size:13px;text-align:center;"></div>' +
     '<div class="alert-box alert-info">📊 本轮进度：' + (testWordIndex + 1) + '/' + totalCount + ' · 已通过 ' + Object.keys(testScores).length + ' 题</div>';
 
   content.innerHTML = intro + cardHTML + nav;
   _setupRecEventDelegation();
   _updateTestNavState(); // 依据当前词所有子项是否已录音，启用/禁用下一题（A' 门禁）
+  // H: 回退上一题时恢复该词历史子项分（pass/fail 颜色），可重读覆盖
+  var snap = testWordSubScores[testWordIndex];
+  if (snap) {
+    snap.forEach(function(s, idx) {
+      if (s === undefined) return;
+      testSubScores[idx] = s;
+      var ids = _getRecIds('test', idx);
+      var scoreEl = document.getElementById(ids.score);
+      if (scoreEl) {
+        scoreEl.style.display = 'block';
+        scoreEl.textContent = s + '分';
+        scoreEl.className = 'rec-score ' + (s >= 80 ? 'pass' : 'fail');
+      }
+    });
+    _updateTestNavState();
+  }
   // 每道题渲染后确保录音态完全干净，防止任何异步残留导致按钮点不动
   _recHardReset();
 }
@@ -2720,24 +2748,22 @@ function _testPeriodBestLine(type) {
   return '本期尚未参与测试，加油！';
 }
 
-// A' 门禁：当前词未录完时页面显示提示条（按钮仍可点，点击时由 nextTestWord 弹 toast 拦截）
+// A' 门禁：当前词未录完时按钮仍可点，点击时由 nextTestWord 弹 toast 拦截；不再变浅蓝，统一深蓝
 function _updateTestNavState() {
   var allRecorded = testSubItems.length > 0 && testSubItems.every(function(it, i) {
     return testSubScores[i] !== undefined;
   });
-  var btn = document.getElementById('test-nav-next');
-  if (btn) { btn.disabled = false; btn.style.opacity = allRecorded ? '1' : '0.7'; }
-  var hint = document.getElementById('test-record-hint');
-  if (hint) {
-    if (allRecorded) {
-      hint.style.display = 'none';
-    } else {
-      hint.style.display = 'block';
-      hint.textContent = (currentStage === 'business')
-        ? '未完成所有句子跟读测试，请继续完成'
-        : '未完成所有词组、例句跟读测试，请继续完成';
-    }
-  }
+  var btn = document.getElementById('test-nav-next-' + (currentTestType || 'weekly'));
+  if (btn) { btn.disabled = false; } // 按钮颜色统一 btn-primary 深蓝，不再变浅
+}
+
+// H 上一题导航：考试中回退重读（首题不显示上一题按钮）
+function prevTestWord(type) {
+  if (testWordIndex <= 0) return;
+  testWordIndex--;
+  // 回退后该题需重新朗读（A' 门禁保证重录才能前进），分数以最终提交为准
+  var content = document.getElementById(type === 'weekly' ? 's-weekly-content' : 's-monthly-content');
+  renderTestCard(type, content);
 }
 
 function nextTestWord(type) {
@@ -2755,9 +2781,11 @@ function nextTestWord(type) {
   testWordIndex++;
   if (testWordIndex >= testWords.length) {
     // Test complete
-    var passed = Object.keys(testScores).length;
     var total = testWords.length;
-    var avgScore = total > 0 && passed > 0 ? Math.round(Object.values(testScores).reduce(function(a,b){return a+b;}, 0) / passed) : 0;
+    var allScores = Object.values(testScores);
+    // A 真平均分：所有词都参与平均（含没过的低分），不是只算通过的词
+    var avgScore = total > 0 ? Math.round(allScores.reduce(function(a,b){return a+b;}, 0) / total) : 0;
+    var passed = allScores.filter(function(s){ return s >= 80; }).length;
 
     // Record test result
     var stageData = studyData[currentStage];
@@ -2946,9 +2974,11 @@ async function renderReport() {
       '<div class="stat-card"><div class="stat-val">' + learnedCount + '</div><div class="stat-key">已学</div></div>' +
       '<div class="stat-card"><div class="stat-val">' + masteredCount + '</div><div class="stat-key">已掌握</div></div>' +
       '<div class="stat-card"><div class="stat-val">' + progressPercent + '%</div><div class="stat-key">学习进度</div></div>' +
-      '<div class="stat-card"><div class="stat-val">' + fmtStudy(totalMinutes) + '</div><div class="stat-key">累计学习</div></div>' +
-      '<div class="stat-card"><div class="stat-val">' + completedDays + '</div><div class="stat-key">学习天数</div></div>' +
-      '<div class="stat-card"><div class="stat-val">' + (stageData.weeklyTests.length > 0 ? Math.round(stageData.weeklyTests.reduce(function(s,t){return s+(t.avgScore||0);},0)/stageData.weeklyTests.length) : 0) + '</div><div class="stat-key">周测均分</div></div>' +
+    '</div>' +
+    // G 报告页调整：累计学习 + 学习天数单独一行居中显示（删除易混淆的"周测均分"卡）
+    '<div style="display:flex;gap:12px;justify-content:center;margin-top:12px;">' +
+      '<div class="stat-card" style="flex:1;max-width:160px;"><div class="stat-val">' + fmtStudy(totalMinutes) + '</div><div class="stat-key">累计学习</div></div>' +
+      '<div class="stat-card" style="flex:1;max-width:160px;"><div class="stat-val">' + completedDays + '</div><div class="stat-key">学习天数</div></div>' +
     '</div>';
 
   // Rankings
@@ -3001,9 +3031,9 @@ async function renderReport() {
   var scoreBreakdownHTML =
     '<div class="section-title">📊 成绩构成</div>' +
     '<div class="card">' +
-      '<div style="display:flex;justify-content:space-between;margin-bottom:8px;"><span>打卡天数占比（30%）</span><span style="font-weight:600;">' + checkinScore + '</span></div>' +
-      '<div style="display:flex;justify-content:space-between;margin-bottom:8px;"><span>周测平均分（30%）</span><span style="font-weight:600;">' + weeklyScore + '</span></div>' +
-      '<div style="display:flex;justify-content:space-between;margin-bottom:8px;"><span>月测成绩（40%）</span><span style="font-weight:600;">' + monthlyScore + '</span></div>' +
+      '<div style="display:flex;justify-content:space-between;margin-bottom:8px;"><span>本月打卡天数（30%）</span><span style="font-weight:600;">' + checkinScore + '</span></div>' +
+      '<div style="display:flex;justify-content:space-between;margin-bottom:8px;"><span>本月周测平均分（30%）</span><span style="font-weight:600;">' + weeklyScore + '</span></div>' +
+      '<div style="display:flex;justify-content:space-between;margin-bottom:8px;"><span>本月月测成绩（40%）</span><span style="font-weight:600;">' + monthlyScore + '</span></div>' +
       '<div style="border-top:1px solid var(--border);padding-top:8px;display:flex;justify-content:space-between;"><span style="font-weight:700;">总成绩</span><span style="font-weight:700;color:var(--primary);font-size:18px;">' + totalScore + '</span></div>' +
     '</div>';
 
