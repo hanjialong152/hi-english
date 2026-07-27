@@ -26,7 +26,7 @@
       "learned": [],
       "mastered": [],
       "totalSeconds": 0,
-      "unlocked": false
+      "unlocked": true
     },
     "checkIns": []
   },
@@ -52,7 +52,7 @@
       "learned": [],
       "mastered": [],
       "totalSeconds": 0,
-      "unlocked": false
+      "unlocked": true
     },
     "checkIns": []
   },
@@ -78,7 +78,7 @@
       "learned": [],
       "mastered": [],
       "totalSeconds": 0,
-      "unlocked": false
+      "unlocked": true
     },
     "checkIns": []
   },
@@ -127,7 +127,7 @@
       "learned": [],
       "mastered": [],
       "totalSeconds": 0,
-      "unlocked": false
+      "unlocked": true
     },
     "checkIns": []
   },
@@ -153,7 +153,7 @@
       "learned": [],
       "mastered": [],
       "totalSeconds": 0,
-      "unlocked": false
+      "unlocked": true
     },
     "checkIns": []
   },
@@ -179,7 +179,7 @@
       "learned": [],
       "mastered": [],
       "totalSeconds": 0,
-      "unlocked": false
+      "unlocked": true
     },
     "checkIns": []
   },
@@ -264,7 +264,7 @@
       "speakScores": {},
       "spellIndex": 0,
       "totalSeconds": 0,
-      "unlocked": false,
+      "unlocked": true,
       "weeklyTests": [],
       "audioDone": {
         "1": {
@@ -320,7 +320,7 @@
       "weeklyTests": [],
       "monthlyTests": [],
       "totalSeconds": 0,
-      "unlocked": false
+      "unlocked": true
     },
     "checkIns": []
   },
@@ -346,7 +346,7 @@
       "weeklyTests": [],
       "monthlyTests": [],
       "totalSeconds": 0,
-      "unlocked": false
+      "unlocked": true
     },
     "checkIns": []
   },
@@ -922,7 +922,7 @@
       },
       "spellIndex": 2,
       "totalSeconds": 0,
-      "unlocked": false,
+      "unlocked": true,
       "weeklyTests": [],
       "audioDone": {
         "32": {
@@ -1213,7 +1213,7 @@
       "speakScores": {},
       "spellIndex": 0,
       "totalSeconds": 0,
-      "unlocked": false,
+      "unlocked": true,
       "weeklyTests": [],
       "audioDone": {},
       "audioDoneDate": {}
@@ -1263,7 +1263,7 @@
       "weeklyTests": [],
       "monthlyTests": [],
       "totalSeconds": 0,
-      "unlocked": false
+      "unlocked": true
     },
     "checkIns": []
   },
@@ -1399,7 +1399,7 @@
       "speakScores": {},
       "spellIndex": 0,
       "totalSeconds": 0,
-      "unlocked": false,
+      "unlocked": true,
       "weeklyTests": [],
       "audioDone": {
         "2": {
@@ -1471,7 +1471,7 @@
       "weeklyTests": [],
       "monthlyTests": [],
       "totalSeconds": 0,
-      "unlocked": false
+      "unlocked": true
     },
     "checkIns": []
   },
@@ -1548,7 +1548,7 @@
       "speakScores": {},
       "spellIndex": 0,
       "totalSeconds": 0,
-      "unlocked": false,
+      "unlocked": true,
       "weeklyTests": []
     },
     "checkIns": [
@@ -1581,7 +1581,7 @@
       "weeklyTests": [],
       "monthlyTests": [],
       "totalSeconds": 0,
-      "unlocked": false
+      "unlocked": true
     },
     "checkIns": []
   },
@@ -1607,7 +1607,7 @@
       "weeklyTests": [],
       "monthlyTests": [],
       "totalSeconds": 0,
-      "unlocked": false
+      "unlocked": true
     },
     "checkIns": []
   },
@@ -1636,7 +1636,7 @@
       "speakScores": {},
       "spellIndex": 0,
       "totalSeconds": 0,
-      "unlocked": false,
+      "unlocked": true,
       "weeklyTests": []
     },
     "checkIns": [
@@ -1669,7 +1669,7 @@
       "weeklyTests": [],
       "monthlyTests": [],
       "totalSeconds": 0,
-      "unlocked": false
+      "unlocked": true
     },
     "checkIns": []
   },
@@ -1694,7 +1694,7 @@
       "speakScores": {},
       "spellIndex": 0,
       "totalSeconds": 0,
-      "unlocked": false,
+      "unlocked": true,
       "weeklyTests": []
     },
     "checkIns": [
@@ -1727,7 +1727,7 @@
       "weeklyTests": [],
       "monthlyTests": [],
       "totalSeconds": 0,
-      "unlocked": false
+      "unlocked": true
     },
     "checkIns": []
   },
@@ -1764,7 +1764,7 @@
       "speakScores": {},
       "spellIndex": 0,
       "totalSeconds": 0,
-      "unlocked": false,
+      "unlocked": true,
       "weeklyTests": []
     },
     "checkIns": [
@@ -1797,7 +1797,7 @@
       "weeklyTests": [],
       "monthlyTests": [],
       "totalSeconds": 0,
-      "unlocked": false
+      "unlocked": true
     },
     "checkIns": []
   },
@@ -1884,7 +1884,7 @@
       "speakScores": {},
       "spellIndex": 0,
       "totalSeconds": 0,
-      "unlocked": false,
+      "unlocked": true,
       "weeklyTests": []
     },
     "checkIns": [
@@ -1922,7 +1922,7 @@
       "weeklyTests": [],
       "monthlyTests": [],
       "totalSeconds": 0,
-      "unlocked": false
+      "unlocked": true
     },
     "checkIns": []
   },
@@ -1948,7 +1948,7 @@
       "weeklyTests": [],
       "monthlyTests": [],
       "totalSeconds": 0,
-      "unlocked": false
+      "unlocked": true
     },
     "checkIns": [
       {
@@ -1999,7 +1999,7 @@
       "weeklyTests": [],
       "monthlyTests": [],
       "totalSeconds": 0,
-      "unlocked": false,
+      "unlocked": true,
       "audioDone": {},
       "audioDoneDate": {}
     },
@@ -2052,7 +2052,7 @@
       "weeklyTests": [],
       "monthlyTests": [],
       "totalSeconds": 0,
-      "unlocked": false,
+      "unlocked": true,
       "audioDone": {},
       "audioDoneDate": {}
     }
@@ -2108,7 +2108,7 @@
       "weeklyTests": [],
       "monthlyTests": [],
       "totalSeconds": 0,
-      "unlocked": false,
+      "unlocked": true,
       "audioDone": {},
       "audioDoneDate": {}
     },
@@ -2169,7 +2169,7 @@
       "weeklyTests": [],
       "monthlyTests": [],
       "totalSeconds": 0,
-      "unlocked": false,
+      "unlocked": true,
       "audioDone": {},
       "audioDoneDate": {}
     },
