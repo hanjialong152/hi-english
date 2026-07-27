@@ -528,6 +528,8 @@ async function checkForNewNotifications() {
 var currentPage = 'home';
 function sNav(page) {
   currentPage = page;
+  // 任何页面切换都强制重置录音状态，避免底部导航/返回切页后麦克风卡死（E 修复加强）
+  _recReset();
   // Always refresh user info when navigating (picks up admin changes)
   refreshUserInfo();
   document.querySelectorAll('#student-app .page').forEach(function(p){ p.classList.remove('active'); });
@@ -1295,7 +1297,11 @@ function _updateRecButtonUI(mode, idx, recording) {
 
 // ===== 长按开始录音 =====
 function startVoiceInput(mode, arg, isTouch) {
-  if (recState.active) return;
+  // 若上次录音状态残留（如切页/异步回调未清），强制重置后再开始，避免麦克风卡死（E 修复加强）
+  if (recState.active || recState.mediaStream || recState.mediaRecorder) {
+    console.warn('[MIC] 开始新录音前发现残留状态，强制 _recReset');
+    _recReset();
+  }
   if (recState.cooldown) {
     showToast('请稍等片刻再试');
     return;
@@ -2709,13 +2715,13 @@ function _testPeriodBestLine(type) {
   return '本期尚未参与测试，加油！';
 }
 
-// A' 门禁：当前词所有子项均已录音才可点下一题/交卷
+// A' 门禁：当前词未录完时页面显示提示条（按钮仍可点，点击时由 nextTestWord 弹 toast 拦截）
 function _updateTestNavState() {
   var allRecorded = testSubItems.length > 0 && testSubItems.every(function(it, i) {
     return testSubScores[i] !== undefined;
   });
   var btn = document.getElementById('test-nav-next');
-  if (btn) btn.disabled = !allRecorded;
+  if (btn) { btn.disabled = false; btn.style.opacity = allRecorded ? '1' : '0.7'; }
   var hint = document.getElementById('test-record-hint');
   if (hint) {
     if (allRecorded) {
@@ -2730,6 +2736,17 @@ function _updateTestNavState() {
 }
 
 function nextTestWord(type) {
+  // A' 门禁：点击下一题/交卷时检查当前词所有子项是否已录音，未录完弹提示并拦截
+  var allRecorded = testSubItems.length > 0 && testSubItems.every(function(it, i) {
+    return testSubScores[i] !== undefined;
+  });
+  if (!allRecorded) {
+    showToast(currentStage === 'business'
+      ? '未完成所有句子跟读测试，请继续完成'
+      : '未完成所有词组、例句跟读测试，请继续完成');
+    return;
+  }
+
   testWordIndex++;
   if (testWordIndex >= testWords.length) {
     // Test complete
