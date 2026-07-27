@@ -2133,7 +2133,7 @@ function _checkTestAllPass() {
       var passEl = document.getElementById('test-all-pass-' + (currentTestType || 'weekly'));
       if (passEl) {
         passEl.style.display = 'block';
-        passEl.textContent = '✅ 全部通过！平均分 ' + avgScore + '，点击「下一题」继续';
+        passEl.textContent = '✅ 全部通过，平均分 ' + avgScore + '，点击蓝色按钮继续';
       }
       showToast('本题全部通过！' + avgScore + '分');
     }
