@@ -16,8 +16,8 @@
 
 // v78: 回退 dirty phrase 为 dirty surface defect、green phrase 保持 green energy strategy；对应音频重生成；SW bump 强制客户端刷新 JS 与音频缓存
 // redeploy-trigger-20260723T2230: force Render rebuild after phrase rollback
-var CACHE_VERSION = 'hi-english-v79';
-var CORE_CACHE = 'hi-english-core-v79';
+var CACHE_VERSION = 'hi-english-v80';
+var CORE_CACHE = 'hi-english-core-v80';
 var AUDIO_CACHE = 'hi-english-audio-v34';
 
 var CORE_FILES = [

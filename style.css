@@ -751,6 +751,37 @@ html, body {
 .speak-score.good { color: var(--success); }
 .speak-score.ok { color: var(--warning); }
 .speak-score.bad { color: var(--accent); }
+
+/* 测试页录音按钮（之前无样式，浏览器默认外观） */
+.rec-btn-sm {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4F6AF0, #7B8FF5);
+  border: none;
+  font-size: 28px;
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(79,106,240,0.35);
+  transition: background 0.15s, box-shadow 0.15s;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+  -webkit-touch-callout: none;
+}
+/* 录音中变红（F 修复：之前缺此样式，按钮不随状态变化） */
+.rec-btn-sm.recording {
+  background: linear-gradient(135deg, #FF4D4F, #FF7875);
+  box-shadow: 0 4px 24px rgba(255,77,79,0.5);
+}
+.rec-score {
+  font-size: 18px;
+  font-weight: 800;
+  margin-top: 6px;
+  min-height: 22px;
+}
+.rec-score.pass { color: var(--success); }
+.rec-score.fail { color: var(--accent); }
 .speak-tip {
   font-size: 12px;
   color: var(--text-sub);

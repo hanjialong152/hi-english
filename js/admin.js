@@ -512,35 +512,9 @@ function toggleBusinessGlobal() {
   }).catch(function() { showToast('网络错误，请重试'); renderBusinessGlobal(); });
 }
 
-// ===== 学员行商务解锁按钮（单按钮随状态变脸）=====
-function bizBtnHtml(u, s) {
-  var eff = s.businessUnlocked || (s.mastered >= 850) || _businessUnlockAll || _betaModeState;
-  var viaQualifiedOnly = (s.mastered >= 850) && !s.businessUnlocked && !_businessUnlockAll && !_betaModeState;
-  var base = 'padding:4px 10px;font-size:12px;margin-right:4px;';
-  if (eff) {
-    if (viaQualifiedOnly) {
-      return '<button class="btn btn-outline" style="' + base + '" disabled title="已达标自动开放">✅已达标开放</button>';
-    }
-    return '<button class="btn btn-outline" style="' + base + '" onclick="toggleBusinessLock(\'' + u.empid + '\', false)">🔒关闭商务</button>';
-  }
-  return '<button class="btn btn-outline" style="' + base + '" onclick="toggleBusinessLock(\'' + u.empid + '\', true)">🔓解锁商务</button>';
-}
-function toggleBusinessLock(empid, open) {
-  if (open) {
-    if (!confirm('确认为该学员解锁「商务英语」阶段？解锁后该学员可直接进入商务英语练习。')) return;
-  } else {
-    if (!confirm('确认关闭该学员的商务英语？若其基础850词未全部跟读通过，将自动重新上锁。')) return;
-  }
-  fetch(HiEnglish.getServerUrl() + '/api/admin/unlock-business', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ empid: empid, unlock: open, token: sessionStorage.getItem('hi_english_admin_token') || '' })
-  }).then(function(r) { return r.json(); }).then(function(data) {
-    if (data && data.success) {
-      showToast(open ? ('已为 ' + empid + ' 解锁商务英语') : ('已关闭 ' + empid + ' 的商务英语'));
-      renderStudentTable();
-    } else { showToast((data && data.error) || '操作失败'); }
-  }).catch(function() { showToast('网络错误，请重试'); });
-}
+// ===== 学员行商务解锁按钮已移除（2026-07-27）：仅保留顶部"全员商务"总开关 =====
+
+
 
 // ===== Study Reminder =====
 function sendStudyReminder() {
@@ -750,7 +724,6 @@ function renderStudentTable() {
       '<td style="white-space:nowrap;">' +
         '<button class="btn btn-outline" style="padding:4px 10px;font-size:12px;margin-right:4px;" onclick="editStudent(\'' + u.empid + '\')">编辑</button>' +
         '<button class="btn btn-outline" style="padding:4px 10px;font-size:12px;margin-right:4px;" onclick="resetPassword(\'' + u.empid + '\')">🔑重置密码</button>' +
-        bizBtnHtml(u, s) +
         '<button class="btn ' + (u.status === 'active' ? 'btn-danger' : 'btn-success') + '" style="padding:4px 10px;font-size:12px;margin-right:4px;" onclick="toggleStatus(\'' + u.empid + '\')">' + (u.status === 'active' ? '禁用' : '启用') + '</button>' +
         '<button class="btn btn-danger" style="padding:4px 10px;font-size:12px;" onclick="deleteStudent(\'' + u.empid + '\')">删除</button>' +
       '</td>' +

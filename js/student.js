@@ -546,6 +546,8 @@ function backHome() {
   if (recState.active) {
     cancelVoiceInput();
   }
+  // 强制重置录音状态，避免跨测试（如先周测再月测）麦克风卡死
+  _recReset();
   isAudioActive = false;
   stopStudyTimer();
   saveStudyData();
@@ -2116,6 +2118,8 @@ function _checkTestAllPass() {
     }
     showToast('本题全部通过！' + avgScore + '分');
   }
+  // 每次录音后刷新下一题/交卷按钮的可用态（A' 门禁）
+  _updateTestNavState();
 }
 
 function submitVoiceInput() {
@@ -2424,6 +2428,8 @@ function prevSpell() {
 
 // ===== Tests =====
 function prepareTest(type) {
+  // 进入测试前强制重置录音状态，避免残留态导致麦克风卡死（E 修复）
+  _recReset();
   var pool;
 
   var weeklyN = currentStage === 'basic' ? TEST_CONFIG.basicWeekly : TEST_CONFIG.bizWeekly;
@@ -2628,6 +2634,7 @@ function renderTestCard(type, content) {
       '<div class="test-icon">' + (type === 'weekly' ? '📝' : '📅') + '</div>' +
       '<h3>' + (type === 'weekly' ? '本周周测' : '本月月测') + '</h3>' +
       '<div class="test-sub">' + (type === 'weekly' ? '上周应学内容随机抽取（' + testCountLabel + '）' : '上月应学内容随机抽取（' + testCountLabel + '）') + '</div>' +
+      '<div style="font-size:13px;color:var(--text-sub);margin-bottom:8px;">' + _testPeriodBestLine(type) + '</div>' +
       '<div class="alert-box alert-info" style="text-align:left;">ℹ️ 测试规则：只显示中文，长按麦克风朗读英文，松手后自动评分，每项80分以上通过</div>' +
     '</div>';
 
@@ -2651,15 +2658,75 @@ function renderTestCard(type, content) {
       '<div id="test-all-pass" style="display:none;text-align:center;padding:12px;background:var(--success-light);border-radius:8px;margin-top:12px;font-size:14px;color:var(--success);font-weight:600;"></div>' +
     '</div>';
 
+  var isLast = (testWordIndex + 1 === totalCount);
+  var nextLabel = isLast ? '📋 交卷' : '下一题 ›';
   var nav =
     '<div style="display:flex;gap:8px;padding:12px;">' +
       '<button class="btn btn-outline" style="flex:1;" onclick="backHome()">退出测试</button>' +
-      '<button class="btn btn-primary" style="flex:1;" onclick="nextTestWord(\'' + type + '\')">下一题 ›</button>' +
+      '<button id="test-nav-next" class="btn btn-primary" style="flex:1;" onclick="nextTestWord(\'' + type + '\')">' + nextLabel + '</button>' +
     '</div>' +
+    '<div id="test-record-hint" style="display:none;margin:0 12px 12px;padding:10px;border-radius:8px;background:#FFF7E6;border:1px solid #FFD591;color:#D46B08;font-size:13px;text-align:center;"></div>' +
     '<div class="alert-box alert-info">📊 本轮进度：' + (testWordIndex + 1) + '/' + totalCount + ' · 已通过 ' + Object.keys(testScores).length + ' 题</div>';
 
   content.innerHTML = intro + cardHTML + nav;
   _setupRecEventDelegation();
+  _updateTestNavState(); // 依据当前词所有子项是否已录音，启用/禁用下一题（A' 门禁）
+}
+
+// 计算本周期历史最高分（用于测试页顶部提示）
+function _testPeriodBestScore(type) {
+  var stageData = studyData[currentStage];
+  var arr = type === 'weekly' ? (stageData.weeklyTests || []) : (stageData.monthlyTests || []);
+  if (!arr.length) return null;
+  var now = new Date();
+  var startStr, endStr;
+  if (type === 'weekly') {
+    var d = now.getDay(); // 0=Sun,6=Sat
+    var lastSat = new Date(now);
+    if (d === 6) { /* 今天周六 */ }
+    else { var diff = d === 0 ? 1 : d + 1; lastSat.setDate(now.getDate() - diff); }
+    lastSat.setHours(0, 0, 0, 0);
+    var fri = new Date(lastSat); fri.setDate(lastSat.getDate() + 6); fri.setHours(23, 59, 59, 999);
+    startStr = formatDateStr(lastSat); endStr = formatDateStr(fri);
+  } else {
+    // 月测在当月 1~5 日进行，记录日期落在当月；按"当月测试窗口"取最高分
+    var mStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    var mEnd = new Date(now.getFullYear(), now.getMonth(), 5); mEnd.setHours(23, 59, 59, 999);
+    startStr = formatDateStr(mStart); endStr = formatDateStr(mEnd);
+  }
+  var best = null;
+  arr.forEach(function(r) {
+    if (r.date >= startStr && r.date <= endStr) {
+      if (best === null || r.avgScore > best) best = r.avgScore;
+    }
+  });
+  return best;
+}
+
+function _testPeriodBestLine(type) {
+  var best = _testPeriodBestScore(type);
+  if (best !== null) return '本期您已参与测试，最高分为' + best + '分';
+  return '本期尚未参与测试，加油！';
+}
+
+// A' 门禁：当前词所有子项均已录音才可点下一题/交卷
+function _updateTestNavState() {
+  var allRecorded = testSubItems.length > 0 && testSubItems.every(function(it, i) {
+    return testSubScores[i] !== undefined;
+  });
+  var btn = document.getElementById('test-nav-next');
+  if (btn) btn.disabled = !allRecorded;
+  var hint = document.getElementById('test-record-hint');
+  if (hint) {
+    if (allRecorded) {
+      hint.style.display = 'none';
+    } else {
+      hint.style.display = 'block';
+      hint.textContent = (currentStage === 'business')
+        ? '未完成所有句子跟读测试，请继续完成'
+        : '未完成所有词组、例句跟读测试，请继续完成';
+    }
+  }
 }
 
 function nextTestWord(type) {
@@ -2680,7 +2747,7 @@ function nextTestWord(type) {
     }
     saveStudyData();
 
-    showToast('测试完成！通过 ' + passed + '/' + total + ' 题，平均分 ' + avgScore);
+    showToast('测试完成！共' + total + '道，通过' + passed + '道，平均分 ' + avgScore);
     setTimeout(function() { backHome(); }, 1500);
     return;
   }
