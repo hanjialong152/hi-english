@@ -17,8 +17,9 @@
 // v78: 回退 dirty phrase 为 dirty surface defect、green phrase 保持 green energy strategy；对应音频重生成；SW bump 强制客户端刷新 JS 与音频缓存
 // redeploy-trigger-20260723T2230: force Render rebuild after phrase rollback
 // v83: 根治周测/月测 DOM id 冲突（测试 id 加 weekly-/monthly- 前缀）；月测麦克风通过无留痕修复；下一题/交卷按钮统一深蓝；上一题保留历史分；A 真平均分按≥80计
-var CACHE_VERSION = 'hi-english-v83';
-var CORE_CACHE = 'hi-english-core-v83';
+// v84: 月测顶部最高分提示修正（_testPeriodBestScore 月测分支对齐归属月口径，跟随当前阶段）
+var CACHE_VERSION = 'hi-english-v84';
+var CORE_CACHE = 'hi-english-core-v84';
 var AUDIO_CACHE = 'hi-english-audio-v34';
 
 var CORE_FILES = [
