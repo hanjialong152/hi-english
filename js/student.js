@@ -20,6 +20,24 @@ var testSubItems = [];
 var testSubScores = {};
 var bizSpellTarget = ''; // Current business spell practice target word
 var BETA_MODE = false; // 众测模式：开启后商务英语对所有人解锁 + 周测/月测不受时间限制
+var BUSINESS_UNLOCK_ALL = false; // 服务端商务全局解锁标志（管理员单按钮控制）
+var TEST_CONFIG = { basicWeekly: 10, basicMonthly: 20, bizWeekly: 10, bizMonthly: 20 }; // 周测/月测抽题数（服务端可配）
+
+function _clampInt(v, d, mx) {
+  var n = parseInt(v, 10);
+  if (isNaN(n) || n < 1) return d;
+  if (mx && n > mx) return mx;
+  return n;
+}
+
+// 商务英语最终解锁态：服务端全局解锁 OR 该账号管理员解锁 OR 众测 OR 基础850达标
+function isBusinessUnlocked() {
+  if (BETA_MODE) return true;
+  if (BUSINESS_UNLOCK_ALL) return true;
+  if (studyData && studyData.business && studyData.business.unlocked) return true;
+  if (studyData && studyData.basic && studyData.basic.mastered.length >= 850) return true;
+  return false;
+}
 
 // 自愈：speakScores 在多处被误初始化为数组 []，导致字符串键在 JSON 序列化时丢失，跟读分数"丢失"。
 // 发现数组时，把数组上的字符串属性迁移为对象属性。
@@ -235,12 +253,27 @@ async function init() {
 
   // 众测模式：从服务端拉取全局开关，开启则解锁商务英语并放开周测/月测时间限制
   fetch(HiEnglish.getServerUrl() + '/api/beta-config').then(function(r) { return r.json(); }).then(function(data) {
-    if (data && data.betaMode) {
-      BETA_MODE = true;
-      if (studyData && studyData.business && !studyData.business.unlocked) {
-        studyData.business.unlocked = true;
-      }
-      renderStageSwitcher();
+    BETA_MODE = !!(data && data.betaMode);
+    // 商务解锁最终态由 isBusinessUnlocked() 实时计算；关闭众测时本地也同步回退到正式规则
+    if (!BETA_MODE && studyData && studyData.business) {
+      studyData.business.unlocked = !!(studyData.basic && studyData.basic.mastered.length >= 850);
+    }
+    renderStageSwitcher();
+  }).catch(function() {});
+
+  // 拉取商务全局解锁标志 + 测试题量配置（全员生效）
+  fetch(HiEnglish.getServerUrl() + '/api/business-config').then(function(r) { return r.json(); }).then(function(data) {
+    BUSINESS_UNLOCK_ALL = !!(data && data.unlock_all);
+    renderStageSwitcher();
+  }).catch(function() {});
+  fetch(HiEnglish.getServerUrl() + '/api/test-config').then(function(r) { return r.json(); }).then(function(data) {
+    if (data && data.success && data.config) {
+      TEST_CONFIG = {
+        basicWeekly: _clampInt(data.config.basicWeekly, 10),
+        basicMonthly: _clampInt(data.config.basicMonthly, 20),
+        bizWeekly: _clampInt(data.config.bizWeekly, 10),
+        bizMonthly: _clampInt(data.config.bizMonthly, 20)
+      };
     }
   }).catch(function() {});
 
@@ -575,7 +608,7 @@ function logout() {
 function renderStageSwitcher() {
   var container = document.getElementById('s-stage-switcher');
   var basicActive = currentStage === 'basic';
-  var businessUnlocked = studyData.business.unlocked;
+  var businessUnlocked = isBusinessUnlocked();
   container.innerHTML =
     '<div class="stage-tab ' + (basicActive ? 'active' : '') + '" onclick="switchStage(\'basic\')">基础词汇练习</div>' +
     '<div class="stage-tab ' + (!basicActive ? 'active' : '') + ' ' + (!businessUnlocked ? 'locked' : '') + '" onclick="switchStage(\'business\')">' +
@@ -584,7 +617,7 @@ function renderStageSwitcher() {
 }
 
 function switchStage(stage) {
-  if (stage === 'business' && !studyData.business.unlocked) {
+  if (stage === 'business' && !isBusinessUnlocked()) {
     showToast('需完成基础词汇练习阶段后解锁');
     return;
   }
@@ -2393,20 +2426,22 @@ function prevSpell() {
 function prepareTest(type) {
   var pool;
 
+  var weeklyN = currentStage === 'basic' ? TEST_CONFIG.basicWeekly : TEST_CONFIG.bizWeekly;
+  var monthlyN = currentStage === 'basic' ? TEST_CONFIG.basicMonthly : TEST_CONFIG.bizMonthly;
   if (type === 'weekly') {
     pool = getWeeklyTestPool();
-    if (pool.length < 10) {
-      showToast('周学习内容少于10个单词或微课，请补卡');
+    if (pool.length < weeklyN) {
+      showToast('周学习内容少于' + weeklyN + '个单词或微课，请补卡');
       return;
     }
-    testWords = pool.slice().sort(function() { return Math.random() - 0.5; }).slice(0, 10);
+    testWords = pool.slice().sort(function() { return Math.random() - 0.5; }).slice(0, weeklyN);
   } else {
     pool = getMonthlyTestPool();
-    if (pool.length < 20) {
-      showToast('月学习内容少于20个单词或微课，请补卡');
+    if (pool.length < monthlyN) {
+      showToast('月学习内容少于' + monthlyN + '个单词或微课，请补卡');
       return;
     }
-    testWords = pool.slice().sort(function() { return Math.random() - 0.5; }).slice(0, 20);
+    testWords = pool.slice().sort(function() { return Math.random() - 0.5; }).slice(0, monthlyN);
   }
 
   testWordIndex = 0;
@@ -2560,7 +2595,9 @@ function renderTestCard(type, content) {
     return;
   }
 
-  var testCountLabel = type === 'weekly' ? '10个单词或微课' : '20个单词或微课';
+  var weeklyN = currentStage === 'basic' ? TEST_CONFIG.basicWeekly : TEST_CONFIG.bizWeekly;
+  var monthlyN = currentStage === 'basic' ? TEST_CONFIG.basicMonthly : TEST_CONFIG.bizMonthly;
+  var testCountLabel = type === 'weekly' ? (weeklyN + '个单词或微课') : (monthlyN + '个单词或微课');
 
   // Build sub-items: each has its own Chinese text, English target, and mic button
   testSubItems = [];

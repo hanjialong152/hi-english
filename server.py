@@ -45,7 +45,7 @@ os.makedirs(DATA_DIR, exist_ok=True)
 data_lock = threading.Lock()
 
 DEFAULT_PASSWORD = '123@456.com'
-DEFAULT_ADMIN_PASSWORD = '1234hi...@com'
+DEFAULT_ADMIN_PASSWORD = 'Hienglish13579.'
 
 # ---- GitHub 数据持久化同步 ----
 # Render 免费版文件系统不持久化，每次重启/部署会重置 data/ 目录
@@ -462,6 +462,8 @@ _WAF_RL_PATHS = {
     '/api/beta-config': (3, 30),
     '/api/admin/toggle-user': (3, 30),
     '/api/admin/unlock-business': (3, 30),
+    '/api/test-config': (3, 30),
+    '/api/business-config': (3, 30),
 }
 
 
@@ -993,9 +995,11 @@ def _merge_stage(existing, incoming):
                 seen.add(h)
                 merged.append(arr)
         out[key] = merged
-    # business 特有字段
-    if 'unlocked' in (existing or {}) or 'unlocked' in (incoming or {}):
-        out['unlocked'] = bool(existing.get('unlocked')) or bool(incoming.get('unlocked'))
+    # business 特有字段：unlocked 以服务端为准（防止客户端本地缓存的 true 把管理员的 false 顶回 true）
+    if 'unlocked' in (existing or {}):
+        out['unlocked'] = bool(existing.get('unlocked'))
+    elif 'unlocked' in (incoming or {}):
+        out['unlocked'] = bool(incoming.get('unlocked'))
     return out
 
 
@@ -1685,7 +1689,18 @@ def handle_save_beta_config():
     if not _is_valid_admin_token((body.get('token') or '').strip()):
         return jsonify({'success': False, 'error': '未授权'}), 401
     beta = bool(body.get('betaMode', False))
-    save_json(os.path.join(DATA_DIR, 'beta.json'), {'betaMode': beta})
+    with data_lock:
+        save_json(os.path.join(DATA_DIR, 'beta.json'), {'betaMode': beta})
+        if not beta:
+            # 关闭众测：按正式规则重置商务解锁（基础 850 全通过才保留，否则重新上锁）
+            study_data = load_json(os.path.join(DATA_DIR, 'study_data.json'))
+            for _empid, _sd in study_data.items():
+                _biz = _sd.get('business')
+                if not isinstance(_biz, dict):
+                    continue
+                _basic_mastered = ((_sd.get('basic') or {}).get('mastered') or [])
+                _biz['unlocked'] = len(_basic_mastered) >= 850
+            save_json(os.path.join(DATA_DIR, 'study_data.json'), study_data)
     return jsonify({'success': True, 'betaMode': beta})
 
 
@@ -1713,6 +1728,86 @@ def handle_unlock_business():
         study_data[empid] = sd
         save_json(os.path.join(DATA_DIR, 'study_data.json'), study_data)
     return jsonify({'success': True, 'empid': empid, 'unlocked': bool(unlock)})
+
+
+# ---- 测试题量配置（管理员可改周测/月测抽题数，全员生效）----
+@app.route('/api/test-config', methods=['GET'])
+def handle_get_test_config():
+    cfg = load_json(os.path.join(DATA_DIR, 'test_config.json'))
+    if not isinstance(cfg, dict):
+        cfg = {}
+    def _gv(k, d):
+        try:
+            n = int(cfg.get(k, d))
+        except (TypeError, ValueError):
+            n = d
+        if n < 1:
+            n = d
+        return n
+    return jsonify({'success': True, 'config': {
+        'basicWeekly': _gv('basicWeekly', 10),
+        'basicMonthly': _gv('basicMonthly', 20),
+        'bizWeekly': _gv('bizWeekly', 10),
+        'bizMonthly': _gv('bizMonthly', 20),
+    }})
+
+
+@app.route('/api/test-config', methods=['POST'])
+def handle_save_test_config():
+    body = request.json or {}
+    if not _is_valid_admin_token((body.get('token') or '').strip()):
+        return jsonify({'success': False, 'error': '未授权'}), 401
+    def _clamp(v, d, mx=100):
+        try:
+            n = int(v)
+        except (TypeError, ValueError):
+            return d
+        if n < 1:
+            return d
+        if n > mx:
+            n = mx
+        return n
+    cfg = {
+        'basicWeekly': _clamp(body.get('basicWeekly'), 10),
+        'basicMonthly': _clamp(body.get('basicMonthly'), 20),
+        'bizWeekly': _clamp(body.get('bizWeekly'), 10),
+        'bizMonthly': _clamp(body.get('bizMonthly'), 20),
+    }
+    save_json(os.path.join(DATA_DIR, 'test_config.json'), cfg)
+    return jsonify({'success': True, 'config': cfg})
+
+
+# ---- 商务英语全局解锁开关（管理员单按钮切换，全员生效）----
+@app.route('/api/business-config', methods=['GET'])
+def handle_get_business_config():
+    cfg = load_json(os.path.join(DATA_DIR, 'business_config.json'))
+    unlock_all = bool(cfg.get('unlock_all', False)) if isinstance(cfg, dict) else False
+    return jsonify({'success': True, 'unlock_all': unlock_all})
+
+
+@app.route('/api/business-config', methods=['POST'])
+def handle_save_business_config():
+    body = request.json or {}
+    if not _is_valid_admin_token((body.get('token') or '').strip()):
+        return jsonify({'success': False, 'error': '未授权'}), 401
+    unlock_all = bool(body.get('unlock_all', False))
+    with data_lock:
+        study_data = load_json(os.path.join(DATA_DIR, 'study_data.json'))
+        for _empid, _sd in study_data.items():
+            _biz = _sd.get('business')
+            if not isinstance(_biz, dict):
+                _biz = {'mastered': [], 'unlocked': False}
+                _sd['business'] = _biz
+            if unlock_all:
+                _biz['unlocked'] = True
+            else:
+                _basic_mastered = ((_sd.get('basic') or {}).get('mastered') or [])
+                if len(_basic_mastered) < 850:
+                    _biz['unlocked'] = False
+                # 已达标的保持开放（不动）
+        save_json(os.path.join(DATA_DIR, 'study_data.json'), study_data)
+        save_json(os.path.join(DATA_DIR, 'business_config.json'), {'unlock_all': unlock_all})
+    return jsonify({'success': True, 'unlock_all': unlock_all})
 
 
 # ---- 站内信 / 消息 API ----

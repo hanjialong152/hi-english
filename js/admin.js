@@ -337,10 +337,13 @@ function renderDashboard() {
       '</div>';
     loadBetaMode();
   }
+  // 测试题量设置卡片
+  renderTestConfigCard();
 }
 
 // ===== 众测模式全局开关 =====
 var _betaModeState = false;
+var _businessUnlockAll = false;
 function loadBetaMode() {
   fetch(HiEnglish.getServerUrl() + '/api/beta-config').then(function(r) { return r.json(); }).then(function(data) {
     _betaModeState = !!(data && data.betaMode);
@@ -390,6 +393,68 @@ function toggleBetaMode() {
   });
 }
 
+// ===== 测试题量设置（管理员可改周测/月测抽题数）=====
+function renderTestConfigCard() {
+  var el = document.getElementById('a-test-config');
+  if (!el) return;
+  el.innerHTML =
+    '<div class="section-title">📝 测试题量设置</div>' +
+    '<div class="card">' +
+      '<p style="font-size:13px;color:var(--text-sub);margin-bottom:12px;">调整周测/月测抽题数量，保存后对所有学员立即生效。抽题数同时作为开考门槛（题池少于该数将提示补卡）。仅可填正整数。</p>' +
+      '<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px;align-items:flex-end;">' +
+        '<div style="font-weight:600;font-size:14px;width:100%;">基础阶段</div>' +
+        '<label style="font-size:13px;">周测 <input type="number" id="tc-basic-weekly" min="1" style="width:70px;padding:6px;border:1px solid var(--border);border-radius:6px;"> 道</label>' +
+        '<label style="font-size:13px;">月测 <input type="number" id="tc-basic-monthly" min="1" style="width:70px;padding:6px;border:1px solid var(--border);border-radius:6px;"> 道</label>' +
+        '<div style="font-weight:600;font-size:14px;width:100%;margin-top:8px;">商务阶段</div>' +
+        '<label style="font-size:13px;">周测 <input type="number" id="tc-biz-weekly" min="1" style="width:70px;padding:6px;border:1px solid var(--border);border-radius:6px;"> 道</label>' +
+        '<label style="font-size:13px;">月测 <input type="number" id="tc-biz-monthly" min="1" style="width:70px;padding:6px;border:1px solid var(--border);border-radius:6px;"> 道</label>' +
+      '</div>' +
+      '<div style="display:flex;gap:8px;">' +
+        '<button class="btn btn-primary" onclick="saveTestConfig()">💾 保存</button>' +
+        '<button class="btn btn-outline" onclick="resetTestConfig()">↺ 一键恢复默认(10/20)</button>' +
+      '</div>' +
+      '<div id="tc-msg" style="font-size:12px;margin-top:8px;color:var(--text-sub);"></div>' +
+    '</div>';
+  loadTestConfig();
+}
+function loadTestConfig() {
+  fetch(HiEnglish.getServerUrl() + '/api/test-config').then(function(r) { return r.json(); }).then(function(data) {
+    if (!(data && data.success)) { setTcMsg('读取失败'); return; }
+    var c = data.config || {};
+    _setTcVal('tc-basic-weekly', c.basicWeekly, 10);
+    _setTcVal('tc-basic-monthly', c.basicMonthly, 20);
+    _setTcVal('tc-biz-weekly', c.bizWeekly, 10);
+    _setTcVal('tc-biz-monthly', c.bizMonthly, 20);
+  }).catch(function() { setTcMsg('读取失败，请刷新'); });
+}
+function _setTcVal(id, v, d) { var e = document.getElementById(id); if (e) e.value = (typeof v === 'number' && v >= 1) ? v : d; }
+function setTcMsg(m) { var e = document.getElementById('tc-msg'); if (e) e.textContent = m; }
+function _tcVal(id, d) { var e = document.getElementById(id); var n = parseInt(e ? e.value : '', 10); if (isNaN(n) || n < 1) return d; if (n > 100) n = 100; return n; }
+function saveTestConfig() {
+  var cfg = {
+    basicWeekly: _tcVal('tc-basic-weekly', 10), basicMonthly: _tcVal('tc-basic-monthly', 20),
+    bizWeekly: _tcVal('tc-biz-weekly', 10), bizMonthly: _tcVal('tc-biz-monthly', 20),
+    token: sessionStorage.getItem('hi_english_admin_token') || ''
+  };
+  setTcMsg('保存中…');
+  fetch(HiEnglish.getServerUrl() + '/api/test-config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cfg) })
+    .then(function(r) { return r.json(); }).then(function(data) {
+      if (data && data.success) {
+        setTcMsg('已保存：基础周' + data.config.basicWeekly + '/月' + data.config.basicMonthly + '，商务周' + data.config.bizWeekly + '/月' + data.config.bizMonthly);
+        showToast('测试题量已保存，学员下次测试生效');
+      } else { setTcMsg((data && data.error) || '保存失败'); }
+    }).catch(function() { setTcMsg('网络错误，请重试'); });
+}
+function resetTestConfig() {
+  if (!confirm('确认恢复默认（周测10道、月测20道）？')) return;
+  var cfg = { basicWeekly: 10, basicMonthly: 20, bizWeekly: 10, bizMonthly: 20, token: sessionStorage.getItem('hi_english_admin_token') || '' };
+  fetch(HiEnglish.getServerUrl() + '/api/test-config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cfg) })
+    .then(function(r) { return r.json(); }).then(function(data) {
+      if (data && data.success) { loadTestConfig(); showToast('已恢复默认题量'); }
+      else { setTcMsg('恢复失败'); }
+    }).catch(function() { setTcMsg('网络错误'); });
+}
+
 // ===== 按账号解锁商务英语 =====
 function unlockBusiness(empid) {
   if (!confirm('确认为该学员解锁「商务英语」阶段？解锁后该学员可直接进入商务英语练习。')) return;
@@ -407,6 +472,74 @@ function unlockBusiness(empid) {
   }).catch(function() {
     showToast('网络错误，请重试');
   });
+}
+
+// ===== 商务英语全局解锁（管理员单按钮切换）=====
+function loadBusinessConfig() {
+  fetch(HiEnglish.getServerUrl() + '/api/business-config').then(function(r) { return r.json(); }).then(function(data) {
+    _businessUnlockAll = !!(data && data.unlock_all);
+    renderBusinessGlobal();
+  }).catch(function() { renderBusinessGlobal(); });
+}
+function renderBusinessGlobal() {
+  var btn = document.getElementById('business-global-btn');
+  if (!btn) return;
+  btn.onclick = toggleBusinessGlobal;
+  if (_businessUnlockAll) {
+    btn.textContent = '🔒 全员商务已开放（点击关闭）';
+    btn.className = 'btn btn-danger';
+  } else {
+    btn.textContent = '🔓 全员商务已关闭（点击开放）';
+    btn.className = 'btn btn-primary';
+  }
+}
+function toggleBusinessGlobal() {
+  var target = !_businessUnlockAll;
+  if (target && !confirm('确认开放全部学员的商务英语阶段？所有学员（含未学完基础850词的）都将可进入。')) return;
+  if (!target && !confirm('确认关闭全员商务英语？未学完基础850词的学员将自动重新上锁（已学完的保持开放）。')) return;
+  var btn = document.getElementById('business-global-btn');
+  if (btn) btn.textContent = '处理中…';
+  fetch(HiEnglish.getServerUrl() + '/api/business-config', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ unlock_all: target, token: sessionStorage.getItem('hi_english_admin_token') || '' })
+  }).then(function(r) { return r.json(); }).then(function(data) {
+    if (data && data.success) {
+      _businessUnlockAll = !!data.unlock_all;
+      renderBusinessGlobal();
+      if (typeof renderStudentTable === 'function') renderStudentTable();
+      showToast(_businessUnlockAll ? '全员商务英语已开放' : '全员商务英语已关闭（未达标自动上锁）');
+    } else { showToast('操作失败，请重试'); renderBusinessGlobal(); }
+  }).catch(function() { showToast('网络错误，请重试'); renderBusinessGlobal(); });
+}
+
+// ===== 学员行商务解锁按钮（单按钮随状态变脸）=====
+function bizBtnHtml(u, s) {
+  var eff = s.businessUnlocked || (s.mastered >= 850) || _businessUnlockAll || _betaModeState;
+  var viaQualifiedOnly = (s.mastered >= 850) && !s.businessUnlocked && !_businessUnlockAll && !_betaModeState;
+  var base = 'padding:4px 10px;font-size:12px;margin-right:4px;';
+  if (eff) {
+    if (viaQualifiedOnly) {
+      return '<button class="btn btn-outline" style="' + base + '" disabled title="已达标自动开放">✅已达标开放</button>';
+    }
+    return '<button class="btn btn-outline" style="' + base + '" onclick="toggleBusinessLock(\'' + u.empid + '\', false)">🔒关闭商务</button>';
+  }
+  return '<button class="btn btn-outline" style="' + base + '" onclick="toggleBusinessLock(\'' + u.empid + '\', true)">🔓解锁商务</button>';
+}
+function toggleBusinessLock(empid, open) {
+  if (open) {
+    if (!confirm('确认为该学员解锁「商务英语」阶段？解锁后该学员可直接进入商务英语练习。')) return;
+  } else {
+    if (!confirm('确认关闭该学员的商务英语？若其基础850词未全部跟读通过，将自动重新上锁。')) return;
+  }
+  fetch(HiEnglish.getServerUrl() + '/api/admin/unlock-business', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ empid: empid, unlock: open, token: sessionStorage.getItem('hi_english_admin_token') || '' })
+  }).then(function(r) { return r.json(); }).then(function(data) {
+    if (data && data.success) {
+      showToast(open ? ('已为 ' + empid + ' 解锁商务英语') : ('已关闭 ' + empid + ' 的商务英语'));
+      renderStudentTable();
+    } else { showToast((data && data.error) || '操作失败'); }
+  }).catch(function() { showToast('网络错误，请重试'); });
 }
 
 // ===== Study Reminder =====
@@ -559,15 +692,19 @@ function renderStudentTable() {
   if (!studentToolbarBuilt) {
     var groupOptions = '<option value="">全部组别</option>' + groups.map(function(g) { return '<option>' + g + '</option>'; }).join('');
     toolbar.innerHTML =
-      '<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">' +
+      '<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">' +
         '<input type="password" autocomplete="new-password" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;" tabindex="-1" aria-hidden="true">' +
         '<input type="text" id="search-input" name="search-query" autocomplete="off" placeholder="搜索账号或姓名..." value="' + (search || '') + '" style="flex:1;min-width:200px;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:14px;" oninput="studentPage=1;renderStudentTable()">' +
         '<select id="filter-group" style="padding:10px;border:1px solid var(--border);border-radius:8px;font-size:14px;" onchange="studentPage=1;renderStudentTable()">' + groupOptions + '</select>' +
+      '</div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">' +
         '<button class="btn btn-primary" onclick="showAddStudentModal()">+ 添加学员</button>' +
+        '<button id="business-global-btn" class="btn btn-primary" onclick="toggleBusinessGlobal()">🔓 全员商务已关闭（点击开放）</button>' +
         '<button class="btn btn-outline" onclick="showBatchImportModal()">📥 批量导入</button>' +
         '<button class="btn btn-outline" onclick="exportStudentData()">📥 导出学员数据</button>' +
       '</div>';
     studentToolbarBuilt = true;
+    loadBusinessConfig();
   } else {
     // 刷新组别下拉项（保留当前选中值）
     var fsel = document.getElementById('filter-group');
@@ -613,7 +750,7 @@ function renderStudentTable() {
       '<td style="white-space:nowrap;">' +
         '<button class="btn btn-outline" style="padding:4px 10px;font-size:12px;margin-right:4px;" onclick="editStudent(\'' + u.empid + '\')">编辑</button>' +
         '<button class="btn btn-outline" style="padding:4px 10px;font-size:12px;margin-right:4px;" onclick="resetPassword(\'' + u.empid + '\')">🔑重置密码</button>' +
-        '<button class="btn btn-outline" style="padding:4px 10px;font-size:12px;margin-right:4px;" onclick="unlockBusiness(\'' + u.empid + '\')">🔓解锁商务</button>' +
+        bizBtnHtml(u, s) +
         '<button class="btn ' + (u.status === 'active' ? 'btn-danger' : 'btn-success') + '" style="padding:4px 10px;font-size:12px;margin-right:4px;" onclick="toggleStatus(\'' + u.empid + '\')">' + (u.status === 'active' ? '禁用' : '启用') + '</button>' +
         '<button class="btn btn-danger" style="padding:4px 10px;font-size:12px;" onclick="deleteStudent(\'' + u.empid + '\')">删除</button>' +
       '</td>' +
