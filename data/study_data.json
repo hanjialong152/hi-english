@@ -431,7 +431,14 @@
         "13",
         "14"
       ],
-      "monthlyTests": [],
+      "monthlyTests": [
+        {
+          "date": "2026-07-27",
+          "avgScore": 13,
+          "passed": 0,
+          "total": 2
+        }
+      ],
       "readIndex": 5,
       "speakScores": {
         "1": {
@@ -824,7 +831,14 @@
         "5",
         "6"
       ],
-      "monthlyTests": [],
+      "monthlyTests": [
+        {
+          "date": "2026-07-27",
+          "avgScore": 7,
+          "passed": 0,
+          "total": 2
+        }
+      ],
       "readIndex": 7,
       "speakScores": {
         "4": {
@@ -923,7 +937,14 @@
       "spellIndex": 2,
       "totalSeconds": 0,
       "unlocked": true,
-      "weeklyTests": [],
+      "weeklyTests": [
+        {
+          "date": "2026-07-27",
+          "avgScore": 4,
+          "passed": 0,
+          "total": 2
+        }
+      ],
       "audioDone": {
         "32": {
           "b_32_0": true,
