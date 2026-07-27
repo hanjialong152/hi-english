@@ -205,17 +205,20 @@ function renderDashboard() {
   var totalWeeklyScore = 0;
   var weeklyCount = 0;
   var totalCheckinRate = 0;
+  var totalBizMastered = 0;
 
   var personalScores = userArr.map(function(u) {
     var s = calcUserScores(u.empid);
     var allStudyData = JSON.parse(localStorage.getItem('hi_english_study') || '{}');
     var sd = allStudyData[u.empid];
-    if (sd && sd.checkIns && sd.checkIns.length > 0) activeThisWeek++;
+    // 本周活跃：按业务周（上周六00:00~本周五23:59）有完成打卡判定，与催学提醒口径一致
+    if (s.weeklyCompletedDays > 0) activeThisWeek++;
 
     totalScore += s.score;
     totalProgress += s.readIndex;
     totalBizProgress += s.bizLearned;
     totalMastered += s.mastered;
+    totalBizMastered += s.bizMastered;
     totalCheckinDays += s.completedDays;
     totalCheckinRate += s.checkinRate;
     if (s.weeklyAvg > 0) { totalWeeklyScore += s.weeklyAvg; weeklyCount++; }
@@ -227,24 +230,24 @@ function renderDashboard() {
   var avgProgress = totalStudents > 0 ? Math.round(totalProgress / totalStudents) : 0;
   var avgBizProgress = totalStudents > 0 ? Math.round(totalBizProgress / totalStudents * 10) / 10 : 0;
   var avgMastered = totalStudents > 0 ? Math.round(totalMastered / totalStudents) : 0;
+  var avgBizMastered = totalStudents > 0 ? Math.round(totalBizMastered / totalStudents) : 0;
   var avgCheckinDays = totalStudents > 0 ? Math.round(totalCheckinDays / totalStudents) : 0;
   var avgWeekly = weeklyCount > 0 ? Math.round(totalWeeklyScore / weeklyCount) : 0;
   var avgCheckinRate = totalStudents > 0 ? Math.round(totalCheckinRate / totalStudents) : 0;
 
-  // Stats
+  // Stats — 第一行：总学员数 / 本周活跃 / 平均分 / 平均打卡天数（率）；第二行：基础阶段平均进度 / 商务阶段平均进度 / 基础平均已掌握 / 商务平均已掌握
   document.getElementById('a-dashboard-stats').innerHTML =
     '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:12px;">' +
       '<div class="stat-card"><div class="stat-val">' + totalStudents + '</div><div class="stat-key">总学员数</div></div>' +
       '<div class="stat-card"><div class="stat-val">' + activeThisWeek + '</div><div class="stat-key">本周活跃</div></div>' +
-      '<div class="stat-card"><div class="stat-val">' + avgCheckinRate + '%</div><div class="stat-key">打卡率</div></div>' +
       '<div class="stat-card"><div class="stat-val">' + avgScore + '</div><div class="stat-key">平均分</div></div>' +
+      '<div class="stat-card"><div class="stat-val">' + avgCheckinDays + '（' + avgCheckinRate + '%）</div><div class="stat-key">平均打卡天数（率）</div></div>' +
     '</div>' +
-    '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px;">' +
-      '<div class="stat-card"><div class="stat-val">' + avgProgress + '/850</div><div class="stat-key">平均学习进度</div></div>' +
-      '<div class="stat-card"><div class="stat-val">' + avgMastered + '</div><div class="stat-key">平均已掌握</div></div>' +
-      '<div class="stat-card"><div class="stat-val">' + avgCheckinDays + '</div><div class="stat-key">平均打卡天数</div></div>' +
-      '<div class="stat-card"><div class="stat-val">' + avgWeekly + '</div><div class="stat-key">平均周测分</div></div>' +
-      '<div class="stat-card"><div class="stat-val">' + avgBizProgress + '/' + BIZ_TOTAL_LESSONS + '</div><div class="stat-key">平均商务进度</div></div>' +
+    '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;">' +
+      '<div class="stat-card"><div class="stat-val">' + avgProgress + '/850</div><div class="stat-key">基础阶段平均进度</div></div>' +
+      '<div class="stat-card"><div class="stat-val">' + avgBizProgress + '/' + BIZ_TOTAL_LESSONS + '</div><div class="stat-key">商务阶段平均进度</div></div>' +
+      '<div class="stat-card"><div class="stat-val">' + avgMastered + '</div><div class="stat-key">基础平均已掌握</div></div>' +
+      '<div class="stat-card"><div class="stat-val">' + avgBizMastered + '</div><div class="stat-key">商务平均已掌握</div></div>' +
     '</div>';
 
   // Personal ranking - with monthly scores
