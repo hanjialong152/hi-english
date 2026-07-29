@@ -1540,7 +1540,11 @@
       "mastered": [],
       "monthlyTests": [],
       "readIndex": 1,
-      "speakScores": {},
+      "speakScores": {
+        "1": {
+          "s0": 100
+        }
+      },
       "spellIndex": 0,
       "totalSeconds": 0,
       "unlocked": true,
@@ -1598,7 +1602,7 @@
       },
       {
         "date": "2026-07-29",
-        "seconds": 237,
+        "seconds": 243,
         "completed": false
       }
     ]
