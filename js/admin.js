@@ -269,8 +269,8 @@ function renderDashboard() {
     return {
       name: g.name, count: g.count,
       checkinRate: Math.round(g.checkinTotal / g.count),
-      weeklyAvg: g.count > 0 ? Math.round(g.weeklyTotal / g.count) : 0,
-      monthlyAvg: g.count > 0 ? Math.round(g.monthlyTotal / g.count) : 0,
+      weeklyAvg: g.count > 0 ? Math.round(g.weeklyTotal / g.count * 100) / 100 : 0,
+      monthlyAvg: g.count > 0 ? Math.round(g.monthlyTotal / g.count * 100) / 100 : 0,
       score: Math.round(g.total / g.count * 10) / 10
     };
   }).sort(function(a, b) { return b.score - a.score; });
@@ -1115,8 +1115,8 @@ function renderGroupStats() {
     return {
       name: g, count: count,
       checkinRate: count > 0 ? Math.round(totalCheckin / count) : 0,
-      weeklyAvg: count > 0 ? Math.round(totalWeekly / count) : 0,
-      monthlyAvg: count > 0 ? Math.round(totalMonthly / count) : 0,
+      weeklyAvg: count > 0 ? Math.round(totalWeekly / count * 100) / 100 : 0,
+      monthlyAvg: count > 0 ? Math.round(totalMonthly / count * 100) / 100 : 0,
       score: count > 0 ? Math.round(totalScore / count * 10) / 10 : 0
     };
   }).sort(function(a, b) { return b.score - a.score; });
@@ -1276,8 +1276,8 @@ function exportTeamRanking() {
     return [
       g, count,
       count > 0 ? Math.round(totalCheckin / count) + '%' : '0%',
-      count > 0 ? Math.round(totalWeekly / count) : 0,
-      count > 0 ? Math.round(totalMonthly / count) : 0,
+      count > 0 ? Math.round(totalWeekly / count * 100) / 100 : 0,
+      count > 0 ? Math.round(totalMonthly / count * 100) / 100 : 0,
       count > 0 ? Math.round(totalScore / count * 10) / 10 : 0
     ];
   }).sort(function(a, b) { return b[5] - a[5]; });
@@ -1315,8 +1315,8 @@ function exportGroupStats() {
     return [
       g, count,
       count > 0 ? Math.round(totalCheckin / count) + '%' : '0%',
-      count > 0 ? Math.round(totalWeekly / count) : 0,
-      count > 0 ? Math.round(totalMonthly / count) : 0,
+      count > 0 ? Math.round(totalWeekly / count * 100) / 100 : 0,
+      count > 0 ? Math.round(totalMonthly / count * 100) / 100 : 0,
       count > 0 ? Math.round(totalScore / count * 10) / 10 : 0
     ];
   }).sort(function(a, b) { return b[5] - a[5]; });
@@ -1363,8 +1363,8 @@ function exportTeamReport() {
     return [
       g, stageStatus,
       count > 0 ? Math.round(totalCheckin / count) + '%' : '0%',
-      count > 0 ? Math.round(totalWeekly / count) : 0,
-      count > 0 ? Math.round(totalMonthly / count) : 0,
+      count > 0 ? Math.round(totalWeekly / count * 100) / 100 : 0,
+      count > 0 ? Math.round(totalMonthly / count * 100) / 100 : 0,
       count > 0 ? Math.round(totalScore / count * 10) / 10 : 0
     ];
   }).sort(function(a, b) { return b[5] - a[5]; });
