@@ -1068,16 +1068,26 @@ const HiEnglish = {
   // ===== Excel Export (real .xls format) =====
   exportExcel(filename, headers, rows, sheetName) {
     sheetName = sheetName || 'Sheet1';
+    // 生成真正的 Excel(.xlsx)，避免旧 HTML 伪装 .xls 被识别为网页/格式不匹配
+    if (typeof XLSX !== 'undefined' && XLSX.utils && XLSX.writeFile) {
+      var aoa = [headers.map(function(h) { return h; })];
+      rows.forEach(function(r) { aoa.push(r); });
+      var ws = XLSX.utils.aoa_to_sheet(aoa);
+      var wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, String(sheetName).slice(0, 31));
+      var outName = String(filename).replace(/\.(xls|csv)$/i, '.xlsx');
+      XLSX.writeFile(wb, outName);
+      return;
+    }
+    // 兜底：XLSX 未加载时使用旧 HTML 方式（一般不会触发）
     var html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
     html += '<head><meta charset="UTF-8"><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>' + sheetName + '</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body>';
     html += '<table border="1" style="border-collapse:collapse;font-family:Microsoft YaHei;font-size:12px;">';
-    // Header row
     html += '<tr>';
     headers.forEach(function(h) {
       html += '<th style="background:#4A90D9;color:#fff;font-weight:bold;padding:6px 10px;text-align:center;border:1px solid #3A7BC8;">' + HiEnglish._escapeHtml(h) + '</th>';
     });
     html += '</tr>';
-    // Data rows
     rows.forEach(function(row, rowIdx) {
       html += '<tr>';
       row.forEach(function(cell) {
@@ -1087,7 +1097,6 @@ const HiEnglish = {
       html += '</tr>';
     });
     html += '</table></body></html>';
-
     var blob = new Blob(['\ufeff' + html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
     var link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
