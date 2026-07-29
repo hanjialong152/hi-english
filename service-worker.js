@@ -18,9 +18,9 @@
 // redeploy-trigger-20260723T2230: force Render rebuild after phrase rollback
 // v83: 根治周测/月测 DOM id 冲突（测试 id 加 weekly-/monthly- 前缀）；月测麦克风通过无留痕修复；下一题/交卷按钮统一深蓝；上一题保留历史分；A 真平均分按≥80计
 // v84: 月测顶部最高分提示修正（_testPeriodBestScore 月测分支对齐归属月口径，跟随当前阶段）
-// v86: 管理员端团队周测/月测平均分分母改为团队总人数；详细报表按周/按月导出展开为每日列（新日期在前）
-var CACHE_VERSION = 'hi-english-v86';
-var CORE_CACHE = 'hi-english-core-v86';
+// v87: 管理员端导出改真XLSX（XLSX库生成）；团队/分组周测月测平均分显示保留2位小数
+var CACHE_VERSION = 'hi-english-v87';
+var CORE_CACHE = 'hi-english-core-v87';
 var AUDIO_CACHE = 'hi-english-audio-v34';
 
 var CORE_FILES = [
