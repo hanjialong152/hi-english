@@ -221,7 +221,7 @@ function renderDashboard() {
     totalBizMastered += s.bizMastered;
     totalCheckinDays += s.completedDays;
     totalCheckinRate += s.checkinRate;
-    if (s.weeklyAvg > 0) { totalWeeklyScore += s.weeklyAvg; weeklyCount++; }
+    totalWeeklyScore += s.weeklyAvg; // 未参与周测计0分，分母改用总人数
 
     return Object.assign({empid: u.empid, name: u.name, group: u.group, status: u.status}, s);
   }).sort(function(a, b) { return b.score - a.score; });
@@ -232,7 +232,7 @@ function renderDashboard() {
   var avgMastered = totalStudents > 0 ? Math.round(totalMastered / totalStudents) : 0;
   var avgBizMastered = totalStudents > 0 ? Math.round(totalBizMastered / totalStudents) : 0;
   var avgCheckinDays = totalStudents > 0 ? Math.round(totalCheckinDays / totalStudents) : 0;
-  var avgWeekly = weeklyCount > 0 ? Math.round(totalWeeklyScore / weeklyCount) : 0;
+  var avgWeekly = totalStudents > 0 ? Math.round(totalWeeklyScore / totalStudents) : 0;
   var avgCheckinRate = totalStudents > 0 ? Math.round(totalCheckinRate / totalStudents) : 0;
 
   // Stats — 第一行：总学员数 / 本周活跃 / 平均分 / 平均打卡天数（率）；第二行：基础阶段平均进度 / 商务阶段平均进度 / 基础平均已掌握 / 商务平均已掌握
@@ -262,15 +262,15 @@ function renderDashboard() {
     groupScores[p.group].total += p.score;
     groupScores[p.group].count++;
     groupScores[p.group].checkinTotal += p.checkinRate;
-    if (p.weeklyAvg > 0) { groupScores[p.group].weeklyTotal += p.weeklyAvg; groupScores[p.group].weeklyCount++; }
-    if (p.monthlyAvg > 0) { groupScores[p.group].monthlyTotal += p.monthlyAvg; groupScores[p.group].monthlyCount++; }
+    groupScores[p.group].weeklyTotal += p.weeklyAvg; // 未参与计0，分母用 group.count
+    groupScores[p.group].monthlyTotal += p.monthlyAvg;
   });
   var groupList = Object.values(groupScores).map(function(g) {
     return {
       name: g.name, count: g.count,
       checkinRate: Math.round(g.checkinTotal / g.count),
-      weeklyAvg: g.weeklyCount > 0 ? Math.round(g.weeklyTotal / g.weeklyCount) : 0,
-      monthlyAvg: g.monthlyCount > 0 ? Math.round(g.monthlyTotal / g.monthlyCount) : 0,
+      weeklyAvg: g.count > 0 ? Math.round(g.weeklyTotal / g.count) : 0,
+      monthlyAvg: g.count > 0 ? Math.round(g.monthlyTotal / g.count) : 0,
       score: Math.round(g.total / g.count * 10) / 10
     };
   }).sort(function(a, b) { return b.score - a.score; });
@@ -1115,8 +1115,8 @@ function renderGroupStats() {
     return {
       name: g, count: count,
       checkinRate: count > 0 ? Math.round(totalCheckin / count) : 0,
-      weeklyAvg: weeklyCount > 0 ? Math.round(totalWeekly / weeklyCount) : 0,
-      monthlyAvg: monthlyCount > 0 ? Math.round(totalMonthly / monthlyCount) : 0,
+      weeklyAvg: count > 0 ? Math.round(totalWeekly / count) : 0,
+      monthlyAvg: count > 0 ? Math.round(totalMonthly / count) : 0,
       score: count > 0 ? Math.round(totalScore / count * 10) / 10 : 0
     };
   }).sort(function(a, b) { return b.score - a.score; });
@@ -1276,8 +1276,8 @@ function exportTeamRanking() {
     return [
       g, count,
       count > 0 ? Math.round(totalCheckin / count) + '%' : '0%',
-      weeklyCount > 0 ? Math.round(totalWeekly / weeklyCount) : 0,
-      monthlyCount > 0 ? Math.round(totalMonthly / monthlyCount) : 0,
+      count > 0 ? Math.round(totalWeekly / count) : 0,
+      count > 0 ? Math.round(totalMonthly / count) : 0,
       count > 0 ? Math.round(totalScore / count * 10) / 10 : 0
     ];
   }).sort(function(a, b) { return b[5] - a[5]; });
@@ -1315,8 +1315,8 @@ function exportGroupStats() {
     return [
       g, count,
       count > 0 ? Math.round(totalCheckin / count) + '%' : '0%',
-      weeklyCount > 0 ? Math.round(totalWeekly / weeklyCount) : 0,
-      monthlyCount > 0 ? Math.round(totalMonthly / monthlyCount) : 0,
+      count > 0 ? Math.round(totalWeekly / count) : 0,
+      count > 0 ? Math.round(totalMonthly / count) : 0,
       count > 0 ? Math.round(totalScore / count * 10) / 10 : 0
     ];
   }).sort(function(a, b) { return b[5] - a[5]; });
@@ -1363,8 +1363,8 @@ function exportTeamReport() {
     return [
       g, stageStatus,
       count > 0 ? Math.round(totalCheckin / count) + '%' : '0%',
-      weeklyCount > 0 ? Math.round(totalWeekly / weeklyCount) : 0,
-      monthlyCount > 0 ? Math.round(totalMonthly / monthlyCount) : 0,
+      count > 0 ? Math.round(totalWeekly / count) : 0,
+      count > 0 ? Math.round(totalMonthly / count) : 0,
       count > 0 ? Math.round(totalScore / count * 10) / 10 : 0
     ];
   }).sort(function(a, b) { return b[5] - a[5]; });
@@ -1416,42 +1416,20 @@ function exportDetailReport() {
   var userArr = Object.values(users);
   if (group) userArr = userArr.filter(function(u) { return u.group === group; });
 
-  // Generate date columns based on dimension
+  // Generate date columns: 无论筛选维度（按日/按周/按月），均按起止日期展开为「每日一列」
+  // 日期顺序：新日期在前、旧日期在后（倒序）。筛选栏的"按周/按月"仅用于自动填充日期范围，不改变导出列结构。
   var startDate = new Date(start);
   var endDate = new Date(end);
-  var columns = [];
-
-  if (dim === '按日') {
-    var d = new Date(startDate);
-    while (d <= endDate) {
-      columns.push({label: d.toISOString().slice(0, 10), date: d.toISOString().slice(0, 10), type: 'day'});
-      d.setDate(d.getDate() + 1);
-    }
-  } else if (dim === '按周') {
-    // Group by week
-    var d = new Date(startDate);
-    var weekNum = 1;
-    while (d <= endDate) {
-      var weekStart = new Date(d);
-      var weekEnd = new Date(d);
-      weekEnd.setDate(d.getDate() + 6);
-      if (weekEnd > endDate) weekEnd = new Date(endDate);
-      columns.push({label: '第' + weekNum + '周(' + weekStart.toISOString().slice(5, 10) + '~' + weekEnd.toISOString().slice(5, 10) + ')', start: weekStart.toISOString().slice(0, 10), end: weekEnd.toISOString().slice(0, 10), type: 'week'});
-      d.setDate(d.getDate() + 7);
-      weekNum++;
-    }
-  } else if (dim === '按月') {
-    var d = new Date(startDate);
-    while (d <= endDate) {
-      var monthLabel = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
-      var monthStart = new Date(d.getFullYear(), d.getMonth(), 1);
-      var monthEnd = new Date(d.getFullYear(), d.getMonth() + 1, 0);
-      if (monthStart < startDate) monthStart = new Date(startDate);
-      if (monthEnd > endDate) monthEnd = new Date(endDate);
-      columns.push({label: monthLabel, start: monthStart.toISOString().slice(0, 10), end: monthEnd.toISOString().slice(0, 10), type: 'month'});
-      d.setMonth(d.getMonth() + 1);
-    }
+  var dayList = [];
+  var d = new Date(startDate);
+  while (d <= endDate) {
+    dayList.push(d.toISOString().slice(0, 10));
+    d.setDate(d.getDate() + 1);
   }
+  dayList.reverse(); // 新日期在前
+  var columns = dayList.map(function(dateStr) {
+    return {label: dateStr, date: dateStr, type: 'day'};
+  });
 
   var rows = userArr.map(function(u) {
     var sd = allStudyData[u.empid] || {checkIns: []};
