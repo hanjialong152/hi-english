@@ -445,7 +445,7 @@
           "total": 2
         }
       ],
-      "readIndex": 18,
+      "readIndex": 13,
       "speakScores": {
         "1": {
           "ex1": 89.0,
@@ -861,7 +861,7 @@
           "total": 1
         }
       ],
-      "readIndex": 8,
+      "readIndex": 1,
       "speakScores": {
         "4": {
           "s0": 100.0,
