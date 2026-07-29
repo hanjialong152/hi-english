@@ -1566,7 +1566,8 @@
           "b_2_6": true,
           "b_2_7": true,
           "b_2_8": true,
-          "b_2_9": true
+          "b_2_9": true,
+          "b_2_5": true
         },
         "1": {
           "b_1_0": true,
@@ -1574,7 +1575,9 @@
           "b_1_5": true
         }
       },
-      "audioDoneDate": {}
+      "audioDoneDate": {
+        "2": "2026-07-29"
+      }
     },
     "checkIns": [
       {
@@ -1609,7 +1612,7 @@
       },
       {
         "date": "2026-07-29",
-        "seconds": 318,
+        "seconds": 323,
         "completed": false
       }
     ]
