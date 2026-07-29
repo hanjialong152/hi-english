@@ -19,8 +19,9 @@
 // v83: 根治周测/月测 DOM id 冲突（测试 id 加 weekly-/monthly- 前缀）；月测麦克风通过无留痕修复；下一题/交卷按钮统一深蓝；上一题保留历史分；A 真平均分按≥80计
 // v84: 月测顶部最高分提示修正（_testPeriodBestScore 月测分支对齐归属月口径，跟随当前阶段）
 // v87: 管理员端导出改真XLSX（XLSX库生成）；团队/分组周测月测平均分显示保留2位小数
-var CACHE_VERSION = 'hi-english-v87';
-var CORE_CACHE = 'hi-english-core-v87';
+// v88: 同步公网翻页尽头全屏阻断页修复（student.js）；bump 核心缓存强制刷新 JS
+var CACHE_VERSION = 'hi-english-v88';
+var CORE_CACHE = 'hi-english-core-v88';
 var AUDIO_CACHE = 'hi-english-audio-v34';
 
 var CORE_FILES = [

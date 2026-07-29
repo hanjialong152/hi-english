@@ -921,10 +921,8 @@ function showLearnPage() {
 
 function renderWordLearnCard() {
   var total = words.length;
-  if (currentIndex >= total) {
-    document.getElementById('s-learn-content').innerHTML = '<div class="test-locked"><div class="lock-icon">🎉</div><div class="lock-msg">恭喜！已完成全部850词学习</div><div style="margin-top:24px;"><button class="btn btn-outline" onclick="backHome()">返回首页</button></div></div>';
-    return;
-  }
+  // 越界兜底：翻到尽头不弹全屏完成页，clamp 回最后一项正常显示（翻到最后一个≠全部学完）
+  if (currentIndex >= total) currentIndex = Math.max(0, total - 1);
 
   var word = words[currentIndex];
   var stageData = studyData.basic;
@@ -1058,10 +1056,8 @@ function renderWordLearnCard() {
 
 function renderLessonLearnCard() {
   var total = lessons.length;
-  if (currentIndex >= total) {
-    document.getElementById('s-learn-content').innerHTML = '<div class="test-locked"><div class="lock-icon">🎉</div><div class="lock-msg">恭喜！已完成全部116课学习</div><div style="margin-top:24px;"><button class="btn btn-outline" onclick="backHome()">返回首页</button></div></div>';
-    return;
-  }
+  // 越界兜底：翻到尽头不弹全屏完成页，clamp 回最后一项正常显示（翻到最后一个≠全部学完）
+  if (currentIndex >= total) currentIndex = Math.max(0, total - 1);
 
   var lesson = lessons[currentIndex];
   var progressPercent = Math.floor((currentIndex / total) * 100);
@@ -2260,6 +2256,12 @@ function prevWord() {
 
 function nextWord() {
   var stageData = studyData[currentStage];
+  var total = (currentStage === 'basic' ? words.length : lessons.length);
+  // 已在最后一项时点击“下一个”：提示且不前进，避免翻越界出全屏完成页
+  if (currentIndex >= total - 1) {
+    showToast('已是最后一项');
+    return;
+  }
   currentIndex++;
   // 精确停留：无论前进后退都记住最后停留页（定位页下次从这一页开始）
   stageData.readIndex = currentIndex;
@@ -2289,10 +2291,8 @@ function showSpellPage() {
   document.getElementById('s-page-spell').classList.add('active');
 
   var total = currentStage === 'basic' ? words.length : lessons.length;
-  if (currentIndex >= total) {
-    document.getElementById('s-spell-content').innerHTML = '<div class="test-locked"><div class="lock-icon">🎉</div><div class="lock-msg">拼写练习已完成</div></div>';
-    return;
-  }
+  // 越界兜底：翻到尽头不弹全屏完成页，clamp 回最后一项正常显示
+  if (currentIndex >= total) currentIndex = Math.max(0, total - 1);
 
   if (currentStage === 'basic') {
     var word = words[currentIndex];
@@ -2432,6 +2432,12 @@ function submitSpell() {
 
 function nextSpell() {
   var stageData = studyData[currentStage];
+  var total = (currentStage === 'basic' ? words.length : lessons.length);
+  // 已在最后一项时点击“下一个”：提示且不前进，避免翻越界出全屏完成页
+  if (currentIndex >= total - 1) {
+    showToast('已是最后一项');
+    return;
+  }
   currentIndex++;
   if (currentIndex > stageData.spellIndex) stageData.spellIndex = currentIndex;
   saveStudyData();
