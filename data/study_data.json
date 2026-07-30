@@ -2077,7 +2077,7 @@
           "total": 2
         }
       ],
-      "readIndex": 639,
+      "readIndex": 638,
       "speakScores": {
         "1": {
           "ex1": 89.0,
@@ -2857,7 +2857,7 @@
       },
       {
         "date": "2026-07-30",
-        "seconds": 316,
+        "seconds": 317,
         "completed": false
       }
     ]
