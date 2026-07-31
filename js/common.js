@@ -389,7 +389,7 @@ const HiEnglish = {
 
     // API: Load 850 words
     async loadWords() {
-      const DATA_VER = '?v=20260731b';
+      const DATA_VER = '?v=20260731c';
       if (this.words850) return this.words850;
       try {
         const res = await fetch('data/ogden_850_final.json' + DATA_VER);
