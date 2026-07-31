@@ -256,11 +256,15 @@
       }
     },
     "business": {
-      "learned": [],
-      "learnedDates": {},
+      "learned": [
+        "1"
+      ],
+      "learnedDates": {
+        "1": "2026-07-31"
+      },
       "mastered": [],
       "monthlyTests": [],
-      "readIndex": 0,
+      "readIndex": 1,
       "speakScores": {},
       "spellIndex": 0,
       "totalSeconds": 0,
@@ -298,7 +302,7 @@
       },
       {
         "date": "2026-07-31",
-        "seconds": 0,
+        "seconds": 5,
         "completed": false
       }
     ]
