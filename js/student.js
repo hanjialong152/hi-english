@@ -2319,7 +2319,7 @@ function showSpellPage() {
         '<div class="progress-bar"><div class="fill" style="width:' + progressPercent + '%;background:var(--success);"></div></div>' +
       '</div>' +
       '<div class="learn-section" style="text-align:center;padding:30px 16px;">' +
-        '<button onclick="playSpellAudio(\'audio/w_\' + word.id + \'.mp3' + AUDIO_VER + '\', \'' + escapeQuotes(word.word) + '\')" style="border:none;background:none;font-size:48px;cursor:pointer;">🔊</button>' +
+        '<button onclick="playSpellAudio(\'audio/w_' + word.id + '.mp3' + AUDIO_VER + '\', \'' + escapeQuotes(word.word) + '\')" style="border:none;background:none;font-size:48px;cursor:pointer;">🔊</button>' +
         '<div style="font-size:13px;color:var(--text-sub);margin-top:8px;">点击播放发音</div>' +
         '<div style="margin-top:20px;">' +
           '<div style="font-size:18px;margin-bottom:8px;color:var(--text);">' + (word.cn || '') + '</div>' +
@@ -2400,7 +2400,7 @@ function renderBusinessSpellPage() {
       '<div style="font-size:16px;line-height:1.8;margin-bottom:8px;color:var(--text);">' + blanked + '</div>' +
       '<div style="font-size:14px;color:var(--text-sub);margin-bottom:20px;">' + target.zh + '</div>' +
       '<div style="text-align:center;">' +
-        '<button onclick="playSpellAudio(\'audio/bw_\' + lesson.id + \'.mp3' + AUDIO_VER + '\', \'' + escapeQuotes(target.word) + '\')" style="border:none;background:none;font-size:36px;cursor:pointer;">🔊</button>' +
+        '<button onclick="playSpellAudio(\'audio/bw_' + lesson.id + '.mp3' + AUDIO_VER + '\', \'' + escapeQuotes(target.word) + '\')" style="border:none;background:none;font-size:36px;cursor:pointer;">🔊</button>' +
         '<div style="font-size:13px;color:var(--text-sub);margin-top:4px;">点击播放单词发音</div>' +
       '</div>' +
       '<div style="margin-top:16px;">' +
