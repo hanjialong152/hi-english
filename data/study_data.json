@@ -2217,7 +2217,7 @@
           "phrase": 0.0
         }
       },
-      "spellIndex": 47,
+      "spellIndex": 48,
       "totalSeconds": 0,
       "weeklyTests": [
         {
@@ -2890,7 +2890,7 @@
       },
       {
         "date": "2026-07-31",
-        "seconds": 132,
+        "seconds": 134,
         "completed": false
       }
     ]
