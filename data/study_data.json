@@ -257,14 +257,16 @@
     },
     "business": {
       "learned": [
-        "1"
+        "1",
+        "2"
       ],
       "learnedDates": {
-        "1": "2026-07-31"
+        "1": "2026-07-31",
+        "2": "2026-07-31"
       },
       "mastered": [],
       "monthlyTests": [],
-      "readIndex": 1,
+      "readIndex": 2,
       "speakScores": {},
       "spellIndex": 0,
       "totalSeconds": 0,
