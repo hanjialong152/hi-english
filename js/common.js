@@ -290,6 +290,14 @@ const HiEnglish = {
     var users = this.getUsers();
     return (users[empid] && users[empid].token) || '';
   },
+  // 统一取当前登录态 token：优先管理员 sessionStorage，其次学员本地 token
+  // 安全（2026-07-31）：全局鉴权中间件要求所有 /api 调用携带有效 token
+  currentToken() {
+    var at = sessionStorage.getItem('hi_english_admin_token') || '';
+    if (at) return at;
+    var u = this.getCurrentUser();
+    return u ? this._getUserToken(u.empid) : '';
+  },
 
   _doPush(empid, data, attempt) {
     attempt = attempt || 1;
@@ -349,7 +357,7 @@ const HiEnglish = {
   // ===== Sync groups from server =====
   async syncGroupsFromServer() {
     try {
-      var resp = await fetch(this.getServerUrl() + '/api/groups');
+      var resp = await fetch(this.getServerUrl() + '/api/groups?token=' + encodeURIComponent(this.currentToken()));
       var data = await resp.json();
       if (data.success && data.groups) {
         this.saveGroups(data.groups);
@@ -857,7 +865,8 @@ const HiEnglish = {
           targets: targets,
           title: title,
           content: content,
-          type: type || 'reminder'
+          type: type || 'reminder',
+          token: this.currentToken()
         })
       });
       var data = await resp.json();
@@ -874,7 +883,7 @@ const HiEnglish = {
       fetch(this.getServerUrl() + '/api/messages/read', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ empid: empid, msgIds: msgIds || [], all: !!all })
+        body: JSON.stringify({ empid: empid, msgIds: msgIds || [], all: !!all, token: HiEnglish._getUserToken(empid) })
       }).catch(function(e) { console.log('[Msg] 标记已读失败:', e.message); });
     } catch (e) {}
   },

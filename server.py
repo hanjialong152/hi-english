@@ -548,6 +548,59 @@ def _is_authorized_viewer(empid, token):
     return False
 
 
+# ---- 统一鉴权中间件（2026-07-31 安全修复：彻底解决"全局未授权/越权"）----
+# 公开免鉴权白名单：登录 / 注册 / 管理登录 / 存活探测
+_AUTH_PUBLIC = {'/api/login', '/api/register', '/api/admin-login', '/api/keepalive'}
+
+
+def _extract_bearer():
+    """统一取登录态 token。
+    新标准：Authorization: Bearer <t>；兼容旧前端 X-Session-Token 头 / ?token= / body.token / form.token(语音识别 multipart)。
+    """
+    auth = (request.headers.get('Authorization') or '').strip()
+    if auth.startswith('Bearer '):
+        t = auth[7:].strip()
+        if t:
+            return t
+    t = (request.headers.get('X-Session-Token') or '').strip()
+    if t:
+        return t
+    t = (request.args.get('token') or '').strip()
+    if t:
+        return t
+    t = (request.form.get('token') or '').strip()
+    if t:
+        return t
+    try:
+        b = request.get_json(silent=True) or {}
+        t = (b.get('token') or '').strip()
+        if t:
+            return t
+    except Exception:
+        pass
+    return ''
+
+
+@app.before_request
+def _unified_auth_guard():
+    """全局门禁：除白名单外，所有 /api/* 必须携带有效登录态 token。
+    - 任意有效 token（学员或管理员）可过基础门禁，否则 401；
+    - /api/admin/* 管理专属接口额外要求 admin 角色，否则 403（解决越权）。
+    各接口已有的逐接口 token 校验保留作双保险，不冲突。
+    """
+    if not request.path.startswith('/api/'):
+        return
+    if request.method == 'OPTIONS':
+        return
+    if request.path in _AUTH_PUBLIC:
+        return
+    token = _extract_bearer()
+    if not token or not _is_valid_any_token(token):
+        return jsonify({'success': False, 'error': '未授权，请先登录'}), 401
+    if request.path.startswith('/api/admin/') and not _is_valid_admin_token(token):
+        return jsonify({'success': False, 'error': '权限不足，需要管理员身份'}), 403
+
+
 def _validate_study_data(sd):
     """清洗并校验客户端传入的学习数据。发现严重污染时返回 None（拒绝写入）。"""
     if not isinstance(sd, dict):
@@ -1829,6 +1882,10 @@ def handle_get_messages():
 def handle_send_message():
     """管理员向一个或多个学员发送站内信（服务端盖真实时间戳）"""
     body = request.json or {}
+    # 安全（2026-07-31）：仅管理员可向学员发站内信，必须携带有效 admin token，防越权/未授权发送
+    _tk = (body.get('token') or '').strip()
+    if not _is_valid_admin_token(_tk):
+        return jsonify({'success': False, 'error': '未授权，需要管理员身份'}), 401
     targets = body.get('targets', [])  # empid 列表
     if isinstance(targets, str):
         targets = [targets]

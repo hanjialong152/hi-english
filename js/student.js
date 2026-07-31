@@ -254,7 +254,7 @@ async function init() {
   // 注：手动同步按钮已移除，跨终端同步现由系统自动完成（登录即同步 + 实时推送 + 可见性自愈）
 
   // 众测模式：从服务端拉取全局开关，开启则解锁商务英语并放开周测/月测时间限制
-  fetch(HiEnglish.getServerUrl() + '/api/beta-config').then(function(r) { return r.json(); }).then(function(data) {
+  fetch(HiEnglish.getServerUrl() + '/api/beta-config?token=' + encodeURIComponent(HiEnglish.currentToken())).then(function(r) { return r.json(); }).then(function(data) {
     BETA_MODE = !!(data && data.betaMode);
     // 商务解锁最终态由 isBusinessUnlocked() 实时计算；关闭众测时本地也同步回退到正式规则
     if (!BETA_MODE && studyData && studyData.business) {
@@ -264,11 +264,11 @@ async function init() {
   }).catch(function() {});
 
   // 拉取商务全局解锁标志 + 测试题量配置（全员生效）
-  fetch(HiEnglish.getServerUrl() + '/api/business-config').then(function(r) { return r.json(); }).then(function(data) {
+  fetch(HiEnglish.getServerUrl() + '/api/business-config?token=' + encodeURIComponent(HiEnglish.currentToken())).then(function(r) { return r.json(); }).then(function(data) {
     BUSINESS_UNLOCK_ALL = !!(data && data.unlock_all);
     renderStageSwitcher();
   }).catch(function() {});
-  fetch(HiEnglish.getServerUrl() + '/api/test-config').then(function(r) { return r.json(); }).then(function(data) {
+  fetch(HiEnglish.getServerUrl() + '/api/test-config?token=' + encodeURIComponent(HiEnglish.currentToken())).then(function(r) { return r.json(); }).then(function(data) {
     if (data && data.success && data.config) {
       TEST_CONFIG = {
         basicWeekly: _clampInt(data.config.basicWeekly, 10),
@@ -1599,6 +1599,9 @@ function uploadAndTranscribe() {
       console.log('[MIC] PCM转换成功: ' + pcmData.byteLength + ' bytes');
       var formData = new FormData();
       formData.append('audio', new Blob([pcmData], { type: 'audio/l16' }), 'recording.pcm');
+      // 安全（2026-07-31）：语音识别属登录态操作，补上学员 token，避免全局鉴权中间件误拦
+      var _cu = HiEnglish.getCurrentUser();
+      if (_cu && _cu.empid) formData.append('token', HiEnglish._getUserToken(_cu.empid));
       return fetch(TRANSCRIBE_API, { method: 'POST', body: formData });
     })
     .then(function(response) {

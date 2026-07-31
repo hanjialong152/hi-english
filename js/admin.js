@@ -345,7 +345,7 @@ function renderDashboard() {
 var _betaModeState = false;
 var _businessUnlockAll = false;
 function loadBetaMode() {
-  fetch(HiEnglish.getServerUrl() + '/api/beta-config').then(function(r) { return r.json(); }).then(function(data) {
+  fetch(HiEnglish.getServerUrl() + '/api/beta-config?token=' + encodeURIComponent(HiEnglish.currentToken())).then(function(r) { return r.json(); }).then(function(data) {
     _betaModeState = !!(data && data.betaMode);
     renderBetaToggle();
   }).catch(function() {
@@ -418,7 +418,7 @@ function renderTestConfigCard() {
   loadTestConfig();
 }
 function loadTestConfig() {
-  fetch(HiEnglish.getServerUrl() + '/api/test-config').then(function(r) { return r.json(); }).then(function(data) {
+  fetch(HiEnglish.getServerUrl() + '/api/test-config?token=' + encodeURIComponent(HiEnglish.currentToken())).then(function(r) { return r.json(); }).then(function(data) {
     if (!(data && data.success)) { setTcMsg('读取失败'); return; }
     var c = data.config || {};
     _setTcVal('tc-basic-weekly', c.basicWeekly, 10);
@@ -476,7 +476,7 @@ function unlockBusiness(empid) {
 
 // ===== 商务英语全局解锁（管理员单按钮切换）=====
 function loadBusinessConfig() {
-  fetch(HiEnglish.getServerUrl() + '/api/business-config').then(function(r) { return r.json(); }).then(function(data) {
+  fetch(HiEnglish.getServerUrl() + '/api/business-config?token=' + encodeURIComponent(HiEnglish.currentToken())).then(function(r) { return r.json(); }).then(function(data) {
     _businessUnlockAll = !!(data && data.unlock_all);
     renderBusinessGlobal();
   }).catch(function() { renderBusinessGlobal(); });
@@ -556,7 +556,8 @@ function sendStudyReminder() {
       title: msgTitle,
       content: msgContent,
       type: 'reminder',
-      daysMap: daysMap
+      daysMap: daysMap,
+      token: sessionStorage.getItem('hi_english_admin_token') || ''
     })
   }).then(function(r) { return r.json(); }).then(function(data) {
     if (data && data.success) {
@@ -578,7 +579,7 @@ function showDingTalkConfig() {
     var input = document.getElementById('dingtalk-webhook');
     if (input) {
       // 从服务端加载已保存的Webhook（跨设备一致）
-      fetch(HiEnglish.getServerUrl() + '/api/dingtalk-config').then(function(r) { return r.json(); }).then(function(data) {
+      fetch(HiEnglish.getServerUrl() + '/api/dingtalk-config?token=' + encodeURIComponent(HiEnglish.currentToken())).then(function(r) { return r.json(); }).then(function(data) {
         if (data.success) input.value = data.webhook || '';
       }).catch(function() {
         input.value = localStorage.getItem('hi_english_dingtalk_webhook') || '';
