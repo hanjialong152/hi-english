@@ -2214,7 +2214,7 @@
           "phrase": 0.0
         },
         "135": {
-          "phrase": 10.0
+          "phrase": 20.0
         }
       },
       "spellIndex": 13,
@@ -2880,7 +2880,7 @@
       },
       {
         "date": "2026-07-31",
-        "seconds": 33,
+        "seconds": 34,
         "completed": false
       }
     ]
