@@ -20,9 +20,9 @@
 // v84: 月测顶部最高分提示修正（_testPeriodBestScore 月测分支对齐归属月口径，跟随当前阶段）
 // v87: 管理员端导出改真XLSX（XLSX库生成）；团队/分组周测月测平均分显示保留2位小数
 // v88: 同步公网翻页尽头全屏阻断页修复（student.js）；bump 核心缓存强制刷新 JS
-var CACHE_VERSION = 'hi-english-v89';
-var CORE_CACHE = 'hi-english-core-v88';
-var AUDIO_CACHE = 'hi-english-audio-v34';
+var CACHE_VERSION = 'hi-english-v90';
+var CORE_CACHE = 'hi-english-core-v89';
+var AUDIO_CACHE = 'hi-english-audio-v35';
 
 var CORE_FILES = [
   './',
