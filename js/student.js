@@ -970,7 +970,7 @@ function renderWordLearnCard() {
         '<div class="learn-word">' + word.word + '</div>' +
         '<button onclick="playBasicAudio(\'w\',\'' + word.id + '\',\'' + escapeQuotes(word.word) + '\')" style="border:none;background:none;font-size:24px;cursor:pointer;">🔊</button>' +
       '</div>' +
-      '<div class="learn-ipa">' + (word.ipa || '') + '  ' + (word.pos || '') + '</div>' +
+      '<div class="learn-ipa">' + (word.ipa || '') + '</div>' +
       '<div class="learn-zh">' + (word.cn || '') + '</div>' +
     '</div>';
 
@@ -2312,7 +2312,6 @@ function showSpellPage() {
         '<button onclick="speakWithTimer(\'' + escapeQuotes(word.word) + '\')" style="border:none;background:none;font-size:48px;cursor:pointer;">🔊</button>' +
         '<div style="font-size:13px;color:var(--text-sub);margin-top:8px;">点击播放发音</div>' +
         '<div style="margin-top:20px;">' +
-          '<div style="font-size:12px;color:var(--text-sub);margin-bottom:6px;">' + (word.pos || '') + '</div>' +
           '<div style="font-size:18px;margin-bottom:8px;color:var(--text);">' + (word.cn || '') + '</div>' +
           '<input type="text" id="spell-input" placeholder="请输入英文单词" style="width:100%;padding:12px;border:2px solid var(--border);border-radius:8px;font-size:18px;text-align:center;outline:none;" onfocus="this.style.borderColor=\'var(--primary)\'" onblur="this.style.borderColor=\'var(--border)\'" onkeydown="if(event.key===\'Enter\')submitSpell()">' +
         '</div>' +

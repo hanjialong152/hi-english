@@ -1535,9 +1535,9 @@
   {
     "id": 74,
     "word": "far",
-    "pos": "adjective/adverb",
+    "pos": "adj./adv.",
     "ipa": "/fɑːr/",
-    "cn": "adj./adv. 远的",
+    "cn": "adj. 远的；遥远的；adv. 远；大大地",
     "phrase_en": "far exceeds",
     "phrase_cn": "远超",
     "s1_en": "The new model far exceeds the safety standard.",
@@ -1548,8 +1548,12 @@
     "s3_cn": "今年到目前为止我们已售出5万辆车。",
     "meanings": [
       {
-        "pos": "adj./adv.",
-        "cn": "远的"
+        "pos": "adj.",
+        "cn": "远的；遥远的"
+      },
+      {
+        "pos": "adv.",
+        "cn": "远；大大地"
       }
     ]
   },
@@ -1598,9 +1602,9 @@
   {
     "id": 77,
     "word": "near",
-    "pos": "preposition/adverb",
+    "pos": "prep./adv./adj.",
     "ipa": "/nɪr/",
-    "cn": "prep./adv. 靠近",
+    "cn": "prep. 靠近；接近；adv. 近；附近；adj. 近的；接近的",
     "phrase_en": "near the assembly area",
     "phrase_cn": "靠近装配区",
     "s1_en": "Store the materials near the assembly area for easy access.",
@@ -1611,8 +1615,16 @@
     "s3_cn": "供应商靠近我们的主要配送中心。",
     "meanings": [
       {
-        "pos": "prep./adv.",
-        "cn": "靠近"
+        "pos": "prep.",
+        "cn": "靠近；接近"
+      },
+      {
+        "pos": "adv.",
+        "cn": "近；附近"
+      },
+      {
+        "pos": "adj.",
+        "cn": "近的；接近的"
       }
     ]
   },
@@ -1745,9 +1757,9 @@
   {
     "id": 84,
     "word": "well",
-    "pos": "adjective/adverb",
+    "pos": "adj./adv.",
     "ipa": "/wel/",
-    "cn": "adj./adv. 好；健康",
+    "cn": "adj. 健康的；良好的；adv. 好；充分地",
     "phrase_en": "performs well",
     "phrase_cn": "表现良好",
     "s1_en": "The new machine performs well in the durability test.",
@@ -1758,8 +1770,12 @@
     "s3_cn": "我们需要做好计划以避免生产延误。",
     "meanings": [
       {
-        "pos": "adj./adv.",
-        "cn": "好；健康"
+        "pos": "adj.",
+        "cn": "健康的；良好的"
+      },
+      {
+        "pos": "adv.",
+        "cn": "好；充分地"
       }
     ]
   },
@@ -1787,9 +1803,9 @@
   {
     "id": 86,
     "word": "enough",
-    "pos": "adjective/adverb",
+    "pos": "adj./adv.",
     "ipa": "/ɪˈnʌf/",
-    "cn": "adj./adv. 足够",
+    "cn": "adj. 足够的；adv. 足够地；相当地",
     "phrase_en": "strong enough",
     "phrase_cn": "足够坚固",
     "s1_en": "The material must be strong enough for crash safety.",
@@ -1800,8 +1816,12 @@
     "s3_cn": "数据是否足够可靠以做采购决策？",
     "meanings": [
       {
-        "pos": "adj./adv.",
-        "cn": "足够"
+        "pos": "adj.",
+        "cn": "足够的"
+      },
+      {
+        "pos": "adv.",
+        "cn": "足够地；相当地"
       }
     ]
   },
@@ -1850,9 +1870,9 @@
   {
     "id": 89,
     "word": "only",
-    "pos": "adjective/adverb",
+    "pos": "adj./adv.",
     "ipa": "/ˈoʊnli/",
-    "cn": "adj./adv. 只有；仅仅",
+    "cn": "adj. 唯一的；仅有的；adv. 只；仅仅",
     "phrase_en": "only approved",
     "phrase_cn": "仅批准的",
     "s1_en": "Use only approved suppliers for critical parts.",
@@ -1863,8 +1883,12 @@
     "s3_cn": "我们只有三天时间完成检验。",
     "meanings": [
       {
-        "pos": "adj./adv.",
-        "cn": "只有；仅仅"
+        "pos": "adj.",
+        "cn": "唯一的；仅有的"
+      },
+      {
+        "pos": "adv.",
+        "cn": "只；仅仅"
       }
     ]
   },
@@ -1955,9 +1979,9 @@
   {
     "id": 94,
     "word": "yesterday",
-    "pos": "noun/verb",
+    "pos": "n./adv.",
     "ipa": "/oˈje/",
-    "cn": "n./v. 昨天",
+    "cn": "n. 昨天；adv. 昨天",
     "phrase_en": "yesterday's production",
     "phrase_cn": "昨天的生产",
     "s1_en": "Yesterday's production output exceeded the target.",
@@ -1968,7 +1992,11 @@
     "s3_cn": "我们在昨天的检验中发现了缺陷。",
     "meanings": [
       {
-        "pos": "n./v.",
+        "pos": "n.",
+        "cn": "昨天"
+      },
+      {
+        "pos": "adv.",
         "cn": "昨天"
       }
     ]
@@ -3159,9 +3187,9 @@
   {
     "id": 146,
     "word": "change",
-    "pos": "noun/verb",
+    "pos": "n./v.",
     "ipa": "/tʃeɪndʒ/",
-    "cn": "n./v. 改变",
+    "cn": "n. 改变；变化；n. 零钱；v. 改变；更换",
     "phrase_en": "make a change",
     "phrase_cn": "做出改变",
     "s1_en": "We must make a change to the design.",
@@ -3172,8 +3200,16 @@
     "s3_cn": "他去年换了工作。",
     "meanings": [
       {
-        "pos": "n./v.",
-        "cn": "改变"
+        "pos": "n.",
+        "cn": "改变；变化"
+      },
+      {
+        "pos": "n.",
+        "cn": "零钱"
+      },
+      {
+        "pos": "v.",
+        "cn": "改变；更换"
       }
     ]
   },
@@ -3481,9 +3517,9 @@
   {
     "id": 160,
     "word": "copy",
-    "pos": "noun/verb",
+    "pos": "n./v.",
     "ipa": "/ˈkɑːpi/",
-    "cn": "n./v. 复制",
+    "cn": "n. 副本；复印件；v. 复制；复印",
     "phrase_en": "make a copy",
     "phrase_cn": "复印一份",
     "s1_en": "Please make a copy of this file.",
@@ -3494,8 +3530,12 @@
     "s3_cn": "请为买方复印一份合同。",
     "meanings": [
       {
-        "pos": "n./v.",
-        "cn": "复制"
+        "pos": "n.",
+        "cn": "副本；复印件"
+      },
+      {
+        "pos": "v.",
+        "cn": "复制；复印"
       }
     ]
   },
@@ -3619,9 +3659,9 @@
   {
     "id": 166,
     "word": "crack",
-    "pos": "noun/verb",
+    "pos": "n./v.",
     "ipa": "/kræk/",
-    "cn": "n./v. 裂缝",
+    "cn": "n. 裂缝；裂纹；v. 开裂；破解",
     "phrase_en": "crack on the production line",
     "phrase_cn": "生产线上的裂缝",
     "s1_en": "The crack is critical for vehicle safety.",
@@ -3632,8 +3672,12 @@
     "s3_cn": "我们需要审查这个项目的裂缝。",
     "meanings": [
       {
-        "pos": "n./v.",
-        "cn": "裂缝"
+        "pos": "n.",
+        "cn": "裂缝；裂纹"
+      },
+      {
+        "pos": "v.",
+        "cn": "开裂；破解"
       }
     ]
   },
@@ -3732,9 +3776,9 @@
   {
     "id": 171,
     "word": "current",
-    "pos": "noun/adjective",
+    "pos": "n./adj.",
     "ipa": "/ˈkɜːrənt/",
-    "cn": "n./adj. 当前；水流",
+    "cn": "adj. 当前的；流通的；n. 电流；水流",
     "phrase_en": "current market trend",
     "phrase_cn": "当前市场趋势",
     "s1_en": "We check the current market trend before we set the price.",
@@ -3745,8 +3789,12 @@
     "s3_cn": "所有零件必须达到当前标准。",
     "meanings": [
       {
-        "pos": "n./adj.",
-        "cn": "当前；水流"
+        "pos": "adj.",
+        "cn": "当前的；流通的"
+      },
+      {
+        "pos": "n.",
+        "cn": "电流；水流"
       }
     ]
   },
@@ -3954,9 +4002,9 @@
   {
     "id": 181,
     "word": "design",
-    "pos": "noun/verb",
+    "pos": "n./v.",
     "ipa": "/dɪˈzaɪn/",
-    "cn": "n./v. 设计",
+    "cn": "n. 设计；图案；v. 设计；构思",
     "phrase_en": "vehicle design specification",
     "phrase_cn": "整车设计规格",
     "s1_en": "The design specification must meet both safety and cost targets.",
@@ -3967,8 +4015,12 @@
     "s3_cn": "供应商提交了支架的新设计方案。",
     "meanings": [
       {
-        "pos": "n./v.",
-        "cn": "设计"
+        "pos": "n.",
+        "cn": "设计；图案"
+      },
+      {
+        "pos": "v.",
+        "cn": "设计；构思"
       }
     ]
   },
@@ -4552,9 +4604,9 @@
   {
     "id": 207,
     "word": "exchange",
-    "pos": "noun/verb",
+    "pos": "n./v.",
     "ipa": "/ɪksˈtʃeɪndʒ/",
-    "cn": "n./v. 交换；交流",
+    "cn": "n. 交换；交流；兑换；v. 交换；兑换",
     "phrase_en": "in exchange for",
     "phrase_cn": "作为……的交换",
     "s1_en": "He gave me a book in exchange for a pen.",
@@ -4565,8 +4617,12 @@
     "s3_cn": "互赠礼物是一种习俗。",
     "meanings": [
       {
-        "pos": "n./v.",
-        "cn": "交换；交流"
+        "pos": "n.",
+        "cn": "交换；交流；兑换"
+      },
+      {
+        "pos": "v.",
+        "cn": "交换；兑换"
       }
     ]
   },
@@ -4870,9 +4926,9 @@
   {
     "id": 221,
     "word": "fire",
-    "pos": "noun",
+    "pos": "n./v.",
     "ipa": "/faɪər/",
-    "cn": "n. 火",
+    "cn": "n. 火；火灾；v. 解雇；开除",
     "phrase_en": "fire safety protocol",
     "phrase_cn": "消防安全协议",
     "s1_en": "Fire safety protocols are reviewed in the quarterly plant audit.",
@@ -4884,7 +4940,11 @@
     "meanings": [
       {
         "pos": "n.",
-        "cn": "火"
+        "cn": "火；火灾"
+      },
+      {
+        "pos": "v.",
+        "cn": "解雇；开除"
       }
     ]
   },
@@ -5451,9 +5511,9 @@
   {
     "id": 246,
     "word": "help",
-    "pos": "noun/verb",
+    "pos": "n./v.",
     "ipa": "/help/",
-    "cn": "n./v. 帮助",
+    "cn": "n. 帮助；助手；v. 帮助；有助于",
     "phrase_en": "ask for help",
     "phrase_cn": "求助",
     "s1_en": "He gave me a lot of help with my work.",
@@ -5464,8 +5524,12 @@
     "s3_cn": "这个应用对学习很有帮助。",
     "meanings": [
       {
-        "pos": "n./v.",
-        "cn": "帮助"
+        "pos": "n.",
+        "cn": "帮助；助手"
+      },
+      {
+        "pos": "v.",
+        "cn": "帮助；有助于"
       }
     ]
   },
@@ -5672,9 +5736,9 @@
   {
     "id": 255,
     "word": "increase",
-    "pos": "noun/verb",
+    "pos": "n./v.",
     "ipa": "/ɪnˈkriːs/",
-    "cn": "n./v. 增加",
+    "cn": "n. 增加；增长；v. 增加；提高",
     "phrase_en": "on the increase",
     "phrase_cn": "在增加",
     "s1_en": "The increase in price worried us.",
@@ -5685,8 +5749,12 @@
     "s3_cn": "汽车的数量在增加。",
     "meanings": [
       {
-        "pos": "n./v.",
-        "cn": "增加"
+        "pos": "n.",
+        "cn": "增加；增长"
+      },
+      {
+        "pos": "v.",
+        "cn": "增加；提高"
       }
     ]
   },
@@ -6177,9 +6245,9 @@
   {
     "id": 276,
     "word": "lead",
-    "pos": "noun/verb",
+    "pos": "n./v.",
     "ipa": "/liːd/",
-    "cn": "n./v. 领导；带领",
+    "cn": "v. 带领；领导；n. 领先；线索；n. 铅（金属）",
     "phrase_en": "lead the team",
     "phrase_cn": "带领团队",
     "s1_en": "She leads a team of ten people.",
@@ -6190,8 +6258,16 @@
     "s3_cn": "摄入过多糖分会导致疾病。",
     "meanings": [
       {
-        "pos": "n./v.",
-        "cn": "领导；带领"
+        "pos": "v.",
+        "cn": "带领；领导"
+      },
+      {
+        "pos": "n.",
+        "cn": "领先；线索"
+      },
+      {
+        "pos": "n.",
+        "cn": "铅（金属）"
       }
     ]
   },
@@ -6323,9 +6399,9 @@
   {
     "id": 282,
     "word": "light",
-    "pos": "noun",
+    "pos": "n./adj.",
     "ipa": "/laɪt/",
-    "cn": "n. 光",
+    "cn": "n. 光；灯光；adj. 轻的；浅色的",
     "phrase_en": "turn on the light",
     "phrase_cn": "打开灯",
     "s1_en": "Turn on the light when it gets dark.",
@@ -6337,7 +6413,11 @@
     "meanings": [
       {
         "pos": "n.",
-        "cn": "光"
+        "cn": "光；灯光"
+      },
+      {
+        "pos": "adj.",
+        "cn": "轻的；浅色的"
       }
     ]
   },
@@ -6599,9 +6679,9 @@
   {
     "id": 294,
     "word": "market",
-    "pos": "noun",
+    "pos": "n./v.",
     "ipa": "/ˈmɑːrkɪt/",
-    "cn": "n. 市场",
+    "cn": "n. 市场；v. 营销；推销",
     "phrase_en": "overseas market",
     "phrase_cn": "海外市场",
     "s1_en": "We plan to enter the Southeast Asian market next year.",
@@ -6614,6 +6694,10 @@
       {
         "pos": "n.",
         "cn": "市场"
+      },
+      {
+        "pos": "v.",
+        "cn": "营销；推销"
       }
     ]
   },
@@ -6662,9 +6746,9 @@
   {
     "id": 297,
     "word": "measure",
-    "pos": "noun/verb",
+    "pos": "n./v.",
     "ipa": "/ˈmeʒər/",
-    "cn": "n./v. 测量",
+    "cn": "n. 测量；措施；n. 尺寸；程度；v. 测量；衡量",
     "phrase_en": "measure optimization plan",
     "phrase_cn": "测量优化计划",
     "s1_en": "An abnormal measure reading triggers an automatic line stop.",
@@ -6675,8 +6759,16 @@
     "s3_cn": "量产开始前验证测量工艺。",
     "meanings": [
       {
-        "pos": "n./v.",
-        "cn": "测量"
+        "pos": "n.",
+        "cn": "测量；措施"
+      },
+      {
+        "pos": "n.",
+        "cn": "尺寸；程度"
+      },
+      {
+        "pos": "v.",
+        "cn": "测量；衡量"
       }
     ]
   },
@@ -6909,7 +7001,7 @@
   {
     "id": 308,
     "word": "money",
-    "pos": "noun",
+    "pos": "n.",
     "ipa": "/ˈmʌni/",
     "cn": "n. 钱；金钱",
     "phrase_en": "save money",
@@ -7302,9 +7394,9 @@
   {
     "id": 325,
     "word": "offer",
-    "pos": "noun/verb",
+    "pos": "n./v.",
     "ipa": "/ˈɔːfər/",
-    "cn": "n./v. 提供；报价",
+    "cn": "n. 报价；提议；v. 提供；提议",
     "phrase_en": "make an offer",
     "phrase_cn": "出价；提议",
     "s1_en": "He made an offer to buy the shop.",
@@ -7315,8 +7407,12 @@
     "s3_cn": "谢谢你的好意提议。",
     "meanings": [
       {
-        "pos": "n./v.",
-        "cn": "提供；报价"
+        "pos": "n.",
+        "cn": "报价；提议"
+      },
+      {
+        "pos": "v.",
+        "cn": "提供；提议"
       }
     ]
   },
@@ -7386,9 +7482,9 @@
   {
     "id": 329,
     "word": "order",
-    "pos": "noun/verb",
+    "pos": "n./v.",
     "ipa": "/ˈɔːrdər/",
-    "cn": "n./v. 订单；命令",
+    "cn": "n. 订单；命令；v. 订购；命令",
     "phrase_en": "purchase order",
     "phrase_cn": "采购订单",
     "s1_en": "Please issue the purchase order to the supplier by Monday.",
@@ -7399,8 +7495,12 @@
     "s3_cn": "我们需要跟踪每个订单从下单到交付的全过程。",
     "meanings": [
       {
-        "pos": "n./v.",
+        "pos": "n.",
         "cn": "订单；命令"
+      },
+      {
+        "pos": "v.",
+        "cn": "订购；命令"
       }
     ]
   },
@@ -7524,9 +7624,9 @@
   {
     "id": 335,
     "word": "paint",
-    "pos": "noun/verb",
+    "pos": "n./v.",
     "ipa": "/peɪnt/",
-    "cn": "n./v. 油漆；绘画",
+    "cn": "n. 油漆；涂料；v. 油漆；绘画",
     "phrase_en": "paint shop process",
     "phrase_cn": "涂装车间工艺",
     "s1_en": "The paint shop process includes pretreatment, primer, base, and clear coat.",
@@ -7537,7 +7637,11 @@
     "s3_cn": "我们在质量看板中跟踪橘皮和流挂等漆面缺陷。",
     "meanings": [
       {
-        "pos": "n./v.",
+        "pos": "n.",
+        "cn": "油漆；涂料"
+      },
+      {
+        "pos": "v.",
         "cn": "油漆；绘画"
       }
     ]
@@ -7570,9 +7674,9 @@
   {
     "id": 337,
     "word": "part",
-    "pos": "noun",
+    "pos": "n./v.",
     "ipa": "/pɑːrt/",
-    "cn": "n. 部分",
+    "cn": "n. 部分；零件；v. 分开；离别",
     "phrase_en": "spare part",
     "phrase_cn": "备件",
     "s1_en": "Please order the spare parts from the approved supplier list.",
@@ -7584,16 +7688,20 @@
     "meanings": [
       {
         "pos": "n.",
-        "cn": "部分"
+        "cn": "部分；零件"
+      },
+      {
+        "pos": "v.",
+        "cn": "分开；离别"
       }
     ]
   },
   {
     "id": 338,
     "word": "paste",
-    "pos": "noun/verb",
+    "pos": "n./v.",
     "ipa": "/peɪst/",
-    "cn": "n./v. 糊；粘贴",
+    "cn": "n. 糊；膏；v. 粘贴；裱糊",
     "phrase_en": "a tube of paste",
     "phrase_cn": "一管浆糊",
     "s1_en": "He used paste to fix the paper.",
@@ -7604,8 +7712,12 @@
     "s3_cn": "浆糊一分钟就干了。",
     "meanings": [
       {
-        "pos": "n./v.",
-        "cn": "糊；粘贴"
+        "pos": "n.",
+        "cn": "糊；膏"
+      },
+      {
+        "pos": "v.",
+        "cn": "粘贴；裱糊"
       }
     ]
   },
@@ -7704,9 +7816,9 @@
   {
     "id": 343,
     "word": "plant",
-    "pos": "noun",
+    "pos": "n.",
     "ipa": "/plænt/",
-    "cn": "n. 植物",
+    "cn": "n. 植物；n. 工厂；车间",
     "phrase_en": "manufacturing plant",
     "phrase_cn": "制造工厂",
     "s1_en": "Our manufacturing plant has a capacity of 300,000 units per year.",
@@ -7719,6 +7831,10 @@
       {
         "pos": "n.",
         "cn": "植物"
+      },
+      {
+        "pos": "n.",
+        "cn": "工厂；车间"
       }
     ]
   },
@@ -7771,9 +7887,9 @@
   {
     "id": 346,
     "word": "point",
-    "pos": "noun",
+    "pos": "n.",
     "ipa": "/pɔɪnt/",
-    "cn": "n. 观点；点",
+    "cn": "n. 观点；论点；n. 点；要点；地点",
     "phrase_en": "make a point",
     "phrase_cn": "提出观点",
     "s1_en": "He made a good point in the talk.",
@@ -7785,7 +7901,11 @@
     "meanings": [
       {
         "pos": "n.",
-        "cn": "观点；点"
+        "cn": "观点；论点"
+      },
+      {
+        "pos": "n.",
+        "cn": "点；要点；地点"
       }
     ]
   },
@@ -7901,9 +8021,9 @@
   {
     "id": 352,
     "word": "power",
-    "pos": "noun",
+    "pos": "n.",
     "ipa": "/ˈpaʊər/",
-    "cn": "n. 力量；电力",
+    "cn": "n. 力量；动力；n. 电力；权力",
     "phrase_en": "electric power",
     "phrase_cn": "电力",
     "s1_en": "The city lost power after the storm.",
@@ -7915,14 +8035,18 @@
     "meanings": [
       {
         "pos": "n.",
-        "cn": "力量；电力"
+        "cn": "力量；动力"
+      },
+      {
+        "pos": "n.",
+        "cn": "电力；权力"
       }
     ]
   },
   {
     "id": 353,
     "word": "price",
-    "pos": "noun",
+    "pos": "n.",
     "ipa": "/praɪs/",
     "cn": "n. 价格",
     "phrase_en": "unit price",
@@ -8077,9 +8201,9 @@
   {
     "id": 360,
     "word": "protest",
-    "pos": "noun/verb",
+    "pos": "n./v.",
     "ipa": "/ˈproʊtest/",
-    "cn": "n./v. 抗议",
+    "cn": "n. 抗议；反对；v. 抗议；申辩",
     "phrase_en": "protest resolution process",
     "phrase_cn": "异议解决流程",
     "s1_en": "A supplier protest against a rejection is handled through the formal appeal process.",
@@ -8090,8 +8214,12 @@
     "s3_cn": "异议解决必须在5个工作日内完成。",
     "meanings": [
       {
-        "pos": "n./v.",
-        "cn": "抗议"
+        "pos": "n.",
+        "cn": "抗议；反对"
+      },
+      {
+        "pos": "v.",
+        "cn": "抗议；申辩"
       }
     ]
   },
@@ -8190,7 +8318,7 @@
   {
     "id": 365,
     "word": "quality",
-    "pos": "noun",
+    "pos": "n.",
     "ipa": "/ˈkwɑːləti/",
     "cn": "n. 质量；品质",
     "phrase_en": "quality control standard",
@@ -8378,7 +8506,7 @@
   {
     "id": 373,
     "word": "reason",
-    "pos": "noun",
+    "pos": "n.",
     "ipa": "/ˈriːzn/",
     "cn": "n. 原因；理由",
     "phrase_en": "the reason for the delay",
@@ -8399,9 +8527,9 @@
   {
     "id": 374,
     "word": "record",
-    "pos": "noun/verb",
+    "pos": "n./v.",
     "ipa": "/ˈrekərd/",
-    "cn": "n./v. 记录",
+    "cn": "n. 记录；档案；v. 记录；录制",
     "phrase_en": "quality record",
     "phrase_cn": "质量记录",
     "s1_en": "Please keep all quality records for at least five years.",
@@ -8412,8 +8540,12 @@
     "s3_cn": "我们在检验记录中发现了一处不一致。",
     "meanings": [
       {
-        "pos": "n./v.",
-        "cn": "记录"
+        "pos": "n.",
+        "cn": "记录；档案"
+      },
+      {
+        "pos": "v.",
+        "cn": "记录；录制"
       }
     ]
   },
@@ -8562,9 +8694,9 @@
   {
     "id": 381,
     "word": "rest",
-    "pos": "noun/verb",
+    "pos": "n./v.",
     "ipa": "/rest/",
-    "cn": "n./v. 休息",
+    "cn": "n. 剩余（部分）；休息；v. 休息；休止",
     "phrase_en": "have a rest",
     "phrase_cn": "休息一下",
     "s1_en": "Let us have a rest after lunch.",
@@ -8575,8 +8707,12 @@
     "s3_cn": "其余的队员完成了工作。",
     "meanings": [
       {
-        "pos": "n./v.",
-        "cn": "休息"
+        "pos": "n.",
+        "cn": "剩余（部分）；休息"
+      },
+      {
+        "pos": "v.",
+        "cn": "休息；休止"
       }
     ]
   },
@@ -8755,9 +8891,9 @@
   {
     "id": 390,
     "word": "rule",
-    "pos": "noun",
+    "pos": "n.",
     "ipa": "/ruːl/",
-    "cn": "n. 规则",
+    "cn": "n. 规则；规定",
     "phrase_en": "safety rule",
     "phrase_cn": "安全规则",
     "s1_en": "Every employee must follow the safety rules in the workshop.",
@@ -8769,7 +8905,7 @@
     "meanings": [
       {
         "pos": "n.",
-        "cn": "规则"
+        "cn": "规则；规定"
       }
     ]
   },
@@ -9006,9 +9142,9 @@
   {
     "id": 401,
     "word": "sense",
-    "pos": "noun",
+    "pos": "n.",
     "ipa": "/sens/",
-    "cn": "n. 感觉；意识",
+    "cn": "n. 感觉；感官；n. 意识；观念；n. 意义；道理",
     "phrase_en": "a sense of duty",
     "phrase_cn": "责任感",
     "s1_en": "He has a strong sense of duty.",
@@ -9020,7 +9156,15 @@
     "meanings": [
       {
         "pos": "n.",
-        "cn": "感觉；意识"
+        "cn": "感觉；感官"
+      },
+      {
+        "pos": "n.",
+        "cn": "意识；观念"
+      },
+      {
+        "pos": "n.",
+        "cn": "意义；道理"
       }
     ]
   },
@@ -9466,9 +9610,9 @@
   {
     "id": 421,
     "word": "smoke",
-    "pos": "noun/verb",
+    "pos": "n./v.",
     "ipa": "/smoʊk/",
-    "cn": "n./v. 烟；吸烟",
+    "cn": "n. 烟；烟雾；v. 吸烟；冒烟",
     "phrase_en": "smoke from the chimney",
     "phrase_cn": "烟囱冒出的烟",
     "s1_en": "Smoke came out of the chimney.",
@@ -9479,8 +9623,12 @@
     "s3_cn": "火灾的烟很浓。",
     "meanings": [
       {
-        "pos": "n./v.",
-        "cn": "烟；吸烟"
+        "pos": "n.",
+        "cn": "烟；烟雾"
+      },
+      {
+        "pos": "v.",
+        "cn": "吸烟；冒烟"
       }
     ]
   },
@@ -10143,9 +10291,9 @@
   {
     "id": 450,
     "word": "surprise",
-    "pos": "noun/verb",
+    "pos": "n./v.",
     "ipa": "/sərˈpraɪz/",
-    "cn": "n./v. 惊讶；意外",
+    "cn": "n. 惊讶；意外；v. 使惊讶；突袭",
     "phrase_en": "surprise audit finding",
     "phrase_cn": "突击审计发现",
     "s1_en": "A surprise audit found a gap in the traceability documentation.",
@@ -10156,8 +10304,12 @@
     "s3_cn": "突击质量检查发现了机器人的校准漂移。",
     "meanings": [
       {
-        "pos": "n./v.",
+        "pos": "n.",
         "cn": "惊讶；意外"
+      },
+      {
+        "pos": "v.",
+        "cn": "使惊讶；突袭"
       }
     ]
   },
@@ -10231,9 +10383,9 @@
   {
     "id": 454,
     "word": "taste",
-    "pos": "noun/verb",
+    "pos": "n./v.",
     "ipa": "/teɪst/",
-    "cn": "n./v. 味道；品味",
+    "cn": "n. 味道；品味；v. 尝；体验",
     "phrase_en": "have a taste",
     "phrase_cn": "有……味道",
     "s1_en": "The soup has a salty taste.",
@@ -10244,8 +10396,12 @@
     "s3_cn": "请尝尝这道菜再告诉我。",
     "meanings": [
       {
-        "pos": "n./v.",
+        "pos": "n.",
         "cn": "味道；品味"
+      },
+      {
+        "pos": "v.",
+        "cn": "尝；体验"
       }
     ]
   },
@@ -10315,9 +10471,9 @@
   {
     "id": 458,
     "word": "test",
-    "pos": "noun/verb",
+    "pos": "n./v.",
     "ipa": "/test/",
-    "cn": "n./v. 测试；试验",
+    "cn": "n. 测试；试验；v. 测试；检验",
     "phrase_en": "crash test",
     "phrase_cn": "碰撞测试",
     "s1_en": "The crash test results met all safety requirements.",
@@ -10328,8 +10484,12 @@
     "s3_cn": "耐久性测试将进行10万公里。",
     "meanings": [
       {
-        "pos": "n./v.",
+        "pos": "n.",
         "cn": "测试；试验"
+      },
+      {
+        "pos": "v.",
+        "cn": "测试；检验"
       }
     ]
   },
@@ -10428,9 +10588,9 @@
   {
     "id": 463,
     "word": "time",
-    "pos": "noun",
+    "pos": "n.",
     "ipa": "/taɪm/",
-    "cn": "n. 时间",
+    "cn": "n. 时间；时段；n. 次；倍；n. 时机；时刻",
     "phrase_en": "cycle time reduction",
     "phrase_cn": "循环时间缩短",
     "s1_en": "Cycle time reduction on Line 3 improved output by 15 percent.",
@@ -10442,7 +10602,15 @@
     "meanings": [
       {
         "pos": "n.",
-        "cn": "时间"
+        "cn": "时间；时段"
+      },
+      {
+        "pos": "n.",
+        "cn": "次；倍"
+      },
+      {
+        "pos": "n.",
+        "cn": "时机；时刻"
       }
     ]
   },
@@ -10545,9 +10713,9 @@
   {
     "id": 468,
     "word": "transport",
-    "pos": "noun/verb",
+    "pos": "n./v.",
     "ipa": "/ˈtrænspɔːrt/",
-    "cn": "n./v. 运输；交通",
+    "cn": "n. 运输；交通；v. 运输；运送",
     "phrase_en": "parts transport",
     "phrase_cn": "零件运输",
     "s1_en": "We optimized the parts transport route to reduce costs.",
@@ -10558,8 +10726,12 @@
     "s3_cn": "所有运输必须符合包装标准。",
     "meanings": [
       {
-        "pos": "n./v.",
+        "pos": "n.",
         "cn": "运输；交通"
+      },
+      {
+        "pos": "v.",
+        "cn": "运输；运送"
       }
     ]
   },
@@ -10616,9 +10788,9 @@
   {
     "id": 471,
     "word": "turn",
-    "pos": "noun/verb",
+    "pos": "n./v.",
     "ipa": "/tɜːrn/",
-    "cn": "n./v. 转动；轮到",
+    "cn": "v. 转动；转向；n. 轮流；轮次；n. 转弯；拐弯",
     "phrase_en": "take a turn",
     "phrase_cn": "轮流",
     "s1_en": "Please turn the key to start.",
@@ -10629,8 +10801,16 @@
     "s3_cn": "路向左转。",
     "meanings": [
       {
-        "pos": "n./v.",
-        "cn": "转动；轮到"
+        "pos": "v.",
+        "cn": "转动；转向"
+      },
+      {
+        "pos": "n.",
+        "cn": "轮流；轮次"
+      },
+      {
+        "pos": "n.",
+        "cn": "转弯；拐弯"
       }
     ]
   },
@@ -10662,9 +10842,9 @@
   {
     "id": 473,
     "word": "unit",
-    "pos": "noun",
+    "pos": "n.",
     "ipa": "/ˈjuːnɪt/",
-    "cn": "n. 单元；单位",
+    "cn": "n. 单位；单元；n. 部件；一台（设备）",
     "phrase_en": "a unit of",
     "phrase_cn": "一个单位",
     "s1_en": "The meter is a unit of length.",
@@ -10676,16 +10856,20 @@
     "meanings": [
       {
         "pos": "n.",
-        "cn": "单元；单位"
+        "cn": "单位；单元"
+      },
+      {
+        "pos": "n.",
+        "cn": "部件；一台（设备）"
       }
     ]
   },
   {
     "id": 474,
     "word": "use",
-    "pos": "noun/verb",
+    "pos": "n./v.",
     "ipa": "/juːs/",
-    "cn": "n./v. 使用；用途",
+    "cn": "v. 使用；运用；n. 用途；用处",
     "phrase_en": "make use of",
     "phrase_cn": "利用",
     "s1_en": "We make use of solar energy.",
@@ -10696,17 +10880,21 @@
     "s3_cn": "请用红笔签字。",
     "meanings": [
       {
-        "pos": "n./v.",
-        "cn": "使用；用途"
+        "pos": "v.",
+        "cn": "使用；运用"
+      },
+      {
+        "pos": "n.",
+        "cn": "用途；用处"
       }
     ]
   },
   {
     "id": 475,
     "word": "value",
-    "pos": "noun",
+    "pos": "n./v.",
     "ipa": "/ˈvæljuː/",
-    "cn": "n. 价值",
+    "cn": "n. 价值；v. 重视；评价",
     "phrase_en": "create customer value",
     "phrase_cn": "创造客户价值",
     "s1_en": "Reliable delivery builds long-term value for our customers.",
@@ -10719,6 +10907,10 @@
       {
         "pos": "n.",
         "cn": "价值"
+      },
+      {
+        "pos": "v.",
+        "cn": "重视；评价"
       }
     ]
   },
@@ -10767,9 +10959,9 @@
   {
     "id": 478,
     "word": "view",
-    "pos": "noun",
+    "pos": "n./v.",
     "ipa": "/vjuː/",
-    "cn": "n. 景色；观点",
+    "cn": "n. 景色；风景；n. 观点；看法；v. 看待；考虑",
     "phrase_en": "a fine view",
     "phrase_cn": "美景",
     "s1_en": "The hill gives a fine view of the city.",
@@ -10781,16 +10973,24 @@
     "meanings": [
       {
         "pos": "n.",
-        "cn": "景色；观点"
+        "cn": "景色；风景"
+      },
+      {
+        "pos": "n.",
+        "cn": "观点；看法"
+      },
+      {
+        "pos": "v.",
+        "cn": "看待；考虑"
       }
     ]
   },
   {
     "id": 479,
     "word": "voice",
-    "pos": "noun",
+    "pos": "n./v.",
     "ipa": "/vɔɪs/",
-    "cn": "n. 声音",
+    "cn": "n. 声音；嗓音；v. 表达；吐露",
     "phrase_en": "in a clear voice",
     "phrase_cn": "声音清晰地",
     "s1_en": "She spoke in a clear voice.",
@@ -10802,7 +11002,11 @@
     "meanings": [
       {
         "pos": "n.",
-        "cn": "声音"
+        "cn": "声音；嗓音"
+      },
+      {
+        "pos": "v.",
+        "cn": "表达；吐露"
       }
     ]
   },
@@ -11207,9 +11411,9 @@
   {
     "id": 498,
     "word": "work",
-    "pos": "noun/verb",
+    "pos": "n./v.",
     "ipa": "/wɜːrk/",
-    "cn": "n./v. 工作",
+    "cn": "n. 工作；作业；v. 工作；运转；起作用",
     "phrase_en": "assembly work",
     "phrase_cn": "装配作业",
     "s1_en": "The assembly work on Line 2 was delayed by a tooling issue.",
@@ -11220,8 +11424,12 @@
     "s3_cn": "请在交接记录中记录所有工作变更。",
     "meanings": [
       {
-        "pos": "n./v.",
-        "cn": "工作"
+        "pos": "n.",
+        "cn": "工作；作业"
+      },
+      {
+        "pos": "v.",
+        "cn": "工作；运转；起作用"
       }
     ]
   },
@@ -11784,9 +11992,9 @@
   {
     "id": 523,
     "word": "book",
-    "pos": "noun",
+    "pos": "n./v.",
     "ipa": "/bʊk/",
-    "cn": "n. 书",
+    "cn": "n. 书；书籍；v. 预订；登记",
     "phrase_en": "read a book",
     "phrase_cn": "读书",
     "s1_en": "She reads a book every week.",
@@ -11798,7 +12006,11 @@
     "meanings": [
       {
         "pos": "n.",
-        "cn": "书"
+        "cn": "书；书籍"
+      },
+      {
+        "pos": "v.",
+        "cn": "预订；登记"
       }
     ]
   },
@@ -13708,9 +13920,9 @@
   {
     "id": 607,
     "word": "line",
-    "pos": "noun",
+    "pos": "n.",
     "ipa": "/laɪn/",
-    "cn": "n. 线；队伍",
+    "cn": "n. 线；线条；n. 生产线；流水线；n. 队伍；行列",
     "phrase_en": "assembly line",
     "phrase_cn": "装配线",
     "s1_en": "The assembly line produces one vehicle every 60 seconds.",
@@ -13722,7 +13934,15 @@
     "meanings": [
       {
         "pos": "n.",
-        "cn": "线；队伍"
+        "cn": "线；线条"
+      },
+      {
+        "pos": "n.",
+        "cn": "生产线；流水线"
+      },
+      {
+        "pos": "n.",
+        "cn": "队伍；行列"
       }
     ]
   },
@@ -15034,9 +15254,9 @@
   {
     "id": 665,
     "word": "spring",
-    "pos": "noun",
+    "pos": "n.",
     "ipa": "/sprɪŋ/",
-    "cn": "n. 春天；弹簧",
+    "cn": "n. 春天；春季；n. 弹簧；发条",
     "phrase_en": "suspension spring",
     "phrase_cn": "悬架弹簧",
     "s1_en": "The suspension spring was upgraded for better ride comfort.",
@@ -15048,7 +15268,11 @@
     "meanings": [
       {
         "pos": "n.",
-        "cn": "春天；弹簧"
+        "cn": "春天；春季"
+      },
+      {
+        "pos": "n.",
+        "cn": "弹簧；发条"
       }
     ]
   },
@@ -15310,9 +15534,9 @@
   {
     "id": 677,
     "word": "table",
-    "pos": "noun",
+    "pos": "n./v.",
     "ipa": "/ˈteɪbl/",
-    "cn": "n. 桌子",
+    "cn": "n. 桌子；n. 表格；表；v. 搁置；提交（议案）",
     "phrase_en": "reference table data",
     "phrase_cn": "参考表数据",
     "s1_en": "The reference table lists all approved material specifications.",
@@ -15325,6 +15549,14 @@
       {
         "pos": "n.",
         "cn": "桌子"
+      },
+      {
+        "pos": "n.",
+        "cn": "表格；表"
+      },
+      {
+        "pos": "v.",
+        "cn": "搁置；提交（议案）"
       }
     ]
   },
@@ -17210,9 +17442,9 @@
   {
     "id": 765,
     "word": "present",
-    "pos": "adjective",
+    "pos": "adj./n./v.",
     "ipa": "/ˈpreznt/",
-    "cn": "adj. 当前的",
+    "cn": "adj. 当前的；出席的；n. 礼物；现在；v. 呈现；展示",
     "phrase_en": "present status report",
     "phrase_cn": "当前状态报告",
     "s1_en": "The present status of the project is green on all milestones.",
@@ -17224,7 +17456,15 @@
     "meanings": [
       {
         "pos": "adj.",
-        "cn": "当前的"
+        "cn": "当前的；出席的"
+      },
+      {
+        "pos": "n.",
+        "cn": "礼物；现在"
+      },
+      {
+        "pos": "v.",
+        "cn": "呈现；展示"
       }
     ]
   },
@@ -17399,9 +17639,9 @@
   {
     "id": 774,
     "word": "right",
-    "pos": "adjective",
+    "pos": "adj./n./adv.",
     "ipa": "/ransɪbt/",
-    "cn": "adj. 正确的",
+    "cn": "adj. 正确的；合适的；n. 权利；右边；adv. 正确地；向右",
     "phrase_en": "right first time",
     "phrase_cn": "一次做对",
     "s1_en": "The right first time approach reduces rework and waste significantly.",
@@ -17413,16 +17653,24 @@
     "meanings": [
       {
         "pos": "adj.",
-        "cn": "正确的"
+        "cn": "正确的；合适的"
+      },
+      {
+        "pos": "n.",
+        "cn": "权利；右边"
+      },
+      {
+        "pos": "adv.",
+        "cn": "正确地；向右"
       }
     ]
   },
   {
     "id": 775,
     "word": "round",
-    "pos": "adjective",
+    "pos": "adj./n./v.",
     "ipa": "/raʊnd/",
-    "cn": "adj. 圆的",
+    "cn": "adj. 圆的；整数的；n. 回合；一轮；v. 绕；环绕",
     "phrase_en": "a round dial",
     "phrase_cn": "圆形表盘",
     "s1_en": "The round dial shows the fuel level at a glance.",
@@ -17434,7 +17682,15 @@
     "meanings": [
       {
         "pos": "adj.",
-        "cn": "圆的"
+        "cn": "圆的；整数的"
+      },
+      {
+        "pos": "n.",
+        "cn": "回合；一轮"
+      },
+      {
+        "pos": "v.",
+        "cn": "绕；环绕"
       }
     ]
   },
@@ -18495,9 +18751,9 @@
   {
     "id": 826,
     "word": "left",
-    "pos": "adjective",
+    "pos": "adj./v.",
     "ipa": "/left/",
-    "cn": "adj. 左边的",
+    "cn": "adj. 左边的；左侧的；v. 离开（leave过去式）",
     "phrase_en": "left hand drive model",
     "phrase_cn": "左舵车型",
     "s1_en": "The left hand drive model is the standard configuration for China.",
@@ -18509,7 +18765,11 @@
     "meanings": [
       {
         "pos": "adj.",
-        "cn": "左边的"
+        "cn": "左边的；左侧的"
+      },
+      {
+        "pos": "v.",
+        "cn": "离开（leave过去式）"
       }
     ]
   },
