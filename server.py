@@ -549,8 +549,13 @@ def _is_authorized_viewer(empid, token):
 
 
 # ---- 统一鉴权中间件（2026-07-31 安全修复：彻底解决"全局未授权/越权"）----
-# 公开免鉴权白名单：登录 / 注册 / 管理登录 / 存活探测
-_AUTH_PUBLIC = {'/api/login', '/api/register', '/api/admin-login', '/api/keepalive'}
+# 公开免鉴权白名单（2026-08-01 加固：改用 "METHOD:path" 元组，区分 HTTP 方法，
+#   防止将来误把 POST 写接口放进白名单导致免 token 绕过，与内网 V6.2 v2 保持一致）。
+#   登录 / 注册 / 管理登录 / 存活探测 仅这些 POST/GET 免鉴权。
+_AUTH_PUBLIC = {
+    'POST:/api/login', 'POST:/api/register', 'POST:/api/admin-login',
+    'GET:/api/keepalive',
+}
 
 
 def _extract_bearer():
@@ -592,7 +597,8 @@ def _unified_auth_guard():
         return
     if request.method == 'OPTIONS':
         return
-    if request.path in _AUTH_PUBLIC:
+    # 2026-08-01 加固：按 "METHOD:path" 精确匹配，避免 POST 写接口被 path 匹配误放行
+    if f'{request.method}:{request.path}' in _AUTH_PUBLIC:
         return
     token = _extract_bearer()
     if not token or not _is_valid_any_token(token):
@@ -757,7 +763,8 @@ def github_api_get(path):
     for attempt in range(3):
         if attempt > 0:
             time.sleep(0.5 * attempt)
-        ok, result = _github_fetch_once(url, timeout=15 + attempt * 5)
+        # 2026-08-01 优化：缩短 GitHub 拉取超时，避免启动初始化被外网慢卡住（原为 15+5n 秒）
+        ok, result = _github_fetch_once(url, timeout=8 + attempt * 4)
         if ok:
             sha = result.get('sha', '')
             content = result.get('content', '')
@@ -792,7 +799,8 @@ def github_api_get_commit(path, ref):
     for attempt in range(3):
         if attempt > 0:
             time.sleep(0.5 * attempt)
-        ok, result = _github_fetch_once(url, timeout=15 + attempt * 5)
+        # 2026-08-01 优化：缩短 GitHub 拉取超时，避免启动初始化被外网慢卡住（原为 15+5n 秒）
+        ok, result = _github_fetch_once(url, timeout=8 + attempt * 4)
         if ok:
             content = result.get('content', '')
             if content:
@@ -1323,23 +1331,46 @@ def _load_users_authoritative():
 
 
 def init_data_files():  # v-restart-trigger-20260711
-    """初始化数据文件：启动时从干净备份加载，重建本地缓存。
+    """初始化数据文件（2026-08-01 优化：启动去阻塞 + 防数据丢失）。
 
-    2026-07-21 安全事件后：每次启动强制删除本地旧缓存，确保从 data-clean/ 干净备份全新加载，
-    避免 Render 容器重启时继承被污染的本地 study_data.json。"""
+    优化点：若本地 DATA_DIR 七个核心文件均存在且为有效 JSON，则**直接保留本地运行期数据**并立即返回，
+    不再无条件删除 + 强制从 data-clean 重建、也不再同步阻塞等待 GitHub 拉取——既让冷启动瞬间完成，
+    又保证 GitHub 不可达时不会退回 7/20 陈旧基线造成数据丢失。仅当本地缺失/损坏时才走原重建逻辑。
+    """
+    _essential = ['study_data', 'users', 'admin', 'groups', 'messages', 'dingtalk', 'beta']
+
+    def _local_all_valid():
+        for _n in _essential:
+            _p = os.path.join(DATA_DIR, _n + '.json')
+            if not os.path.exists(_p):
+                return False
+            try:
+                with open(_p, 'r', encoding='utf-8') as _f:
+                    _v = json.load(_f)
+                if not isinstance(_v, (dict, list)):
+                    return False
+            except Exception:
+                return False
+        return True
+
+    # 2026-08-01：本地完整则直接保留，跳过强制重载（避免启动卡 GitHub / 退回陈旧基线）
+    if _local_all_valid():
+        print('[Init] 本地数据目录完整有效，直接保留运行期数据（跳过强制重载，加速冷启动）', flush=True)
+        return
+
+    print('[Init] 本地数据缺失/无效，执行重建（从干净备份 + GitHub 叠加）...', flush=True)
     # ===== 7/20 整体回滚：强制从干净备份加载，彻底甩掉所有污染 =====
     # 优先级：本地 data-clean/ 目录（随代码部署，Render 沙箱不依赖外网）> GitHub f1a5eed7 > data-sync HEAD
     # 扫描器已污染 Supabase/data-sync 的多个字段，本次回滚一律以干净备份为准。稳定后可恢复。
-    print('[回滚] 强制从干净备份加载，忽略 Supabase/远程脏数据...', flush=True)
     # 关键：先删除本地可能被污染的缓存，确保全新加载（Render 容器重启不保证文件系统清空）
-    for _name in ['study_data', 'users', 'admin', 'groups', 'messages', 'dingtalk', 'beta']:
+    for _name in _essential:
         _cached = os.path.join(DATA_DIR, _name + '.json')
         if os.path.exists(_cached):
             try:
                 os.remove(_cached)
-                print(f'[回滚] 已删除本地旧缓存 {_name}.json', flush=True)
+                print(f'[Init] 已删除本地旧缓存 {_name}.json', flush=True)
             except Exception as e:
-                print(f'[回滚] 删除本地旧缓存 {_name}.json 失败: {e}', flush=True)
+                print(f'[Init] 删除本地旧缓存 {_name}.json 失败: {e}', flush=True)
     _clean_dir = CLEAN_BACKUP_DIR
     def _load_clean(name):
         _p = os.path.join(_clean_dir, name + '.json')
@@ -2632,8 +2663,8 @@ def keepalive_loop():
             _keepalive_status['last_ping_time'] = int(time.time())
             _keepalive_status['last_ping_status'] = f'失败: {e}'
             print(f'[KeepAlive] ping 失败: {e} @ {time.strftime("%H:%M:%S")}', flush=True)
-        # 每 10 分钟 ping 一次
-        time.sleep(600)
+        # 2026-08-01 优化：缩短保活间隔 10 分钟→5 分钟，增加冗余对抗 Render 免费版休眠
+        time.sleep(300)
 
 
 @app.route('/api/keepalive', methods=['GET'])
