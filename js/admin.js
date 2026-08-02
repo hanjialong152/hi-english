@@ -82,7 +82,7 @@ function calcAudioLearnedCount(empid, stage) {
   return n;
 }
 
-function calcUserScores(empid) {
+function calcUserScores(empid, month) {
   var allStudyData = JSON.parse(localStorage.getItem('hi_english_study') || '{}');
   var sd = allStudyData[empid] || {basic: {mastered: [], weeklyTests: [], monthlyTests: []}, checkIns: []};
   var mastered = sd.basic && sd.basic.mastered ? sd.basic.mastered.length : 0;
@@ -300,6 +300,7 @@ function renderDashboard() {
 
   // Stats — 第一行：总学员数 / 本周活跃 / 平均分 / 平均打卡天数（率）；第二行：基础阶段平均进度 / 商务阶段平均进度 / 基础平均已掌握 / 商务平均已掌握
   document.getElementById('a-dashboard-stats').innerHTML =
+    '<div class="section-title" style="margin-left:0;margin-bottom:12px;">学习总览 <span class="month-tag">' + monthLabel + '</span></div>' +
     '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:12px;">' +
       '<div class="stat-card"><div class="stat-val">' + totalStudents + '</div><div class="stat-key">总学员数</div></div>' +
       '<div class="stat-card"><div class="stat-val">' + activeThisWeek + '</div><div class="stat-key">本周活跃</div></div>' +
@@ -343,10 +344,10 @@ function renderDashboard() {
   }).join('');
 
   document.getElementById('a-dashboard-rankings').innerHTML =
-    '<div class="section-title">🏆 个人学习排行榜（' + monthLabel + '）</div>' +
+    '<div class="section-title">🏆 个人学习排行榜 <span class="month-tag">' + monthLabel + '</span></div>' +
     '<div style="display:flex;justify-content:flex-end;margin-bottom:8px;"><button class="btn btn-outline" onclick="exportPersonalRanking()">📥 导出个人排行榜</button></div>' +
     '<div style="overflow-x:auto;"><table class="data-table"><thead><tr><th>排名</th><th>账号</th><th>姓名</th><th>组别</th><th>打卡天数</th><th>周测成绩</th><th>月测成绩</th><th>总成绩</th></tr></thead><tbody>' + (personalHTML || '<tr><td colspan="8" style="text-align:center;color:var(--text-sub);">暂无数据</td></tr>') + '</tbody></table></div>' +
-    '<div class="section-title">🏆 团队学习排行榜（' + monthLabel + '）</div>' +
+    '<div class="section-title">🏆 团队学习排行榜 <span class="month-tag">' + monthLabel + '</span></div>' +
     '<div style="display:flex;justify-content:flex-end;margin-bottom:8px;"><button class="btn btn-outline" onclick="exportTeamRanking()">📥 导出团队排行榜</button></div>' +
     '<div style="overflow-x:auto;"><table class="data-table"><thead><tr><th>排名</th><th>团队名称</th><th>人数</th><th>平均打卡率</th><th>平均周测分</th><th>平均月测分</th><th>总成绩</th></tr></thead><tbody>' + (groupHTML || '<tr><td colspan="7" style="text-align:center;color:var(--text-sub);">暂无数据</td></tr>') + '</tbody></table></div>';
 

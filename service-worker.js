@@ -17,8 +17,8 @@
 // v84: 月测顶部最高分提示修正
 // v83: 根治周测/月测 DOM id 冲突；月测麦克风通过无留痕修复
 // v78: 回退 dirty phrase 为 dirty surface defect
-var CACHE_VERSION = 'hi-english-v96';
-var CORE_CACHE = 'hi-english-core-v96';
+var CACHE_VERSION = 'hi-english-v97';
+var CORE_CACHE = 'hi-english-core-v97';
 var AUDIO_CACHE = 'hi-english-audio-v35';
 
 var CORE_FILES = [

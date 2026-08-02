@@ -2988,7 +2988,7 @@ async function renderReport() {
 
   var scoreHTML =
     '<div class="card" style="text-align:center;">' +
-      '<div style="font-size:12px;color:var(--text-sub);">综合得分 <span style="display:inline-block;background:var(--primary);color:#fff;font-size:12px;font-weight:600;padding:2px 8px;border-radius:10px;margin-left:6px;vertical-align:middle;">' + monthLabel + '</span></div>' +
+      '<div style="font-size:15px;font-weight:700;color:var(--primary);">综合得分 <span style="display:inline-block;background:var(--primary);color:#fff;font-size:12px;font-weight:600;padding:2px 8px;border-radius:10px;margin-left:6px;vertical-align:middle;">' + monthLabel + '</span></div>' +
       '<div style="font-size:40px;font-weight:700;color:var(--primary);margin:8px 0;">' + totalScore + '</div>' +
     '</div>';
 
@@ -3052,7 +3052,7 @@ async function renderReport() {
   }).join('');
 
   var scoreBreakdownHTML =
-    '<div class="section-title">📊 成绩构成（' + monthLabel + '）</div>' +
+    '<div class="section-title">📊 成绩构成 <span class="month-tag">' + monthLabel + '</span></div>' +
     '<div class="card">' +
       '<div style="display:flex;justify-content:space-between;margin-bottom:8px;"><span>本月打卡天数（30%）</span><span style="font-weight:600;">' + checkinScore + '</span></div>' +
       '<div style="display:flex;justify-content:space-between;margin-bottom:8px;"><span>本月周测平均分（30%）</span><span style="font-weight:600;">' + weeklyScore + '</span></div>' +
@@ -3061,9 +3061,9 @@ async function renderReport() {
     '</div>';
 
   document.getElementById('s-report-content').innerHTML = scoreHTML + statsHTML +
-    '<div class="section-title">🏆 个人学习排行榜（' + monthLabel + '）</div>' +
+    '<div class="section-title">🏆 个人学习排行榜 <span class="month-tag">' + monthLabel + '</span></div>' +
     '<div class="rank-list">' + (personalRankHTML || '<div style="text-align:center;padding:20px;color:var(--text-sub);">暂无排行数据</div>') + '</div>' +
-    '<div class="section-title">🏆 团队学习排行榜（' + monthLabel + '）</div>' +
+    '<div class="section-title">🏆 团队学习排行榜 <span class="month-tag">' + monthLabel + '</span></div>' +
     '<div class="rank-list">' + (groupRankHTML || '<div style="text-align:center;padding:20px;color:var(--text-sub);">暂无排行数据</div>') + '</div>' +
     scoreBreakdownHTML;
 }
