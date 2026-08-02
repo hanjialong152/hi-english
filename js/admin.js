@@ -103,6 +103,14 @@ function calcUserScores(empid) {
   var score = _sc.total;
   var weeklyAvg = _sc.weeklyAvg;
   var monthlyAvg = _sc.monthlyAvg;
+  if (month) {
+    var ms = HiEnglish.calcMonthlyScore(sd, month);
+    score = ms.total; weeklyAvg = ms.weeklyAvg; monthlyAvg = ms.monthlyAvg;
+    var _y = parseInt(month.slice(0, 4), 10), _m = parseInt(month.slice(5, 7), 10) - 1;
+    var _dim = HiEnglish.getDaysInMonth(_y, _m);
+    completedDays = ms.monthCheckinDays;
+    checkinRate = _dim > 0 ? Math.round((completedDays / _dim) * 100) : 0;
+  }
 
   return {
     mastered: mastered, readIndex: basicAudioLearned, completedDays: completedDays, weeklyCompletedDays: weeklyCompletedDays,
@@ -114,6 +122,59 @@ function calcUserScores(empid) {
     businessUnlocked: sd.business && sd.business.unlocked
   };
 }
+
+function calcCumulativeScores(empid) {
+  var allStudyData = JSON.parse(localStorage.getItem('hi_english_study') || '{}');
+  var sd = allStudyData[empid] || {basic: {mastered: [], weeklyTests: [], monthlyTests: []}, business: {mastered: [], weeklyTests: [], monthlyTests: []}, checkIns: []};
+  var users = HiEnglish.getUsers();
+  var u = users[empid] || {};
+  var checkIns = sd.checkIns || [];
+  var completedDays = checkIns.filter(function(c) { return c.completed; }).length;
+  var denomDays = 0;
+  var created = u.createdAt || '';
+  if (created) {
+    var cd = new Date(String(created).replace(/-/g, '/'));
+    if (!isNaN(cd.getTime())) {
+      var nowd = new Date();
+      denomDays = Math.max(1, Math.round((nowd - cd) / 86400000) + 1);
+    }
+  }
+  if (denomDays <= 0 && checkIns.length > 0) {
+    var dates = checkIns.map(function(c) { return c.date; }).filter(Boolean).sort();
+    var ed = new Date(String(dates[0]).replace(/-/g, '/'));
+    var nowd2 = new Date();
+    denomDays = Math.max(1, Math.round((nowd2 - ed) / 86400000) + 1);
+  }
+  if (denomDays <= 0) denomDays = 1;
+  var cumCheckinRate = Math.round((completedDays / denomDays) * 100);
+  var self = HiEnglish;
+  var allWeekly = [].concat((sd.basic && sd.basic.weeklyTests) || [], (sd.business && sd.business.weeklyTests) || []);
+  var wAvgAll = 0;
+  if (allWeekly.length > 0) {
+    var weekMax = {};
+    allWeekly.forEach(function(tt) { var wk = self.getWeekKey(tt.date); var sc = tt.avgScore || 0; if (!(wk in weekMax) || sc > weekMax[wk]) weekMax[wk] = sc; });
+    var weekVals = Object.keys(weekMax).map(function(k) { return weekMax[k]; });
+    wAvgAll = weekVals.reduce(function(s, v) { return s + v; }, 0) / weekVals.length;
+  }
+  var allMonthly = [].concat((sd.basic && sd.basic.monthlyTests) || [], (sd.business && sd.business.monthlyTests) || []);
+  var mMaxAll = allMonthly.length > 0 ? Math.max.apply(null, allMonthly.map(function(tt) { return tt.avgScore || 0; })) : 0;
+  var weeklyAvg = Math.round(wAvgAll);
+  var monthlyAvg = Math.round(mMaxAll);
+  var cumScore = Math.round((cumCheckinRate * 0.3 + wAvgAll * 0.3 + mMaxAll * 0.4) * 10) / 10;
+  var basicAudioLearned = calcAudioLearnedCount(empid, 'basic');
+  var bizAudioLearned = calcAudioLearnedCount(empid, 'business');
+  var mastered = sd.basic && sd.basic.mastered ? sd.basic.mastered.length : 0;
+  var bizMastered = sd.business && sd.business.mastered ? sd.business.mastered.length : 0;
+  return {
+    mastered: mastered, readIndex: basicAudioLearned, completedDays: completedDays,
+    checkinRate: cumCheckinRate, weeklyAvg: weeklyAvg, monthlyAvg: monthlyAvg, score: cumScore,
+    bizLearned: bizAudioLearned, bizMastered: bizMastered,
+    basicLearned: basicAudioLearned, businessComplete: bizAudioLearned >= BIZ_TOTAL_LESSONS,
+    basicComplete: basicAudioLearned >= 850, businessUnlocked: sd.business && sd.business.unlocked,
+    cumDaysDenom: denomDays
+  };
+}
+
 
 // ===== Dashboard =====
 var reminderPage = 1;
@@ -193,6 +254,8 @@ function toggleReminderSelectAll() {
 }
 
 function renderDashboard() {
+  var curMonth = HiEnglish.today().slice(0, 7);
+  var monthLabel = curMonth.slice(0, 4) + '年' + parseInt(curMonth.slice(5, 7), 10) + '月';
   var users = HiEnglish.getUsers();
   var userArr = Object.values(users);
   var totalStudents = userArr.length;
@@ -208,7 +271,7 @@ function renderDashboard() {
   var totalBizMastered = 0;
 
   var personalScores = userArr.map(function(u) {
-    var s = calcUserScores(u.empid);
+    var s = calcUserScores(u.empid, curMonth);
     var allStudyData = JSON.parse(localStorage.getItem('hi_english_study') || '{}');
     var sd = allStudyData[u.empid];
     // 本周活跃：按业务周（上周六00:00~本周五23:59）有完成打卡判定，与催学提醒口径一致
@@ -280,10 +343,10 @@ function renderDashboard() {
   }).join('');
 
   document.getElementById('a-dashboard-rankings').innerHTML =
-    '<div class="section-title">🏆 个人学习排行榜</div>' +
+    '<div class="section-title">🏆 个人学习排行榜（' + monthLabel + '）</div>' +
     '<div style="display:flex;justify-content:flex-end;margin-bottom:8px;"><button class="btn btn-outline" onclick="exportPersonalRanking()">📥 导出个人排行榜</button></div>' +
     '<div style="overflow-x:auto;"><table class="data-table"><thead><tr><th>排名</th><th>账号</th><th>姓名</th><th>组别</th><th>打卡天数</th><th>周测成绩</th><th>月测成绩</th><th>总成绩</th></tr></thead><tbody>' + (personalHTML || '<tr><td colspan="8" style="text-align:center;color:var(--text-sub);">暂无数据</td></tr>') + '</tbody></table></div>' +
-    '<div class="section-title">🏆 团队学习排行榜</div>' +
+    '<div class="section-title">🏆 团队学习排行榜（' + monthLabel + '）</div>' +
     '<div style="display:flex;justify-content:flex-end;margin-bottom:8px;"><button class="btn btn-outline" onclick="exportTeamRanking()">📥 导出团队排行榜</button></div>' +
     '<div style="overflow-x:auto;"><table class="data-table"><thead><tr><th>排名</th><th>团队名称</th><th>人数</th><th>平均打卡率</th><th>平均周测分</th><th>平均月测分</th><th>总成绩</th></tr></thead><tbody>' + (groupHTML || '<tr><td colspan="7" style="text-align:center;color:var(--text-sub);">暂无数据</td></tr>') + '</tbody></table></div>';
 
@@ -710,7 +773,7 @@ function renderStudentTable() {
 
   var tbody = document.getElementById('student-tbody');
   tbody.innerHTML = pageArr.map(function(u) {
-    var s = calcUserScores(u.empid);
+    var s = calcCumulativeScores(u.empid);
     return '<tr>' +
       '<td>' + u.empid + '</td>' +
       '<td>' + u.name + '</td>' +
@@ -1106,7 +1169,7 @@ function renderGroupStats() {
     var totalScore = 0;
 
     groupUsers.forEach(function(u) {
-      var s = calcUserScores(u.empid);
+      var s = calcCumulativeScores(u.empid);
       totalCheckin += s.checkinRate;
       if (s.weeklyAvg > 0) { totalWeekly += s.weeklyAvg; weeklyCount++; }
       if (s.monthlyAvg > 0) { totalMonthly += s.monthlyAvg; monthlyCount++; }
@@ -1250,8 +1313,9 @@ function fillGroupSelect(id) {
 // 14: Personal ranking export - Excel with: 排名, 账号, 姓名, 组别, 打卡天数, 周测成绩, 月测成绩, 总成绩
 function exportPersonalRanking() {
   var users = HiEnglish.getUsers();
+  var curMonth = HiEnglish.today().slice(0, 7);
   var rows = Object.values(users).map(function(u) {
-    var s = calcUserScores(u.empid);
+    var s = calcUserScores(u.empid, curMonth);
     return [u.empid, u.name, u.group, s.completedDays, s.weeklyAvg, s.monthlyAvg || 0, s.score];
   }).sort(function(a, b) { return b[6] - a[6]; });
   rows.forEach(function(r, i) { r.unshift(i + 1); });
@@ -1262,13 +1326,14 @@ function exportPersonalRanking() {
 // 15: Team ranking export - Excel with: 排名, 团队名称, 人数, 平均打卡率, 平均周测分, 平均月测分, 总成绩(团队平均分)
 function exportTeamRanking() {
   var users = HiEnglish.getUsers();
+  var curMonth = HiEnglish.today().slice(0, 7);
   var groups = HiEnglish.getGroups();
   var rows = groups.map(function(g) {
     var groupUsers = Object.values(users).filter(function(u) { return u.group === g; });
     var count = groupUsers.length;
     var totalCheckin = 0, totalWeekly = 0, weeklyCount = 0, totalMonthly = 0, monthlyCount = 0, totalScore = 0;
     groupUsers.forEach(function(u) {
-      var s = calcUserScores(u.empid);
+      var s = calcUserScores(u.empid, curMonth);
       totalCheckin += s.checkinRate;
       if (s.weeklyAvg > 0) { totalWeekly += s.weeklyAvg; weeklyCount++; }
       if (s.monthlyAvg > 0) { totalMonthly += s.monthlyAvg; monthlyCount++; }
@@ -1291,7 +1356,7 @@ function exportTeamRanking() {
 function exportStudentData() {
   var users = HiEnglish.getUsers();
   var rows = Object.values(users).map(function(u) {
-    var s = calcUserScores(u.empid);
+    var s = calcCumulativeScores(u.empid);
     return [u.empid, u.name, u.group, s.readIndex + '/850', s.bizLearned + '/' + BIZ_TOTAL_LESSONS, s.mastered, s.bizMastered, s.completedDays, s.score, u.status === 'active' ? '启用' : '禁用'];
   });
   HiEnglish.exportExcel('学员数据.xls', ['账号', '姓名', '组别', '基础进度', '商务进度', '基础掌握', '商务掌握', '打卡天数', '平均分', '状态'], rows, '学员数据');
@@ -1307,7 +1372,7 @@ function exportGroupStats() {
     var count = groupUsers.length;
     var totalCheckin = 0, totalWeekly = 0, weeklyCount = 0, totalMonthly = 0, monthlyCount = 0, totalScore = 0;
     groupUsers.forEach(function(u) {
-      var s = calcUserScores(u.empid);
+      var s = calcCumulativeScores(u.empid);
       totalCheckin += s.checkinRate;
       if (s.weeklyAvg > 0) { totalWeekly += s.weeklyAvg; weeklyCount++; }
       if (s.monthlyAvg > 0) { totalMonthly += s.monthlyAvg; monthlyCount++; }
@@ -1328,8 +1393,9 @@ function exportGroupStats() {
 // 18: All staff report - Excel with: 账号, 姓名, 组别, 学习阶段完成情况, 月度打卡完成率, 周测成绩, 月测成绩, 累计总成绩
 function exportAllReport() {
   var users = HiEnglish.getUsers();
+  var curMonth = HiEnglish.today().slice(0, 7);
   var rows = Object.values(users).map(function(u) {
-    var s = calcUserScores(u.empid);
+    var s = calcUserScores(u.empid, curMonth);
     var stageStatus = '基础词汇已完成(' + s.basicLearned + '/850)';
     if (s.businessUnlocked) stageStatus += ' + 商务英语已完成(' + s.bizLearned + '/' + BIZ_TOTAL_LESSONS + ')';
     else stageStatus += ' + 商务英语未解锁';
@@ -1342,6 +1408,7 @@ function exportAllReport() {
 // 19: Team report - Excel with: 团队名称, 学习阶段完成情况, 月度团队日打卡平均完成率, 团队周测平均分, 团队月测平均分, 累计总成绩平均分
 function exportTeamReport() {
   var users = HiEnglish.getUsers();
+  var curMonth = HiEnglish.today().slice(0, 7);
   var groups = HiEnglish.getGroups();
   var rows = groups.map(function(g) {
     var groupUsers = Object.values(users).filter(function(u) { return u.group === g; });
@@ -1351,7 +1418,7 @@ function exportTeamReport() {
     var businessCompleteCount = 0;
     var businessUnlockedCount = 0;
     groupUsers.forEach(function(u) {
-      var s = calcUserScores(u.empid);
+      var s = calcUserScores(u.empid, curMonth);
       totalCheckin += s.checkinRate;
       if (s.weeklyAvg > 0) { totalWeekly += s.weeklyAvg; weeklyCount++; }
       if (s.monthlyAvg > 0) { totalMonthly += s.monthlyAvg; monthlyCount++; }
@@ -1454,10 +1521,74 @@ function exportDetailReport() {
   });
 
   var headers = ['账号', '姓名', '组别'].concat(columns.map(function(c) { return c.label; }));
-  HiEnglish.exportExcel('详细报表.xls', headers, rows, '详细报表');
+  HiEnglish.exportExcel('详细打卡数据.xls', headers, rows, '详细报表');
   showToast('详细报表已导出');
   closeModal('detail-report-modal');
 }
+
+// 综合学习数据（个人+团队）统一导出：选月份=当月/往月，勾选累计=注册至今汇总
+function showConsolidatedModal() {
+  var el = document.getElementById('cons-month');
+  if (el && !el.value) el.value = HiEnglish.today().slice(0, 7);
+  document.getElementById('consolidated-modal').classList.add('show');
+}
+
+function exportIntegratedReport() {
+  var users = HiEnglish.getUsers();
+  var cumulative = document.getElementById('cons-cumulative').checked;
+  var month = (document.getElementById('cons-month').value || HiEnglish.today().slice(0, 7));
+  var userArr = Object.values(users);
+  var scopeLabel = cumulative ? '（累计）' : ('（' + month.slice(0, 4) + '年' + parseInt(month.slice(5, 7), 10) + '月）');
+  var pRows = userArr.map(function(u) {
+    var prog = cumulative ? calcCumulativeScores(u.empid) : calcUserScores(u.empid, month);
+    return {
+      empid: u.empid, name: u.name, group: u.group || '',
+      basicProgress: prog.basicLearned + '/850',
+      bizProgress: prog.bizLearned + '/' + BIZ_TOTAL_LESSONS,
+      basicMastered: prog.mastered,
+      bizMastered: prog.bizMastered,
+      checkinDays: prog.completedDays,
+      weekly: prog.weeklyAvg,
+      monthly: prog.monthlyAvg,
+      total: prog.score,
+      status: u.status === 'active' ? '启用' : '禁用'
+    };
+  }).sort(function(a, b) { return b.total - a.total; });
+  var pHeader = ['排名', '账号', '姓名', '组别', '基础进度', '商务进度', '基础掌握', '商务掌握', '打卡天数', '周测成绩', '月测成绩', '总成绩', '状态'];
+  var pData = pRows.map(function(p, i) {
+    return [i + 1, p.empid, p.name, p.group, p.basicProgress, p.bizProgress, p.basicMastered, p.bizMastered, p.checkinDays, p.weekly, p.monthly, p.total, p.status];
+  });
+  var groups = HiEnglish.getGroups();
+  var tRows = groups.map(function(g) {
+    var gu = userArr.filter(function(u) { return u.group === g; });
+    var count = gu.length;
+    var sumChk = 0, sumW = 0, sumM = 0, sumT = 0;
+    gu.forEach(function(u) {
+      var prog = cumulative ? calcCumulativeScores(u.empid) : calcUserScores(u.empid, month);
+      sumChk += prog.checkinRate; sumW += prog.weeklyAvg; sumM += prog.monthlyAvg; sumT += prog.score;
+    });
+    return {
+      name: g, count: count,
+      chk: count > 0 ? Math.round(sumChk / count) : 0,
+      w: count > 0 ? Math.round(sumW / count * 100) / 100 : 0,
+      m: count > 0 ? Math.round(sumM / count * 100) / 100 : 0,
+      t: count > 0 ? Math.round(sumT / count * 10) / 10 : 0
+    };
+  }).sort(function(a, b) { return b.t - a.t; });
+  var tHeader = ['排名', '团队名称', '人数', '平均打卡率', '平均周测分', '平均月测分', '总成绩'];
+  var tData = tRows.map(function(tt, i) { return [i + 1, tt.name, tt.count, tt.chk + '%', tt.w, tt.m, tt.t]; });
+  if (typeof XLSX !== 'undefined' && XLSX.utils && XLSX.writeFile) {
+    var wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([pHeader].concat(pData)), '个人综合数据');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([tHeader].concat(tData)), '团队综合数据');
+    XLSX.writeFile(wb, '综合学习数据_个人+团队' + scopeLabel + '.xlsx');
+    showToast('综合学习数据已导出');
+  } else {
+    showToast('导出组件未加载，请刷新后重试');
+  }
+  closeModal('consolidated-modal');
+}
+
 
 // ===== Video source =====
 function addVideoSource() {

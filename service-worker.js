@@ -1,6 +1,7 @@
 // ===================================================
-// Hi English - Service Worker v95 (PWA安装支持)
+// Hi English - Service Worker v96 (PWA安装支持)
 // ===================================================
+// v96: 数据呈现改造(当月/往月/累计)发布；bump 缓存名强制刷新全部静态资源
 // v95: 静态资源策略从"网络优先"改为"缓存优先"
 //      修复普通模式首次访问慢(~1min)问题：
 //      原因：SW 网络优先对每个静态请求都重新走网络，
@@ -16,8 +17,8 @@
 // v84: 月测顶部最高分提示修正
 // v83: 根治周测/月测 DOM id 冲突；月测麦克风通过无留痕修复
 // v78: 回退 dirty phrase 为 dirty surface defect
-var CACHE_VERSION = 'hi-english-v95';
-var CORE_CACHE = 'hi-english-core-v95';
+var CACHE_VERSION = 'hi-english-v96';
+var CORE_CACHE = 'hi-english-core-v96';
 var AUDIO_CACHE = 'hi-english-audio-v35';
 
 var CORE_FILES = [

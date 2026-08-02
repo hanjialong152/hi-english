@@ -164,6 +164,7 @@ body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Mi
       <!-- 学员管理页 -->
       <div id="a-page-students" class="admin-page">
         <div id="a-students-toolbar"></div>
+        <div class="section-title">学员数据（累计）</div>
         <div style="overflow-x:auto;">
           <table class="data-table" id="student-table">
             <thead>
@@ -188,7 +189,7 @@ body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Mi
           </div>
           <p style="font-size:12px;color:var(--text-sub);margin-top:8px;">点击 ✎ 可修改组别名称，修改后所有属于该组的学员自动更新</p>
         </div>
-        <div class="section-title">分组学员统计</div>
+        <div class="section-title">分组数据（累计）</div>
         <div style="display:flex;justify-content:flex-end;margin-bottom:8px;">
           <button class="btn btn-outline" onclick="exportGroupStats()">📥 导出分组统计</button>
         </div>
@@ -206,8 +207,12 @@ body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Mi
           <p>每个团队的学习阶段完成情况、月度团队日打卡平均完成率、团队周测/月测平均分、累计总成绩平均分</p>
         </div>
         <div class="export-card" onclick="showDetailedReportModal()">
-          <h4>📋 详细报表</h4>
+          <h4>📋 详细打卡数据</h4>
           <p>按起止日期/日/周/月筛选，可分别导出每位学员日、周、月打卡情况</p>
+        </div>
+        <div class="export-card" onclick="showConsolidatedModal()">
+          <h4>📊 综合学习数据（个人+团队）</h4>
+          <p>选月份或勾选累计，一次导出「个人综合 + 团队综合」两张表（去重整合）</p>
         </div>
       </div>
 
@@ -373,7 +378,7 @@ body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Mi
 <!-- 详细报表弹窗 -->
 <div id="detail-report-modal" class="modal-mask">
   <div class="modal-box" style="max-width:420px;">
-    <h3>📋 详细报表筛选</h3>
+    <h3>📋 详细打卡数据筛选</h3>
     <div class="form-group">
       <label>起始日期</label>
       <input type="date" id="report-start" value="2026-07-01">
@@ -403,6 +408,29 @@ body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Mi
     </div>
   </div>
 </div>
+
+<!-- 综合学习数据（整合导出）弹窗 -->
+<div id="consolidated-modal" class="modal-mask">
+  <div class="modal-box" style="max-width:440px;">
+    <h3>📊 综合学习数据（个人+团队）</h3>
+    <div class="form-group">
+      <label>数据月份</label>
+      <input type="month" id="cons-month" value="">
+    </div>
+    <div class="form-group" style="display:flex;align-items:center;gap:8px;">
+      <input type="checkbox" id="cons-cumulative" onchange="document.getElementById('cons-month').disabled = this.checked;">
+      <label style="margin:0;">累计（勾选后忽略月份，按注册至今汇总）</label>
+    </div>
+    <div style="margin-top:8px;padding:10px;background:var(--primary-light);border-radius:8px;font-size:12px;color:var(--primary);">
+      导出内容：一张 Excel 含「个人综合数据（13列）」「团队综合数据（7列）」两张表；选月份=当月/往月，勾选累计=注册至今汇总。
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('consolidated-modal')">取消</button>
+      <button class="btn btn-primary" onclick="exportIntegratedReport()">导出Excel</button>
+    </div>
+  </div>
+</div>
+
 
 <!-- 批量导入学员弹窗 -->
 <div id="batch-import-modal" class="modal-mask">
