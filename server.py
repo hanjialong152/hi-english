@@ -1775,6 +1775,8 @@ def handle_save_beta_config():
     beta = bool(body.get('betaMode', False))
     with data_lock:
         save_json(os.path.join(DATA_DIR, 'beta.json'), {'betaMode': beta})
+        # 2026-08-03 修复：显式推 GitHub data-sync，确保 Render 重启/部署后开关状态不丢
+        schedule_sync(os.path.join(DATA_DIR, 'beta.json'), {'betaMode': beta})
         if not beta:
             # 关闭众测：按正式规则重置商务解锁（基础 850 全通过才保留，否则重新上锁）
             study_data = load_json(os.path.join(DATA_DIR, 'study_data.json'))
@@ -1891,6 +1893,8 @@ def handle_save_business_config():
                 # 已达标的保持开放（不动）
         save_json(os.path.join(DATA_DIR, 'study_data.json'), study_data)
         save_json(os.path.join(DATA_DIR, 'business_config.json'), {'unlock_all': unlock_all})
+        # 2026-08-03 修复：显式推 GitHub data-sync，确保 Render 重启/部署后开关状态不丢
+        schedule_sync(os.path.join(DATA_DIR, 'business_config.json'), {'unlock_all': unlock_all})
     return jsonify({'success': True, 'unlock_all': unlock_all})
 
 
