@@ -357,7 +357,7 @@ const HiEnglish = {
   // ===== Sync groups from server =====
   async syncGroupsFromServer() {
     try {
-      var resp = await fetch(this.getServerUrl() + '/api/groups?token=' + encodeURIComponent(this.currentToken()));
+      var resp = await fetch(this.getServerUrl() + '/api/groups?token=' + encodeURIComponent(this.currentToken()), { cache: 'no-store' });
       var data = await resp.json();
       if (data.success && data.groups) {
         this.saveGroups(data.groups);

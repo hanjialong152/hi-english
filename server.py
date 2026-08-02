@@ -1755,6 +1755,8 @@ def handle_save_dingtalk_config():
     if webhook and 'oapi.dingtalk.com' not in webhook and 'qyapi.weixin.qq.com' not in webhook:
         return jsonify({'success': False, 'error': '仅允许钉钉/企业微信机器人 Webhook'}), 400
     save_json(os.path.join(DATA_DIR, 'dingtalk.json'), {'webhook': webhook})
+    # 2026-08-03 修复：钉钉 Webhook 保存后落 GitHub data-sync，确保 Render 部署/重启后不丢
+    schedule_sync(os.path.join(DATA_DIR, 'dingtalk.json'), {'webhook': webhook})
     return jsonify({'success': True})
 
 
@@ -1860,6 +1862,8 @@ def handle_save_test_config():
         'bizMonthly': _clamp(body.get('bizMonthly'), 20),
     }
     save_json(os.path.join(DATA_DIR, 'test_config.json'), cfg)
+    # 2026-08-03 修复：考题量配置保存后落 GitHub data-sync，确保 Render 部署/重启后不丢
+    schedule_sync(os.path.join(DATA_DIR, 'test_config.json'), cfg)
     return jsonify({'success': True, 'config': cfg})
 
 

@@ -254,7 +254,7 @@ async function init() {
   // 注：手动同步按钮已移除，跨终端同步现由系统自动完成（登录即同步 + 实时推送 + 可见性自愈）
 
   // 众测模式：从服务端拉取全局开关，开启则解锁商务英语并放开周测/月测时间限制
-  fetch(HiEnglish.getServerUrl() + '/api/beta-config?token=' + encodeURIComponent(HiEnglish.currentToken())).then(function(r) { return r.json(); }).then(function(data) {
+  fetch(HiEnglish.getServerUrl() + '/api/beta-config?token=' + encodeURIComponent(HiEnglish.currentToken()), { cache: 'no-store' }).then(function(r) { return r.json(); }).then(function(data) {
     BETA_MODE = !!(data && data.betaMode);
     // 商务解锁最终态由 isBusinessUnlocked() 实时计算；关闭众测时本地也同步回退到正式规则
     if (!BETA_MODE && studyData && studyData.business) {
@@ -264,11 +264,11 @@ async function init() {
   }).catch(function() {});
 
   // 拉取商务全局解锁标志 + 测试题量配置（全员生效）
-  fetch(HiEnglish.getServerUrl() + '/api/business-config?token=' + encodeURIComponent(HiEnglish.currentToken())).then(function(r) { return r.json(); }).then(function(data) {
+  fetch(HiEnglish.getServerUrl() + '/api/business-config?token=' + encodeURIComponent(HiEnglish.currentToken()), { cache: 'no-store' }).then(function(r) { return r.json(); }).then(function(data) {
     BUSINESS_UNLOCK_ALL = !!(data && data.unlock_all);
     renderStageSwitcher();
   }).catch(function() {});
-  fetch(HiEnglish.getServerUrl() + '/api/test-config?token=' + encodeURIComponent(HiEnglish.currentToken())).then(function(r) { return r.json(); }).then(function(data) {
+  fetch(HiEnglish.getServerUrl() + '/api/test-config?token=' + encodeURIComponent(HiEnglish.currentToken()), { cache: 'no-store' }).then(function(r) { return r.json(); }).then(function(data) {
     if (data && data.success && data.config) {
       TEST_CONFIG = {
         basicWeekly: _clampInt(data.config.basicWeekly, 10),
@@ -3112,30 +3112,10 @@ function _renderMessagesList(messages) {
   }).join('');
 
   document.getElementById('s-messages-content').innerHTML =
-    '<div class="card">' +
-      '<div style="font-size:14px;font-weight:600;margin-bottom:10px;">🔔 提醒设置</div>' +
-      '<div style="display:flex;flex-direction:column;gap:10px;">' +
-        '<div style="display:flex;align-items:center;justify-content:space-between;"><div><div style="font-size:14px;">手机通知栏提醒</div><div style="font-size:12px;color:var(--text-sub);">每日自动推送打卡提醒至手机通知栏</div></div><div style="width:44px;height:24px;background:var(--primary);border-radius:12px;position:relative;cursor:pointer;" onclick="toggleSwitch(this)"><div style="width:20px;height:20px;background:#fff;border-radius:50%;position:absolute;top:2px;right:2px;transition:all .2s;"></div></div></div>' +
-        '<div style="display:flex;align-items:center;justify-content:space-between;"><div><div style="font-size:14px;">钉钉消息提醒</div><div style="font-size:12px;color:var(--text-sub);">每日自动通过钉钉发送学习提醒</div></div><div style="width:44px;height:24px;background:var(--primary);border-radius:12px;position:relative;cursor:pointer;" onclick="toggleSwitch(this)"><div style="width:20px;height:20px;background:#fff;border-radius:50%;position:absolute;top:2px;right:2px;transition:all .2s;"></div></div></div>' +
-        '<div style="display:flex;align-items:center;justify-content:space-between;"><div><div style="font-size:14px;">每日自动提醒</div><div style="font-size:12px;color:var(--text-sub);">每天定时提醒未完成打卡</div></div><div style="width:44px;height:24px;background:var(--primary);border-radius:12px;position:relative;cursor:pointer;" onclick="toggleSwitch(this)"><div style="width:20px;height:20px;background:#fff;border-radius:50%;position:absolute;top:2px;right:2px;transition:all .2s;"></div></div></div>' +
-      '</div>' +
-    '</div>' +
     '<div class="section-title">📨 消息列表</div>' +
     '<div style="margin:0 12px;">' + (msgsHTML || '<div style="text-align:center;padding:20px;color:var(--text-sub);">暂无消息</div>') + '</div>';
 }
 
-function toggleSwitch(el) {
-  var dot = el.querySelector('div');
-  if (el.style.background === 'rgb(232, 232, 232)' || el.style.background === 'var(--border)') {
-    el.style.background = 'var(--primary)';
-    dot.style.right = '2px';
-    showToast('提醒已开启');
-  } else {
-    el.style.background = 'var(--border)';
-    dot.style.right = '22px';
-    showToast('提醒已关闭');
-  }
-}
 
 function markAllRead() {
   var user = HiEnglish.getCurrentUser();
