@@ -632,6 +632,7 @@ function switchStage(stage) {
     return;
   }
   currentStage = stage;
+  wlSearch = '';  // 【V6.5 修复】切换阶段时清空搜索词，避免旧词残留到新阶段
   renderStageSwitcher();
   renderHome();
 }
@@ -2930,6 +2931,13 @@ function renderWordList(filter) {
   var countInfo = '<div style="padding:0 12px 4px;font-size:12px;color:var(--text-sub);">显示 ' + displayItems.length + ' / ' + totalWords + (currentStage === 'basic' ? ' 个单词' : ' 门微课') + '</div>';
 
   container.innerHTML = statsHTML + filterHTML + searchHTML + countInfo + '<div id="wl-list" style="padding:0 12px 12px;">' + (listHTML || '<div style="text-align:center;padding:20px;color:var(--text-sub);">暂无数据</div>') + '</div>';
+
+  // 【V6.5 修复】手机端搜索框输入时键盘被收走：每次重渲染 DOM 后把焦点还回搜索框
+  // 仅当正在搜索(wlSearch 非空)才聚焦，避免切页/进页面误弹键盘
+  if (wlSearch) {
+    var _si = container.querySelector('input[name="wl-search-query"]');
+    if (_si) { _si.focus(); try { _si.setSelectionRange(_si.value.length, _si.value.length); } catch(e) {} }
+  }
 }
 
 function onWlSearch(val) {
