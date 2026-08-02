@@ -1,27 +1,23 @@
 // ===================================================
-// Hi English - Service Worker v28 (PWA安装支持)
+// Hi English - Service Worker v95 (PWA安装支持)
 // ===================================================
-// v28: 学习清单标签双达标+筛选按钮缩小；商务跟读提示+分数颜色；补卡逻辑修复；拼写练习上一题+词性缩小；钉钉催学移动端列表
-// v27: 学习清单加"已学"按钮+重排+已学筛选含双达标；readIndex合并改"最后停留页"优先；bump 核心缓存强制刷新 JS
-// v25: 已学逻辑改为"真实听过音频才算" + 定位页精确停留；bump 核心缓存强制刷新 JS
-// v24: 音频缓存版本提升，强制刷新重新生成的发音MP3
-// v22: 移动端通知栏推送（showNotification + notificationclick）
-// v21: 修复分组数据持久化 + 搜索栏禁止浏览器自动填充
-// v72: 修复 speakScores 被初始化为数组导致跟读分数丢失 + mastered 一致性修复
-// v59: 最终稳定版：强制从 data-clean 恢复 7/21 真实记录，dataVersion=2 覆盖客户端脏缓存
-// v50: 补卡UI定稿（选中=蓝底白字实心；今天边框选中他日期时弱化为淡蓝虚线）
-// v49: 补卡UI再修（按钮日期换第二行/今天格子可点击取消选中/17日细框取消）
-// v48: 补卡2项UI修复（日历选中框跟随点击日期/去补卡按钮日期字体缩小防换行）
-// v47: 4项Bug修复（补卡入口/禁用拦截/状态标签/报表日期联动）强制刷新缓存
-
-// v78: 回退 dirty phrase 为 dirty surface defect、green phrase 保持 green energy strategy；对应音频重生成；SW bump 强制客户端刷新 JS 与音频缓存
-// redeploy-trigger-20260723T2230: force Render rebuild after phrase rollback
-// v83: 根治周测/月测 DOM id 冲突（测试 id 加 weekly-/monthly- 前缀）；月测麦克风通过无留痕修复；下一题/交卷按钮统一深蓝；上一题保留历史分；A 真平均分按≥80计
-// v84: 月测顶部最高分提示修正（_testPeriodBestScore 月测分支对齐归属月口径，跟随当前阶段）
-// v87: 管理员端导出改真XLSX（XLSX库生成）；团队/分组周测月测平均分显示保留2位小数
+// v95: 静态资源策略从"网络优先"改为"缓存优先"
+//      修复普通模式首次访问慢(~1min)问题：
+//      原因：SW 网络优先对每个静态请求都重新走网络，
+//      在 Render 上每次 fetch 被拦截后重发耗时 4-16s（直连只需几百ms），
+//      多个 JS 文件叠加导致首屏约 1 分钟。
+//      改为缓存优先后：有缓存直接返回(0ms)，后台静默更新；
+//      API 和音频保持原有逻辑不变。
+//
+// v94-v28: (保留历史版本记录)
+// v94: 前一版本
 // v88: 同步公网翻页尽头全屏阻断页修复（student.js）；bump 核心缓存强制刷新 JS
-var CACHE_VERSION = 'hi-english-v94';
-var CORE_CACHE = 'hi-english-core-v93';
+// v87: 管理员端导出改真XLSX（XLSX库生成）；团队/分组周测月测平均分显示保留2小数
+// v84: 月测顶部最高分提示修正
+// v83: 根治周测/月测 DOM id 冲突；月测麦克风通过无留痕修复
+// v78: 回退 dirty phrase 为 dirty surface defect
+var CACHE_VERSION = 'hi-english-v95';
+var CORE_CACHE = 'hi-english-core-v95';
 var AUDIO_CACHE = 'hi-english-audio-v35';
 
 var CORE_FILES = [
@@ -42,8 +38,7 @@ var CORE_FILES = [
   './icon-512.png',
   './icon-apple.png',
   './favicon.png',
-  './admin.css',
-  './admin.js'
+  './admin.css'
 ];
 
 self.addEventListener('install', function(event) {
@@ -86,7 +81,7 @@ self.addEventListener('fetch', function(event) {
     return;
   }
 
-  // 音频文件：网络优先
+  // 音频文件：网络优先（音频需要最新版本，且体积大不适合预缓存）
   if (url.pathname.indexOf('/audio/') !== -1 || url.pathname.match(/\.(mp3|wav)$/)) {
     event.respondWith(
       fetch(event.request).then(function(resp) {
@@ -106,24 +101,28 @@ self.addEventListener('fetch', function(event) {
     return;
   }
 
-  // 其他文件：网络优先
+  // 静态文件（JS/CSS/HTML/图片）：缓存优先
+  // 有缓存直接返回（0ms），同时后台发网络请求静默更新缓存
+  // 无缓存时走网络（首次访问或缓存被清除时）
   event.respondWith(
-    fetch(event.request).then(function(resp) {
-      if (resp.ok && resp.type !== 'opaque') {
-        var clone = resp.clone();
-        caches.open(CORE_CACHE).then(function(cache) {
-          cache.put(event.request, clone);
-        });
-      }
-      return resp;
-    }).catch(function() {
-      return caches.match(event.request).then(function(cached) {
-        if (cached) return cached;
-        if (event.request.mode === 'navigate') {
-          return caches.match('./index.html');
+    caches.match(event.request).then(function(cached) {
+      var networkFetch = fetch(event.request).then(function(resp) {
+        if (resp.ok && resp.type !== 'opaque') {
+          var clone = resp.clone();
+          caches.open(CORE_CACHE).then(function(cache) {
+            cache.put(event.request, clone);
+          });
         }
-        return new Response('离线', { status: 503 });
+        return resp;
       });
+      // 有缓存立即返回，无缓存等网络
+      return cached || networkFetch;
+    }).catch(function() {
+      // 完全离线时的兜底
+      if (event.request.mode === 'navigate') {
+        return caches.match('./index.html');
+      }
+      return new Response('离线', { status: 503 });
     })
   );
 });
