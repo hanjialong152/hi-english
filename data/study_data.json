@@ -25,7 +25,8 @@
     "business": {
       "learned": [],
       "mastered": [],
-      "totalSeconds": 0
+      "totalSeconds": 0,
+      "unlocked": true
     },
     "checkIns": []
   },
@@ -50,7 +51,8 @@
     "business": {
       "learned": [],
       "mastered": [],
-      "totalSeconds": 0
+      "totalSeconds": 0,
+      "unlocked": true
     },
     "checkIns": []
   },
@@ -75,7 +77,8 @@
     "business": {
       "learned": [],
       "mastered": [],
-      "totalSeconds": 0
+      "totalSeconds": 0,
+      "unlocked": true
     },
     "checkIns": []
   },
@@ -123,7 +126,8 @@
     "business": {
       "learned": [],
       "mastered": [],
-      "totalSeconds": 0
+      "totalSeconds": 0,
+      "unlocked": true
     },
     "checkIns": []
   },
@@ -148,7 +152,8 @@
     "business": {
       "learned": [],
       "mastered": [],
-      "totalSeconds": 0
+      "totalSeconds": 0,
+      "unlocked": true
     },
     "checkIns": []
   },
@@ -173,7 +178,8 @@
     "business": {
       "learned": [],
       "mastered": [],
-      "totalSeconds": 0
+      "totalSeconds": 0,
+      "unlocked": true
     },
     "checkIns": []
   },
@@ -322,7 +328,7 @@
       "weeklyTests": [],
       "monthlyTests": [],
       "totalSeconds": 0,
-      "unlocked": false
+      "unlocked": true
     },
     "checkIns": []
   },
@@ -348,7 +354,7 @@
       "weeklyTests": [],
       "monthlyTests": [],
       "totalSeconds": 0,
-      "unlocked": false
+      "unlocked": true
     },
     "checkIns": []
   },
@@ -3040,7 +3046,7 @@
       "weeklyTests": [],
       "monthlyTests": [],
       "totalSeconds": 0,
-      "unlocked": false
+      "unlocked": true
     },
     "checkIns": []
   },
@@ -3814,7 +3820,7 @@
       "weeklyTests": [],
       "monthlyTests": [],
       "totalSeconds": 0,
-      "unlocked": false
+      "unlocked": true
     },
     "checkIns": []
   },
@@ -3891,7 +3897,7 @@
       "speakScores": {},
       "spellIndex": 0,
       "totalSeconds": 0,
-      "unlocked": false,
+      "unlocked": true,
       "weeklyTests": []
     },
     "checkIns": [
@@ -3924,7 +3930,7 @@
       "weeklyTests": [],
       "monthlyTests": [],
       "totalSeconds": 0,
-      "unlocked": false
+      "unlocked": true
     },
     "checkIns": []
   },
@@ -3950,7 +3956,7 @@
       "weeklyTests": [],
       "monthlyTests": [],
       "totalSeconds": 0,
-      "unlocked": false
+      "unlocked": true
     },
     "checkIns": []
   },
@@ -4012,7 +4018,7 @@
       "weeklyTests": [],
       "monthlyTests": [],
       "totalSeconds": 0,
-      "unlocked": false
+      "unlocked": true
     },
     "checkIns": []
   },
@@ -4037,7 +4043,7 @@
       "speakScores": {},
       "spellIndex": 0,
       "totalSeconds": 0,
-      "unlocked": false,
+      "unlocked": true,
       "weeklyTests": []
     },
     "checkIns": [
@@ -4070,7 +4076,7 @@
       "weeklyTests": [],
       "monthlyTests": [],
       "totalSeconds": 0,
-      "unlocked": false
+      "unlocked": true
     },
     "checkIns": []
   },
@@ -4107,7 +4113,7 @@
       "speakScores": {},
       "spellIndex": 0,
       "totalSeconds": 0,
-      "unlocked": false,
+      "unlocked": true,
       "weeklyTests": []
     },
     "checkIns": [
@@ -4140,7 +4146,7 @@
       "weeklyTests": [],
       "monthlyTests": [],
       "totalSeconds": 0,
-      "unlocked": false
+      "unlocked": true
     },
     "checkIns": []
   },
@@ -4265,7 +4271,7 @@
       "weeklyTests": [],
       "monthlyTests": [],
       "totalSeconds": 0,
-      "unlocked": false
+      "unlocked": true
     },
     "checkIns": []
   },
