@@ -243,7 +243,10 @@
     "status": "active",
     "password_hash": "63a7ee4f8e71e2106662baa376059fda72321831932171a228a0a27b85909c79",
     "salt": "d3ea91edc5b03074",
-    "created_at": 1783933375831
+    "created_at": 1783933375831,
+    "last_login": 1785738359690,
+    "login_count": 1,
+    "session_token": "c1821eb173f79531f4b2b20fc658d4d7"
   },
   "115174": {
     "empid": "115174",
