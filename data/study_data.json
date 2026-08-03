@@ -4323,7 +4323,7 @@
   },
   "115174": {
     "basic": {
-      "readIndex": 0,
+      "readIndex": 4,
       "spellIndex": 2,
       "learned": [
         "1",
@@ -4331,7 +4331,12 @@
         "3",
         "4"
       ],
-      "learnedDates": {},
+      "learnedDates": {
+        "1": "2026-07-23",
+        "2": "2026-07-23",
+        "3": "2026-07-23",
+        "4": "2026-07-23"
+      },
       "mastered": [],
       "speakScores": {},
       "weeklyTests": [],
@@ -4379,6 +4384,11 @@
       },
       {
         "date": "2026-07-23",
+        "seconds": 0,
+        "completed": false
+      },
+      {
+        "date": "2026-08-03",
         "seconds": 0,
         "completed": false
       }
