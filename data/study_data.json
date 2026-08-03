@@ -2091,7 +2091,7 @@
           "total": 2
         }
       ],
-      "readIndex": 24,
+      "readIndex": 23,
       "speakScores": {
         "1": {
           "ex1": 89.0,
@@ -2227,7 +2227,7 @@
           "phrase": 0.0
         },
         "25": {
-          "phrase": 35.0
+          "phrase": 100.0
         }
       },
       "spellIndex": 48,
