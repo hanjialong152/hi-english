@@ -4335,7 +4335,7 @@
   "115174": {
     "basic": {
       "readIndex": 7,
-      "spellIndex": 2,
+      "spellIndex": 3,
       "learned": [
         "1",
         "2",
@@ -4415,7 +4415,7 @@
       },
       {
         "date": "2026-08-05",
-        "seconds": 1,
+        "seconds": 3,
         "completed": false
       }
     ]
