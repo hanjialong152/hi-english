@@ -4938,7 +4938,9 @@
       },
       "spellIndex": 49,
       "totalSeconds": 0,
-      "weeklyTests": []
+      "weeklyTests": [],
+      "audioDone": {},
+      "audioDoneDate": {}
     },
     "business": {
       "learned": [],
@@ -4950,7 +4952,9 @@
       "spellIndex": 0,
       "totalSeconds": 0,
       "unlocked": true,
-      "weeklyTests": []
+      "weeklyTests": [],
+      "audioDone": {},
+      "audioDoneDate": {}
     },
     "checkIns": [
       {
@@ -4961,6 +4965,11 @@
       {
         "date": "2026-07-10",
         "seconds": 125,
+        "completed": false
+      },
+      {
+        "date": "2026-08-06",
+        "seconds": 0,
         "completed": false
       }
     ]
