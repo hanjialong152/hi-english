@@ -224,8 +224,9 @@
     "password_hash": "2b9308d7151e80d0caead9153f8f1cab9babcd477cfeeb2c9a968741ea129c6d",
     "salt": "165c80b2f8b17fca",
     "created_at": 1783596678512,
-    "last_login": 1783689520973,
-    "login_count": 7
+    "last_login": 1785979780570,
+    "login_count": 8,
+    "session_token": "6382b6fe95d7b8a501b498fab0069bc9"
   },
   "228174": {
     "empid": "228174",
