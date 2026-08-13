@@ -4,10 +4,10 @@
     "name": "TestUser2",
     "group": "B组",
     "status": "active",
-    "password_hash": "72f289d032390cb050b29a5db2bb2e3e86555210781d979940d1dc9e2f516a41",
-    "salt": "5a520e323476cd7d",
+    "password_hash": "1e5583546a77a8972b3112c1b1cceefba5f36d273e1153c5e86f20010341b853",
+    "salt": "efebea4499f71996",
     "created_at": 1783355038782,
-    "must_change_password": true,
+    "must_change_password": false,
     "last_login": 1786595674353,
     "login_count": 18,
     "session_token": "e4da827a5c33ec35d828f5e7e2d042a6"
