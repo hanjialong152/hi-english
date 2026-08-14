@@ -312,6 +312,11 @@
         "date": "2026-08-13",
         "seconds": 18,
         "completed": false
+      },
+      {
+        "date": "2026-08-14",
+        "seconds": 0,
+        "completed": false
       }
     ]
   },
