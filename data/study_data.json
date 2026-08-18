@@ -2126,7 +2126,7 @@
           "total": 2
         }
       ],
-      "readIndex": 21,
+      "readIndex": 8,
       "speakScores": {
         "1": {
           "ex1": 89.0,
@@ -2588,7 +2588,7 @@
           "total": 1
         }
       ],
-      "readIndex": 7,
+      "readIndex": 8,
       "speakScores": {
         "4": {
           "s0": 100.0,
@@ -3003,6 +3003,11 @@
       },
       {
         "date": "2026-08-13",
+        "seconds": 0,
+        "completed": false
+      },
+      {
+        "date": "2026-08-18",
         "seconds": 0,
         "completed": false
       }
