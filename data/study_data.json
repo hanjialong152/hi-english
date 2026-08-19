@@ -235,7 +235,7 @@
           "phrase": 35.0
         }
       },
-      "spellIndex": 17,
+      "spellIndex": 18,
       "totalSeconds": 0,
       "weeklyTests": [],
       "audioDone": {
@@ -340,7 +340,7 @@
       },
       {
         "date": "2026-08-19",
-        "seconds": 5,
+        "seconds": 6,
         "completed": false
       }
     ]
