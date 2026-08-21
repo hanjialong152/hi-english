@@ -223,7 +223,7 @@
       },
       "mastered": [],
       "monthlyTests": [],
-      "readIndex": 13,
+      "readIndex": 10,
       "speakScores": {
         "13": {
           "phrase": 35.0
@@ -347,6 +347,11 @@
       {
         "date": "2026-08-20",
         "seconds": 12,
+        "completed": false
+      },
+      {
+        "date": "2026-08-21",
+        "seconds": 0,
         "completed": false
       }
     ]
