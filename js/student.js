@@ -2260,15 +2260,17 @@ function _setupRecEventDelegation() {
 }
 
 
-// ===== 汽车/商务专有词 学习区点读 =====
+// ===== 学习区 全词点读（汽车/商务专有词 + 基础词汇/商务句子每个单词）=====
 function wrapCarWords(text) {
   if (!text) return text;
-  var map = HiEnglish.carVocabMap;
-  var words = HiEnglish.carVocabWords;
-  if (!map || !words || !words.length) return text;
+  // 专有词(多词短语)优先放前面，再接通用单词；合并后统一包裹为可点 <span>
+  var carW = HiEnglish.carVocabWords || [];
+  var comW = HiEnglish.commonVocabWords || [];
+  var allW = carW.concat(comW);
+  if (!allW.length) return text;
   var re;
   try {
-    re = new RegExp('\\b(' + words.join('|') + ')\\b', 'gi');
+    re = new RegExp('\\b(' + allW.join('|') + '|' + '[A-Za-z][A-Za-z\'*-]*' + ')\\b', 'gi');
   } catch(e) { return text; }
   return text.replace(re, function(m) {
     return '<span class="vocab-tap" data-w="' + m.replace(/"/g, '&quot;') + '">' + m + '</span>';
@@ -2276,25 +2278,40 @@ function wrapCarWords(text) {
 }
 
 function showCarWordCard(w) {
-  var map = HiEnglish.carVocabMap || {};
-  var info = map[(w || '').toLowerCase()];
-  if (!info) return;
+  if (!w) return;
+  var lw = (w || '').toLowerCase();
+  // 先查汽车/商务专有词，再查全词词典；都查不到也弹卡(仅显示单词)
+  var info = (HiEnglish.carVocabMap || {})[lw] || (HiEnglish.commonVocabMap || {})[lw] || null;
   var modal = document.getElementById('carWordModal');
   if (!modal) return;
-  document.getElementById('carWordWord').textContent = info.word || w;
-  document.getElementById('carWordIpa').textContent = info.ipa || '';
-  document.getElementById('carWordPos').textContent = info.pos || '';
-  document.getElementById('carWordCn').textContent = info.cn || '';
-  modal._currentWord = info.word || w;
+  document.getElementById('carWordWord').textContent = info ? (info.word || w) : w;
+  document.getElementById('carWordIpa').textContent = info ? (info.ipa || '') : '';
+  document.getElementById('carWordPos').textContent = info ? (info.pos || '') : '';
+  document.getElementById('carWordCn').textContent = info ? (info.cn || '') : '';
+  modal._currentWord = w;
   modal.style.display = 'flex';
+  // 点开自动发声（统一音色 mp3；缺失降级浏览器 TTS）
+  playCarWord();
 }
 
 function playCarWord() {
   var modal = document.getElementById('carWordModal');
   var w = modal && modal._currentWord;
   if (!w) return;
-  var mp3 = 'audio/car_' + w.replace(/ /g, '_') + '.mp3';
-  var audio = new Audio(mp3);
+  var lw = w.toLowerCase();
+  // 停止上一个发声，避免连点叠音
+  if (window.speechSynthesis) { try { window.speechSynthesis.cancel(); } catch(e) {} }
+  if (modal._audio) { try { modal._audio.pause(); } catch(e) {} }
+  var url;
+  if (HiEnglish.carVocabMap && HiEnglish.carVocabMap[lw]) {
+    // 汽车/商务专有词 -> car_{slug}.mp3
+    url = 'audio/car_' + w.replace(/ /g, '_') + '.mp3';
+  } else {
+    // 通用词(基础词汇/商务句子) -> cw_{slug}.mp3（统一音色，与跟读区一致）
+    url = 'audio/cw_' + lw.replace(/[^a-z0-9]/g, '_') + '.mp3';
+  }
+  var audio = new Audio(url);
+  modal._audio = audio;
   audio.play().catch(function() {
     if (HiEnglish.speak) HiEnglish.speak(w);
   });

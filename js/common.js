@@ -414,9 +414,10 @@ const HiEnglish = {
     }
   },
 
-  // API: Load car/business vocab for tap-to-read (学习区专有词点读)
+  // API: Load car/business vocab + 全词词典 for tap-to-read (学习区点读)
   async loadCarVocab() {
-    if (this.carVocabMap) return this.carVocabMap;
+    if (this.carVocabMap && this.commonVocabMap) return this.carVocabMap;
+    // 汽车/商务专有词（已有 car_*.mp3）
     try {
       const res = await fetch('data/car_vocab.json?_=' + Date.now());
       const list = await res.json();
@@ -431,13 +432,31 @@ const HiEnglish = {
       // 长词优先，避免子串抢匹配（如 credit 不抢 letter of credit）
       arr.sort((a, b) => b.length - a.length);
       this.carVocabWords = arr.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-      return this.carVocabMap;
     } catch(e) {
       console.error('Failed to load car vocab:', e);
       this.carVocabMap = {};
       this.carVocabWords = [];
-      return {};
     }
+    // 全词点读词典（基础词汇/商务句子每个单词，含统一音色 cw_*.mp3）
+    try {
+      const res2 = await fetch('data/common_vocab.json?_=' + Date.now());
+      const list2 = await res2.json();
+      this.commonVocabMap = {};
+      const arr2 = [];
+      list2.forEach((it) => {
+        if (it && it.word) {
+          this.commonVocabMap[it.word.toLowerCase()] = it;
+          arr2.push(it.word);
+        }
+      });
+      arr2.sort((a, b) => b.length - a.length);
+      this.commonVocabWords = arr2.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    } catch(e) {
+      console.error('Failed to load common vocab:', e);
+      this.commonVocabMap = {};
+      this.commonVocabWords = [];
+    }
+    return this.carVocabMap;
   },
 
   // TTS: Initialize voices - pick the most natural-sounding one
