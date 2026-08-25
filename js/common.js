@@ -414,6 +414,32 @@ const HiEnglish = {
     }
   },
 
+  // API: Load car/business vocab for tap-to-read (学习区专有词点读)
+  async loadCarVocab() {
+    if (this.carVocabMap) return this.carVocabMap;
+    try {
+      const res = await fetch('data/car_vocab.json?_=' + Date.now());
+      const list = await res.json();
+      this.carVocabMap = {};
+      const arr = [];
+      list.forEach((it) => {
+        if (it && it.word) {
+          this.carVocabMap[it.word.toLowerCase()] = it;
+          arr.push(it.word);
+        }
+      });
+      // 长词优先，避免子串抢匹配（如 credit 不抢 letter of credit）
+      arr.sort((a, b) => b.length - a.length);
+      this.carVocabWords = arr.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+      return this.carVocabMap;
+    } catch(e) {
+      console.error('Failed to load car vocab:', e);
+      this.carVocabMap = {};
+      this.carVocabWords = [];
+      return {};
+    }
+  },
+
   // TTS: Initialize voices - pick the most natural-sounding one
   initVoices() {
     if (!('speechSynthesis' in window)) return;

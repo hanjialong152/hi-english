@@ -1,0 +1,1184 @@
+[
+  {
+    "word": "engine",
+    "ipa": "/ˈendʒɪn/",
+    "pos": "n.",
+    "cn": "发动机"
+  },
+  {
+    "word": "brake",
+    "ipa": "/breɪk/",
+    "pos": "n.",
+    "cn": "刹车/制动器"
+  },
+  {
+    "word": "brake pad",
+    "ipa": "/breɪk pæd/",
+    "pos": "n.",
+    "cn": "刹车片"
+  },
+  {
+    "word": "clutch",
+    "ipa": "/klʌtʃ/",
+    "pos": "n.",
+    "cn": "离合器"
+  },
+  {
+    "word": "gearbox",
+    "ipa": "/ˈɡɪrbɑːks/",
+    "pos": "n.",
+    "cn": "变速箱"
+  },
+  {
+    "word": "transmission",
+    "ipa": "/trænsˈmɪʃən/",
+    "pos": "n.",
+    "cn": "变速器"
+  },
+  {
+    "word": "battery",
+    "ipa": "/ˈbætəri/",
+    "pos": "n.",
+    "cn": "电池"
+  },
+  {
+    "word": "radiator",
+    "ipa": "/ˈreɪdieɪtər/",
+    "pos": "n.",
+    "cn": "散热器"
+  },
+  {
+    "word": "piston",
+    "ipa": "/ˈpɪstən/",
+    "pos": "n.",
+    "cn": "活塞"
+  },
+  {
+    "word": "cylinder",
+    "ipa": "/ˈsɪlɪndər/",
+    "pos": "n.",
+    "cn": "气缸"
+  },
+  {
+    "word": "spark plug",
+    "ipa": "/spɑːrk plʌɡ/",
+    "pos": "n.",
+    "cn": "火花塞"
+  },
+  {
+    "word": "alternator",
+    "ipa": "/ˈɔːltərneɪtər/",
+    "pos": "n.",
+    "cn": "发电机"
+  },
+  {
+    "word": "starter",
+    "ipa": "/ˈstɑːrtər/",
+    "pos": "n.",
+    "cn": "起动机"
+  },
+  {
+    "word": "suspension",
+    "ipa": "/səˈspenʃən/",
+    "pos": "n.",
+    "cn": "悬架"
+  },
+  {
+    "word": "shock absorber",
+    "ipa": "/ʃɑːk əbˈzɔːrbər/",
+    "pos": "n.",
+    "cn": "减震器"
+  },
+  {
+    "word": "steering wheel",
+    "ipa": "/ˈstɪrɪŋ wiːl/",
+    "pos": "n.",
+    "cn": "方向盘"
+  },
+  {
+    "word": "axle",
+    "ipa": "/ˈæksəl/",
+    "pos": "n.",
+    "cn": "车轴"
+  },
+  {
+    "word": "chassis",
+    "ipa": "/ˈʃæsi/",
+    "pos": "n.",
+    "cn": "底盘"
+  },
+  {
+    "word": "exhaust",
+    "ipa": "/ɪɡˈzɔːst/",
+    "pos": "n.",
+    "cn": "排气管"
+  },
+  {
+    "word": "catalytic converter",
+    "ipa": "/ˌkætəˈlɪtɪk kənˈvɜːrtər/",
+    "pos": "n.",
+    "cn": "催化转化器"
+  },
+  {
+    "word": "turbocharger",
+    "ipa": "/ˈtɜːrbəʊtʃɑːrdʒər/",
+    "pos": "n.",
+    "cn": "涡轮增压器"
+  },
+  {
+    "word": "windshield",
+    "ipa": "/ˈwɪndʃiːld/",
+    "pos": "n.",
+    "cn": "挡风玻璃"
+  },
+  {
+    "word": "wiper",
+    "ipa": "/ˈwaɪpər/",
+    "pos": "n.",
+    "cn": "雨刷"
+  },
+  {
+    "word": "headlight",
+    "ipa": "/ˈhedlaɪt/",
+    "pos": "n.",
+    "cn": "前大灯"
+  },
+  {
+    "word": "taillight",
+    "ipa": "/ˈteɪlaɪt/",
+    "pos": "n.",
+    "cn": "尾灯"
+  },
+  {
+    "word": "bumper",
+    "ipa": "/ˈbʌmpər/",
+    "pos": "n.",
+    "cn": "保险杠"
+  },
+  {
+    "word": "tire",
+    "ipa": "/ˈtaɪər/",
+    "pos": "n.",
+    "cn": "轮胎"
+  },
+  {
+    "word": "wheel",
+    "ipa": "/wiːl/",
+    "pos": "n.",
+    "cn": "车轮"
+  },
+  {
+    "word": "rim",
+    "ipa": "/rɪm/",
+    "pos": "n.",
+    "cn": "轮毂"
+  },
+  {
+    "word": "mirror",
+    "ipa": "/ˈmɪrər/",
+    "pos": "n.",
+    "cn": "后视镜"
+  },
+  {
+    "word": "hood",
+    "ipa": "/hʊd/",
+    "pos": "n.",
+    "cn": "引擎盖"
+  },
+  {
+    "word": "trunk",
+    "ipa": "/trʌŋk/",
+    "pos": "n.",
+    "cn": "后备箱"
+  },
+  {
+    "word": "sedan",
+    "ipa": "/sɪˈdæn/",
+    "pos": "n.",
+    "cn": "轿车"
+  },
+  {
+    "word": "SUV",
+    "ipa": "/ˌes dʌbəljuː ˈviː/",
+    "pos": "n.",
+    "cn": "运动型多用途车"
+  },
+  {
+    "word": "hatchback",
+    "ipa": "/ˈhætʃbæk/",
+    "pos": "n.",
+    "cn": "两厢车"
+  },
+  {
+    "word": "coupe",
+    "ipa": "/ˈkuːpeɪ/",
+    "pos": "n.",
+    "cn": "双门轿跑"
+  },
+  {
+    "word": "convertible",
+    "ipa": "/kənˈvɜːrtəbəl/",
+    "pos": "n.",
+    "cn": "敞篷车"
+  },
+  {
+    "word": "pickup",
+    "ipa": "/ˈpɪkʌp/",
+    "pos": "n.",
+    "cn": "皮卡"
+  },
+  {
+    "word": "van",
+    "ipa": "/væn/",
+    "pos": "n.",
+    "cn": "厢式货车"
+  },
+  {
+    "word": "minivan",
+    "ipa": "/ˈmɪnivæn/",
+    "pos": "n.",
+    "cn": "多用途车(MPV)"
+  },
+  {
+    "word": "truck",
+    "ipa": "/trʌk/",
+    "pos": "n.",
+    "cn": "卡车"
+  },
+  {
+    "word": "bus",
+    "ipa": "/bʌs/",
+    "pos": "n.",
+    "cn": "公共汽车"
+  },
+  {
+    "word": "EV",
+    "ipa": "/ˌiː ˈviː/",
+    "pos": "n.",
+    "cn": "电动车"
+  },
+  {
+    "word": "electric vehicle",
+    "ipa": "/ɪˈlektrɪk ˈviːəkl/",
+    "pos": "n.",
+    "cn": "电动车"
+  },
+  {
+    "word": "hybrid",
+    "ipa": "/ˈhaɪbrɪd/",
+    "pos": "n.",
+    "cn": "混合动力车"
+  },
+  {
+    "word": "motorcycle",
+    "ipa": "/ˈmoʊtərsaɪkl/",
+    "pos": "n.",
+    "cn": "摩托车"
+  },
+  {
+    "word": "tractor",
+    "ipa": "/ˈtræktər/",
+    "pos": "n.",
+    "cn": "拖拉机"
+  },
+  {
+    "word": "forklift",
+    "ipa": "/ˈfɔːrklɪft/",
+    "pos": "n.",
+    "cn": "叉车"
+  },
+  {
+    "word": "horsepower",
+    "ipa": "/ˈhɔːrspaʊər/",
+    "pos": "n.",
+    "cn": "马力"
+  },
+  {
+    "word": "torque",
+    "ipa": "/tɔːrk/",
+    "pos": "n.",
+    "cn": "扭矩"
+  },
+  {
+    "word": "fuel",
+    "ipa": "/ˈfjuːəl/",
+    "pos": "n.",
+    "cn": "燃料"
+  },
+  {
+    "word": "gasoline",
+    "ipa": "/ˈɡæsəliːn/",
+    "pos": "n.",
+    "cn": "汽油"
+  },
+  {
+    "word": "diesel",
+    "ipa": "/ˈdiːzl/",
+    "pos": "n.",
+    "cn": "柴油"
+  },
+  {
+    "word": "electric motor",
+    "ipa": "/ɪˈlektrɪk ˈmoʊtər/",
+    "pos": "n.",
+    "cn": "电动机"
+  },
+  {
+    "word": "charging",
+    "ipa": "/ˈtʃɑːrdʒɪŋ/",
+    "pos": "n.",
+    "cn": "充电"
+  },
+  {
+    "word": "charging pile",
+    "ipa": "/ˈtʃɑːrdʒɪŋ paɪl/",
+    "pos": "n.",
+    "cn": "充电桩"
+  },
+  {
+    "word": "charging station",
+    "ipa": "/ˈtʃɑːrdʒɪŋ ˈsteɪʃən/",
+    "pos": "n.",
+    "cn": "充电站"
+  },
+  {
+    "word": "range",
+    "ipa": "/reɪndʒ/",
+    "pos": "n.",
+    "cn": "续航里程"
+  },
+  {
+    "word": "battery pack",
+    "ipa": "/ˈbætəri pæk/",
+    "pos": "n.",
+    "cn": "电池包"
+  },
+  {
+    "word": "regenerative braking",
+    "ipa": "/rɪˈdʒenərətɪv ˈbreɪkɪŋ/",
+    "pos": "n.",
+    "cn": "动能回收"
+  },
+  {
+    "word": "emission",
+    "ipa": "/ɪˈmɪʃən/",
+    "pos": "n.",
+    "cn": "排放"
+  },
+  {
+    "word": "fuel economy",
+    "ipa": "/ˈfjuːəl ɪˈkɑːnəmi/",
+    "pos": "n.",
+    "cn": "燃油经济性"
+  },
+  {
+    "word": "assembly line",
+    "ipa": "/əˈsembli laɪn/",
+    "pos": "n.",
+    "cn": "装配线"
+  },
+  {
+    "word": "welding",
+    "ipa": "/ˈweldɪŋ/",
+    "pos": "n.",
+    "cn": "焊接"
+  },
+  {
+    "word": "stamping",
+    "ipa": "/ˈstæmpɪŋ/",
+    "pos": "n.",
+    "cn": "冲压"
+  },
+  {
+    "word": "painting",
+    "ipa": "/ˈpeɪntɪŋ/",
+    "pos": "n.",
+    "cn": "涂装"
+  },
+  {
+    "word": "robotic arm",
+    "ipa": "/roʊˈbɑːtɪk ɑːrm/",
+    "pos": "n.",
+    "cn": "机械臂"
+  },
+  {
+    "word": "quality inspection",
+    "ipa": "/ˈkwɑːləti ɪnˈspekʃən/",
+    "pos": "n.",
+    "cn": "质量检验"
+  },
+  {
+    "word": "lean production",
+    "ipa": "/liːn prəˈdʌkʃən/",
+    "pos": "n.",
+    "cn": "精益生产"
+  },
+  {
+    "word": "just-in-time",
+    "ipa": "/ˌdʒʌst ɪn ˈtaɪm/",
+    "pos": "n.",
+    "cn": "准时制(JIT)"
+  },
+  {
+    "word": "OEM",
+    "ipa": "/ˌoʊ iː ˈem/",
+    "pos": "n.",
+    "cn": "原始设备制造商"
+  },
+  {
+    "word": "ODM",
+    "ipa": "/ˌoʊ diː ˈem/",
+    "pos": "n.",
+    "cn": "原始设计制造商"
+  },
+  {
+    "word": "supplier",
+    "ipa": "/səˈplaɪər/",
+    "pos": "n.",
+    "cn": "供应商"
+  },
+  {
+    "word": "mass production",
+    "ipa": "/mæs prəˈdʌkʃən/",
+    "pos": "n.",
+    "cn": "批量生产"
+  },
+  {
+    "word": "mold",
+    "ipa": "/moʊld/",
+    "pos": "n.",
+    "cn": "模具"
+  },
+  {
+    "word": "inventory",
+    "ipa": "/ˈɪnvəntɔːri/",
+    "pos": "n.",
+    "cn": "库存"
+  },
+  {
+    "word": "defect",
+    "ipa": "/ˈdiːfekt/",
+    "pos": "n.",
+    "cn": "缺陷"
+  },
+  {
+    "word": "recall",
+    "ipa": "/rɪˈkɔːl/",
+    "pos": "n./v.",
+    "cn": "召回"
+  },
+  {
+    "word": "inspection",
+    "ipa": "/ɪnˈspekʃən/",
+    "pos": "n.",
+    "cn": "检验"
+  },
+  {
+    "word": "tolerance",
+    "ipa": "/ˈtɑːlərəns/",
+    "pos": "n.",
+    "cn": "公差"
+  },
+  {
+    "word": "calibration",
+    "ipa": "/ˌkælɪˈbreɪʃən/",
+    "pos": "n.",
+    "cn": "校准"
+  },
+  {
+    "word": "certification",
+    "ipa": "/ˌsɜːrtɪfɪˈkeɪʃən/",
+    "pos": "n.",
+    "cn": "认证"
+  },
+  {
+    "word": "warranty",
+    "ipa": "/ˈwɔːrənti/",
+    "pos": "n.",
+    "cn": "保修"
+  },
+  {
+    "word": "standard",
+    "ipa": "/ˈstændərd/",
+    "pos": "n.",
+    "cn": "标准"
+  },
+  {
+    "word": "sample",
+    "ipa": "/ˈsæmpl/",
+    "pos": "n.",
+    "cn": "样品"
+  },
+  {
+    "word": "rework",
+    "ipa": "/ˈriːwɜːrk/",
+    "pos": "n.",
+    "cn": "返工"
+  },
+  {
+    "word": "dealership",
+    "ipa": "/ˈdiːlərʃɪp/",
+    "pos": "n.",
+    "cn": "经销商"
+  },
+  {
+    "word": "showroom",
+    "ipa": "/ˈʃoʊruːm/",
+    "pos": "n.",
+    "cn": "展厅"
+  },
+  {
+    "word": "test drive",
+    "ipa": "/test draɪv/",
+    "pos": "n.",
+    "cn": "试驾"
+  },
+  {
+    "word": "invoice",
+    "ipa": "/ˈɪnvɔɪs/",
+    "pos": "n.",
+    "cn": "发票"
+  },
+  {
+    "word": "quote",
+    "ipa": "/kwoʊt/",
+    "pos": "n.",
+    "cn": "报价"
+  },
+  {
+    "word": "lease",
+    "ipa": "/liːs/",
+    "pos": "n./v.",
+    "cn": "租赁"
+  },
+  {
+    "word": "trade-in",
+    "ipa": "/ˈtreɪd ɪn/",
+    "pos": "n.",
+    "cn": "置换"
+  },
+  {
+    "word": "registration",
+    "ipa": "/ˌredʒɪˈstreɪʃən/",
+    "pos": "n.",
+    "cn": "上牌/登记"
+  },
+  {
+    "word": "insurance",
+    "ipa": "/ɪnˈʃʊrəns/",
+    "pos": "n.",
+    "cn": "保险"
+  },
+  {
+    "word": "deposit",
+    "ipa": "/dɪˈpɑːzɪt/",
+    "pos": "n.",
+    "cn": "定金"
+  },
+  {
+    "word": "discount",
+    "ipa": "/ˈdɪskaʊnt/",
+    "pos": "n.",
+    "cn": "折扣"
+  },
+  {
+    "word": "diagnostic",
+    "ipa": "/ˌdaɪəɡˈnɑːstɪk/",
+    "pos": "n.",
+    "cn": "诊断"
+  },
+  {
+    "word": "diagnostic trouble code",
+    "ipa": "/ˌdaɪəɡˈnɑːstɪk ˈtrʌbəl koʊd/",
+    "pos": "n.",
+    "cn": "故障码(DTC)"
+  },
+  {
+    "word": "oil change",
+    "ipa": "/ɔɪl tʃeɪndʒ/",
+    "pos": "n.",
+    "cn": "换机油"
+  },
+  {
+    "word": "filter",
+    "ipa": "/ˈfɪltər/",
+    "pos": "n.",
+    "cn": "滤清器"
+  },
+  {
+    "word": "air filter",
+    "ipa": "/er ˈfɪltər/",
+    "pos": "n.",
+    "cn": "空气滤清器"
+  },
+  {
+    "word": "coolant",
+    "ipa": "/ˈkuːlənt/",
+    "pos": "n.",
+    "cn": "冷却液"
+  },
+  {
+    "word": "belt",
+    "ipa": "/belt/",
+    "pos": "n.",
+    "cn": "皮带"
+  },
+  {
+    "word": "garage",
+    "ipa": "/ɡəˈrɑːʒ/",
+    "pos": "n.",
+    "cn": "修理厂"
+  },
+  {
+    "word": "mechanic",
+    "ipa": "/məˈkænɪk/",
+    "pos": "n.",
+    "cn": "机修工"
+  },
+  {
+    "word": "maintenance",
+    "ipa": "/ˈmeɪntənəns/",
+    "pos": "n.",
+    "cn": "保养"
+  },
+  {
+    "word": "spare part",
+    "ipa": "/sper pɑːrt/",
+    "pos": "n.",
+    "cn": "备件"
+  },
+  {
+    "word": "acceleration",
+    "ipa": "/əkˌseləˈreɪʃən/",
+    "pos": "n.",
+    "cn": "加速"
+  },
+  {
+    "word": "braking distance",
+    "ipa": "/ˈbreɪkɪŋ ˈdɪstəns/",
+    "pos": "n.",
+    "cn": "刹车距离"
+  },
+  {
+    "word": "cruise control",
+    "ipa": "/kruːz kənˈtroʊl/",
+    "pos": "n.",
+    "cn": "定速巡航"
+  },
+  {
+    "word": "lane keeping",
+    "ipa": "/leɪn ˈkiːpɪŋ/",
+    "pos": "n.",
+    "cn": "车道保持"
+  },
+  {
+    "word": "blind spot",
+    "ipa": "/blaɪnd spɑːt/",
+    "pos": "n.",
+    "cn": "盲区"
+  },
+  {
+    "word": "collision",
+    "ipa": "/kəˈlɪʒən/",
+    "pos": "n.",
+    "cn": "碰撞"
+  },
+  {
+    "word": "airbag",
+    "ipa": "/ˈerbæɡ/",
+    "pos": "n.",
+    "cn": "安全气囊"
+  },
+  {
+    "word": "ABS",
+    "ipa": "/ˌeɪ biː ˈes/",
+    "pos": "n.",
+    "cn": "防抱死制动系统"
+  },
+  {
+    "word": "ESP",
+    "ipa": "/ˌiː es ˈpiː/",
+    "pos": "n.",
+    "cn": "车身电子稳定系统"
+  },
+  {
+    "word": "ADAS",
+    "ipa": "/ˌeɪ dæs/",
+    "pos": "n.",
+    "cn": "高级驾驶辅助系统"
+  },
+  {
+    "word": "autonomous driving",
+    "ipa": "/ɔːˈtɑːnəməs ˈdraɪvɪŋ/",
+    "pos": "n.",
+    "cn": "自动驾驶"
+  },
+  {
+    "word": "sensor",
+    "ipa": "/ˈsensər/",
+    "pos": "n.",
+    "cn": "传感器"
+  },
+  {
+    "word": "radar",
+    "ipa": "/ˈreɪdɑːr/",
+    "pos": "n.",
+    "cn": "雷达"
+  },
+  {
+    "word": "camera",
+    "ipa": "/ˈkæmərə/",
+    "pos": "n.",
+    "cn": "摄像头"
+  },
+  {
+    "word": "meeting",
+    "ipa": "/ˈmiːtɪŋ/",
+    "pos": "n.",
+    "cn": "会议"
+  },
+  {
+    "word": "agenda",
+    "ipa": "/əˈdʒendə/",
+    "pos": "n.",
+    "cn": "议程"
+  },
+  {
+    "word": "minutes",
+    "ipa": "/ˈmɪnɪts/",
+    "pos": "n.",
+    "cn": "会议纪要"
+  },
+  {
+    "word": "conference",
+    "ipa": "/ˈkɑːnfərəns/",
+    "pos": "n.",
+    "cn": "会议/大会"
+  },
+  {
+    "word": "discuss",
+    "ipa": "/dɪˈskʌs/",
+    "pos": "v.",
+    "cn": "讨论"
+  },
+  {
+    "word": "negotiate",
+    "ipa": "/nɪˈɡoʊʃieɪt/",
+    "pos": "v.",
+    "cn": "谈判"
+  },
+  {
+    "word": "feedback",
+    "ipa": "/ˈfiːdbæk/",
+    "pos": "n.",
+    "cn": "反馈"
+  },
+  {
+    "word": "presentation",
+    "ipa": "/ˌprezənˈteɪʃən/",
+    "pos": "n.",
+    "cn": "演示/汇报"
+  },
+  {
+    "word": "webinar",
+    "ipa": "/ˈwebɪnɑːr/",
+    "pos": "n.",
+    "cn": "网络研讨会"
+  },
+  {
+    "word": "brainstorm",
+    "ipa": "/ˈbreɪnstɔːrm/",
+    "pos": "v./n.",
+    "cn": "头脑风暴"
+  },
+  {
+    "word": "follow up",
+    "ipa": "/ˈfɑːloʊ ʌp/",
+    "pos": "ph.",
+    "cn": "跟进"
+  },
+  {
+    "word": "delegate",
+    "ipa": "/ˈdelɪɡət/",
+    "pos": "v.",
+    "cn": "委派"
+  },
+  {
+    "word": "email",
+    "ipa": "/ˈiːmeɪl/",
+    "pos": "n.",
+    "cn": "电子邮件"
+  },
+  {
+    "word": "memo",
+    "ipa": "/ˈmemoʊ/",
+    "pos": "n.",
+    "cn": "备忘录"
+  },
+  {
+    "word": "report",
+    "ipa": "/rɪˈpɔːrt/",
+    "pos": "n.",
+    "cn": "报告"
+  },
+  {
+    "word": "proposal",
+    "ipa": "/prəˈpoʊzl/",
+    "pos": "n.",
+    "cn": "提案"
+  },
+  {
+    "word": "contract",
+    "ipa": "/ˈkɑːntrækt/",
+    "pos": "n.",
+    "cn": "合同"
+  },
+  {
+    "word": "agreement",
+    "ipa": "/əˈɡriːmənt/",
+    "pos": "n.",
+    "cn": "协议"
+  },
+  {
+    "word": "purchase order",
+    "ipa": "/ˈpɜːrtʃəs ˈɔːrdər/",
+    "pos": "n.",
+    "cn": "采购订单(PO)"
+  },
+  {
+    "word": "RFQ",
+    "ipa": "/ˌɑːr ef ˈkjuː/",
+    "pos": "n.",
+    "cn": "询价单"
+  },
+  {
+    "word": "NDA",
+    "ipa": "/ˌen diː ˈeɪ/",
+    "pos": "n.",
+    "cn": "保密协议"
+  },
+  {
+    "word": "signature",
+    "ipa": "/ˈsɪɡnətʃər/",
+    "pos": "n.",
+    "cn": "签名"
+  },
+  {
+    "word": "attach",
+    "ipa": "/əˈtætʃ/",
+    "pos": "v.",
+    "cn": "附上"
+  },
+  {
+    "word": "reply",
+    "ipa": "/rɪˈplaɪ/",
+    "pos": "v.",
+    "cn": "回复"
+  },
+  {
+    "word": "payment",
+    "ipa": "/ˈpeɪmənt/",
+    "pos": "n.",
+    "cn": "付款"
+  },
+  {
+    "word": "shipment",
+    "ipa": "/ˈʃɪpmənt/",
+    "pos": "n.",
+    "cn": "发货"
+  },
+  {
+    "word": "delivery",
+    "ipa": "/dɪˈlɪvəri/",
+    "pos": "n.",
+    "cn": "交付/送货"
+  },
+  {
+    "word": "customs",
+    "ipa": "/ˈkʌstəmz/",
+    "pos": "n.",
+    "cn": "海关"
+  },
+  {
+    "word": "freight",
+    "ipa": "/freɪt/",
+    "pos": "n.",
+    "cn": "运费"
+  },
+  {
+    "word": "logistics",
+    "ipa": "/ləˈdʒɪstɪks/",
+    "pos": "n.",
+    "cn": "物流"
+  },
+  {
+    "word": "warehouse",
+    "ipa": "/ˈwerhaʊs/",
+    "pos": "n.",
+    "cn": "仓库"
+  },
+  {
+    "word": "tariff",
+    "ipa": "/ˈtærɪf/",
+    "pos": "n.",
+    "cn": "关税"
+  },
+  {
+    "word": "letter of credit",
+    "ipa": "/ˈletər əv ˈkredɪt/",
+    "pos": "n.",
+    "cn": "信用证(L/C)"
+  },
+  {
+    "word": "receipt",
+    "ipa": "/rɪˈsiːt/",
+    "pos": "n.",
+    "cn": "收据"
+  },
+  {
+    "word": "refund",
+    "ipa": "/ˈriːfʌnd/",
+    "pos": "n./v.",
+    "cn": "退款"
+  },
+  {
+    "word": "cost",
+    "ipa": "/kɔːst/",
+    "pos": "n.",
+    "cn": "成本"
+  },
+  {
+    "word": "budget",
+    "ipa": "/ˈbʌdʒɪt/",
+    "pos": "n.",
+    "cn": "预算"
+  },
+  {
+    "word": "profit",
+    "ipa": "/ˈprɑːfɪt/",
+    "pos": "n.",
+    "cn": "利润"
+  },
+  {
+    "word": "revenue",
+    "ipa": "/ˈrevənuː/",
+    "pos": "n.",
+    "cn": "营收"
+  },
+  {
+    "word": "balance",
+    "ipa": "/ˈbæləns/",
+    "pos": "n.",
+    "cn": "余额"
+  },
+  {
+    "word": "market",
+    "ipa": "/ˈmɑːrkɪt/",
+    "pos": "n.",
+    "cn": "市场"
+  },
+  {
+    "word": "customer",
+    "ipa": "/ˈkʌstəmər/",
+    "pos": "n.",
+    "cn": "客户"
+  },
+  {
+    "word": "client",
+    "ipa": "/ˈklaɪənt/",
+    "pos": "n.",
+    "cn": "客户"
+  },
+  {
+    "word": "sales",
+    "ipa": "/seɪlz/",
+    "pos": "n.",
+    "cn": "销售"
+  },
+  {
+    "word": "promotion",
+    "ipa": "/prəˈmoʊʃən/",
+    "pos": "n.",
+    "cn": "促销"
+  },
+  {
+    "word": "brand",
+    "ipa": "/brænd/",
+    "pos": "n.",
+    "cn": "品牌"
+  },
+  {
+    "word": "lead",
+    "ipa": "/liːd/",
+    "pos": "n.",
+    "cn": "潜在客户"
+  },
+  {
+    "word": "CRM",
+    "ipa": "/ˌsiː ɑːr ˈem/",
+    "pos": "n.",
+    "cn": "客户关系管理"
+  },
+  {
+    "word": "campaign",
+    "ipa": "/kæmˈpeɪn/",
+    "pos": "n.",
+    "cn": "营销活动"
+  },
+  {
+    "word": "target",
+    "ipa": "/ˈtɑːrɡɪt/",
+    "pos": "n.",
+    "cn": "目标"
+  },
+  {
+    "word": "competitor",
+    "ipa": "/kəmˈpetɪtər/",
+    "pos": "n.",
+    "cn": "竞争对手"
+  },
+  {
+    "word": "demand",
+    "ipa": "/dɪˈmænd/",
+    "pos": "n.",
+    "cn": "需求"
+  },
+  {
+    "word": "order",
+    "ipa": "/ˈɔːrdər/",
+    "pos": "n.",
+    "cn": "订单"
+  },
+  {
+    "word": "interview",
+    "ipa": "/ˈɪntərvjuː/",
+    "pos": "n./v.",
+    "cn": "面试"
+  },
+  {
+    "word": "recruit",
+    "ipa": "/rɪˈkruːt/",
+    "pos": "v.",
+    "cn": "招聘"
+  },
+  {
+    "word": "hire",
+    "ipa": "/haɪər/",
+    "pos": "v.",
+    "cn": "雇佣"
+  },
+  {
+    "word": "training",
+    "ipa": "/ˈtreɪnɪŋ/",
+    "pos": "n.",
+    "cn": "培训"
+  },
+  {
+    "word": "salary",
+    "ipa": "/ˈsæləri/",
+    "pos": "n.",
+    "cn": "薪资"
+  },
+  {
+    "word": "bonus",
+    "ipa": "/ˈboʊnəs/",
+    "pos": "n.",
+    "cn": "奖金"
+  },
+  {
+    "word": "resignation",
+    "ipa": "/ˌrezɪɡˈneɪʃən/",
+    "pos": "n.",
+    "cn": "辞职"
+  },
+  {
+    "word": "performance review",
+    "ipa": "/pərˈfɔːrməns rɪˈvjuː/",
+    "pos": "n.",
+    "cn": "绩效评估"
+  },
+  {
+    "word": "benefit",
+    "ipa": "/ˈbenɪfɪt/",
+    "pos": "n.",
+    "cn": "福利"
+  },
+  {
+    "word": "vacancy",
+    "ipa": "/ˈveɪkənsi/",
+    "pos": "n.",
+    "cn": "职位空缺"
+  },
+  {
+    "word": "deadline",
+    "ipa": "/ˈdedlaɪn/",
+    "pos": "n.",
+    "cn": "截止日期"
+  },
+  {
+    "word": "schedule",
+    "ipa": "/ˈskedʒuːl/",
+    "pos": "n.",
+    "cn": "日程"
+  },
+  {
+    "word": "task",
+    "ipa": "/tæsk/",
+    "pos": "n.",
+    "cn": "任务"
+  },
+  {
+    "word": "project",
+    "ipa": "/ˈprɑːdʒekt/",
+    "pos": "n.",
+    "cn": "项目"
+  },
+  {
+    "word": "team",
+    "ipa": "/tiːm/",
+    "pos": "n.",
+    "cn": "团队"
+  },
+  {
+    "word": "colleague",
+    "ipa": "/ˈkɑːliːɡ/",
+    "pos": "n.",
+    "cn": "同事"
+  },
+  {
+    "word": "boss",
+    "ipa": "/bɔːs/",
+    "pos": "n.",
+    "cn": "老板"
+  },
+  {
+    "word": "workflow",
+    "ipa": "/ˈwɜːrkfloʊ/",
+    "pos": "n.",
+    "cn": "工作流"
+  },
+  {
+    "word": "KPI",
+    "ipa": "/ˌkeɪ piː ˈaɪ/",
+    "pos": "n.",
+    "cn": "关键绩效指标"
+  },
+  {
+    "word": "priority",
+    "ipa": "/praɪˈɔːrəti/",
+    "pos": "n.",
+    "cn": "优先级"
+  },
+  {
+    "word": "responsibility",
+    "ipa": "/rɪˌspɑːnsəˈbɪləti/",
+    "pos": "n.",
+    "cn": "职责"
+  },
+  {
+    "word": "objective",
+    "ipa": "/əbˈdʒektɪv/",
+    "pos": "n.",
+    "cn": "目标"
+  }
+]

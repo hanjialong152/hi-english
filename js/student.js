@@ -293,6 +293,10 @@ async function init() {
   
   // Initialize recording button event delegation
   _setupRecEventDelegation();
+
+  // 汽车/商务专有词学习区点读：加载词库 + 绑定点击委托
+  _setupCarVocabTap();
+  HiEnglish.loadCarVocab();
   
   // Initialize browser notifications
   initNotifications();
@@ -990,7 +994,7 @@ function renderWordLearnCard() {
     '<div class="learn-section">' +
       '<h4>📌 常见词组 <button id="audio-btn-basic-p" onclick="playBasicAudio(\'p\',\'' + word.id + '\',\'' + escapeQuotes(word.phrase_en) + '\')" style="float:right;border:none;background:none;font-size:16px;cursor:pointer;">🔊</button></h4>' +
       '<div style="font-size:15px;">' +
-        '<div style="margin-bottom:4px;">' + word.phrase_en + '</div>' +
+        '<div style="margin-bottom:4px;">' + wrapCarWords(word.phrase_en) + '</div>' +
         '<div style="font-size:13px;color:var(--text-sub);">' + word.phrase_cn + '</div>' +
       '</div>' +
     '</div>';
@@ -1001,21 +1005,21 @@ function renderWordLearnCard() {
       '<h4>💬 例句</h4>' +
       '<div style="margin-bottom:12px;">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;">' +
-          '<span style="font-size:14px;">' + word.s1_en + '</span>' +
+          '<span style="font-size:14px;">' + wrapCarWords(word.s1_en) + '</span>' +
           '<button id="audio-btn-basic-e1" onclick="playBasicAudio(\'e1\',\'' + word.id + '\',\'' + escapeQuotes(word.s1_en) + '\')" style="border:none;background:none;font-size:16px;cursor:pointer;">🔊</button>' +
         '</div>' +
         '<div style="font-size:13px;color:var(--text-sub);">' + word.s1_cn + '</div>' +
       '</div>' +
       '<div style="margin-bottom:12px;">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;">' +
-          '<span style="font-size:14px;">' + word.s2_en + '</span>' +
+          '<span style="font-size:14px;">' + wrapCarWords(word.s2_en) + '</span>' +
           '<button id="audio-btn-basic-e2" onclick="playBasicAudio(\'e2\',\'' + word.id + '\',\'' + escapeQuotes(word.s2_en) + '\')" style="border:none;background:none;font-size:16px;cursor:pointer;">🔊</button>' +
         '</div>' +
         '<div style="font-size:13px;color:var(--text-sub);">' + word.s2_cn + '</div>' +
       '</div>' +
       '<div>' +
         '<div style="display:flex;justify-content:space-between;align-items:center;">' +
-          '<span style="font-size:14px;">' + word.s3_en + '</span>' +
+          '<span style="font-size:14px;">' + wrapCarWords(word.s3_en) + '</span>' +
           '<button id="audio-btn-basic-e3" onclick="playBasicAudio(\'e3\',\'' + word.id + '\',\'' + escapeQuotes(word.s3_en) + '\')" style="border:none;background:none;font-size:16px;cursor:pointer;">🔊</button>' +
         '</div>' +
         '<div style="font-size:13px;color:var(--text-sub);">' + word.s3_cn + '</div>' +
@@ -1114,7 +1118,7 @@ function renderLessonLearnCard() {
   var sentencesHTML = lesson.sentences.map(function(s, i) {
     return '<div class="learn-section">' +
       '<h4>' + (s.speaker === 'A' ? '👤 A' : '👤 B') + ' <button id="audio-btn-business-b_' + lesson.id + '_' + i + '" onclick="playBasicAudio(\'b_' + lesson.id + '_' + i + '\',\'' + escapeQuotes(s.en) + '\')" style="float:right;border:none;background:none;font-size:16px;cursor:pointer;">🔊</button></h4>' +
-      '<div style="font-size:15px;margin-bottom:4px;">' + s.en + '</div>' +
+      '<div style="font-size:15px;margin-bottom:4px;">' + wrapCarWords(s.en) + '</div>' +
       '<div style="font-size:13px;color:var(--text-sub);">' + s.zh + '</div>' +
     '</div>';
   }).join('');
@@ -2255,6 +2259,63 @@ function _setupRecEventDelegation() {
   });
 }
 
+
+// ===== 汽车/商务专有词 学习区点读 =====
+function wrapCarWords(text) {
+  if (!text) return text;
+  var map = HiEnglish.carVocabMap;
+  var words = HiEnglish.carVocabWords;
+  if (!map || !words || !words.length) return text;
+  var re;
+  try {
+    re = new RegExp('\\b(' + words.join('|') + ')\\b', 'gi');
+  } catch(e) { return text; }
+  return text.replace(re, function(m) {
+    return '<span class="vocab-tap" data-w="' + m.replace(/"/g, '&quot;') + '">' + m + '</span>';
+  });
+}
+
+function showCarWordCard(w) {
+  var map = HiEnglish.carVocabMap || {};
+  var info = map[(w || '').toLowerCase()];
+  if (!info) return;
+  var modal = document.getElementById('carWordModal');
+  if (!modal) return;
+  document.getElementById('carWordWord').textContent = info.word || w;
+  document.getElementById('carWordIpa').textContent = info.ipa || '';
+  document.getElementById('carWordPos').textContent = info.pos || '';
+  document.getElementById('carWordCn').textContent = info.cn || '';
+  modal._currentWord = info.word || w;
+  modal.style.display = 'flex';
+}
+
+function playCarWord() {
+  var modal = document.getElementById('carWordModal');
+  var w = modal && modal._currentWord;
+  if (!w) return;
+  var mp3 = 'audio/car_' + w.replace(/ /g, '_') + '.mp3';
+  var audio = new Audio(mp3);
+  audio.play().catch(function() {
+    if (HiEnglish.speak) HiEnglish.speak(w);
+  });
+}
+
+function closeCarWordModal() {
+  var modal = document.getElementById('carWordModal');
+  if (modal) modal.style.display = 'none';
+}
+
+function _setupCarVocabTap() {
+  if (window._carTapPatched) return;
+  window._carTapPatched = true;
+  document.addEventListener('click', function(e) {
+    var t = e.target;
+    var tap = t && t.closest ? t.closest('.vocab-tap') : null;
+    if (!tap) return;
+    var w = tap.getAttribute('data-w');
+    showCarWordCard(w);
+  });
+}
 
 // ===== Word navigation =====
 function prevWord() {
