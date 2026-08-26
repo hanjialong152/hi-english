@@ -1313,7 +1313,7 @@
         "21"
       ],
       "monthlyTests": [],
-      "readIndex": 53,
+      "readIndex": 54,
       "speakScores": {
         "1": {
           "ex1": 89.0,
@@ -1490,6 +1490,9 @@
           "e3": true,
           "e2": true,
           "e1": true,
+          "p": true
+        },
+        "54": {
           "p": true
         }
       },
@@ -1995,7 +1998,7 @@
       },
       {
         "date": "2026-08-26",
-        "seconds": 14,
+        "seconds": 15,
         "completed": false
       }
     ]
