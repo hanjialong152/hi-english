@@ -267,7 +267,7 @@
       "readIndex": 0,
       "speakScores": {
         "1": {
-          "s0": 100
+          "s0": 100.0
         }
       },
       "spellIndex": 0,
@@ -341,7 +341,7 @@
       },
       {
         "date": "2026-08-29",
-        "seconds": 13,
+        "seconds": 15,
         "completed": false
       }
     ]
