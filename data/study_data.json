@@ -212,7 +212,11 @@
       "mastered": [],
       "monthlyTests": [],
       "readIndex": 10,
-      "speakScores": {},
+      "speakScores": {
+        "11": {
+          "phrase": 35.0
+        }
+      },
       "spellIndex": 0,
       "totalSeconds": 0,
       "weeklyTests": [],
@@ -241,6 +245,9 @@
           "e2": true,
           "e1": true,
           "p": true
+        },
+        "11": {
+          "e1": true
         }
       },
       "audioDoneDate": {
@@ -325,6 +332,11 @@
       },
       {
         "date": "2026-08-21",
+        "seconds": 0,
+        "completed": false
+      },
+      {
+        "date": "2026-08-29",
         "seconds": 0,
         "completed": false
       }
