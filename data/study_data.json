@@ -261,12 +261,14 @@
         "1",
         "2"
       ],
-      "learnedDates": {},
+      "learnedDates": {
+        "1": "2026-08-29"
+      },
       "mastered": [
         "1"
       ],
       "monthlyTests": [],
-      "readIndex": 0,
+      "readIndex": 1,
       "speakScores": {
         "1": {
           "s0": 100.0,
