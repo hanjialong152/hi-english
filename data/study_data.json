@@ -25,7 +25,8 @@
     "business": {
       "learned": [],
       "mastered": [],
-      "totalSeconds": 0
+      "totalSeconds": 0,
+      "unlocked": false
     },
     "checkIns": []
   },
@@ -50,7 +51,8 @@
     "business": {
       "learned": [],
       "mastered": [],
-      "totalSeconds": 0
+      "totalSeconds": 0,
+      "unlocked": false
     },
     "checkIns": []
   },
@@ -75,7 +77,8 @@
     "business": {
       "learned": [],
       "mastered": [],
-      "totalSeconds": 0
+      "totalSeconds": 0,
+      "unlocked": false
     },
     "checkIns": []
   },
@@ -123,7 +126,8 @@
     "business": {
       "learned": [],
       "mastered": [],
-      "totalSeconds": 0
+      "totalSeconds": 0,
+      "unlocked": false
     },
     "checkIns": []
   },
@@ -148,7 +152,8 @@
     "business": {
       "learned": [],
       "mastered": [],
-      "totalSeconds": 0
+      "totalSeconds": 0,
+      "unlocked": false
     },
     "checkIns": []
   },
@@ -173,7 +178,8 @@
     "business": {
       "learned": [],
       "mastered": [],
-      "totalSeconds": 0
+      "totalSeconds": 0,
+      "unlocked": false
     },
     "checkIns": []
   },
@@ -293,7 +299,7 @@
       },
       "spellIndex": 0,
       "totalSeconds": 0,
-      "unlocked": true,
+      "unlocked": false,
       "weeklyTests": [],
       "audioDone": {
         "1": {
@@ -1793,7 +1799,7 @@
       },
       "spellIndex": 2,
       "totalSeconds": 0,
-      "unlocked": true,
+      "unlocked": false,
       "weeklyTests": [],
       "audioDone": {
         "32": {
@@ -2175,7 +2181,7 @@
       "speakScores": {},
       "spellIndex": 0,
       "totalSeconds": 0,
-      "unlocked": true,
+      "unlocked": false,
       "weeklyTests": [],
       "audioDone": {},
       "audioDoneDate": {}
@@ -2917,7 +2923,7 @@
       "speakScores": {},
       "spellIndex": 0,
       "totalSeconds": 0,
-      "unlocked": true,
+      "unlocked": false,
       "weeklyTests": [],
       "audioDone": {
         "2": {
@@ -3169,7 +3175,7 @@
       "speakScores": {},
       "spellIndex": 0,
       "totalSeconds": 0,
-      "unlocked": true,
+      "unlocked": false,
       "weeklyTests": []
     },
     "checkIns": [
@@ -3419,7 +3425,7 @@
       "speakScores": {},
       "spellIndex": 0,
       "totalSeconds": 0,
-      "unlocked": true,
+      "unlocked": false,
       "weeklyTests": [],
       "audioDone": {
         "1": {
@@ -3500,7 +3506,7 @@
       "weeklyTests": [],
       "monthlyTests": [],
       "totalSeconds": 0,
-      "unlocked": true
+      "unlocked": false
     },
     "checkIns": [
       {
@@ -3692,7 +3698,7 @@
       "weeklyTests": [],
       "monthlyTests": [],
       "totalSeconds": 0,
-      "unlocked": true,
+      "unlocked": false,
       "audioDone": {},
       "audioDoneDate": {}
     },
@@ -3755,7 +3761,7 @@
       "weeklyTests": [],
       "monthlyTests": [],
       "totalSeconds": 0,
-      "unlocked": true,
+      "unlocked": false,
       "audioDone": {},
       "audioDoneDate": {}
     }
@@ -3811,7 +3817,7 @@
       "weeklyTests": [],
       "monthlyTests": [],
       "totalSeconds": 0,
-      "unlocked": true,
+      "unlocked": false,
       "audioDone": {},
       "audioDoneDate": {}
     },
