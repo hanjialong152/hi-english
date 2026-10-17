@@ -3139,6 +3139,11 @@
         "date": "2026-10-09",
         "seconds": 0,
         "completed": false
+      },
+      {
+        "date": "2026-10-17",
+        "seconds": 0,
+        "completed": false
       }
     ]
   },
